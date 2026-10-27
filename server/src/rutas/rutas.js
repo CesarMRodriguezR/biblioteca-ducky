@@ -1,15 +1,36 @@
-/**
- * Rutas de la API. Cada ruta declara: autenticación, permiso (función del
- * perfil), validación y controlador. Mapa de módulos del diagrama:
- *   Gestión de Usuarios  → /auth, /usuarios, /perfiles, /funciones
- *   Panel                → /panel (indicadores y actividad reciente)
- *   Gestión de Libros    → /libros, /libros/:id/ejemplares, /editoriales,
- *                          /autores, /temas, /nuevos-libros, /ordenes-compra
- *   Búsqueda Libros      → GET /libros, GET /libros/:id, /libros/listado(.pdf)
- *   Préstamo Libros      → /prestamos, /lista-espera
- *   Devolución Préstamos → /prestamos/:id/devolucion, /multas
- *   Chatbot / Políticas  → /chatbot, /politicas
+/*
+ * ******************************************************************
+ * Nombre del programa: API-RUTAS · rutas.js
+ * Función: Registrar las rutas de la API: autenticación, permiso, validación y controlador de
+ *          cada una.
+ * Autor: Equipo CCJMops
+ * Fecha: 26/10/2026
+ * Entrada: Peticiones HTTP bajo /api
+ * Salida: Router de Express
+ * Nomenclatura: Variables en snake_case, funciones en CamelCase,
+ *               constantes en SNAKE_CASE (mayúsculas completas),
+ *               clases y módulos en CamelCase.
+ * ******************************************************************
  */
+
+/*
+ * ******************************************************************
+ * Contenido de listado:
+ *     Módulo          Objetivo
+ *     RutasCatalogo   Registra las rutas CRUD de un catálogo simple. lectura:…
+ * ******************************************************************
+ */
+
+/*
+ * ******************************************************************
+ * Instrucciones de reutilización:
+ * (1) Cada ruta declara en orden: Autenticar, Puede(funciones...), Validar(esquema) y
+ *     ManejarAsincrono(controlador).
+ * (2) Las funciones (permisos) son los códigos de la tabla Funciones; un perfil sin la función
+ *     recibe 403.
+ * ******************************************************************
+ */
+
 import expressPaquete from 'express';
 const { Router } = expressPaquete;
 import { ManejarAsincrono } from '../utilidades/ManejarAsincrono.js';
@@ -42,13 +63,16 @@ import {
 const rutas = Router();
 const con_id = Validar(esquemas.id_param, 'params');
 
-/**
- * Registra las rutas CRUD de un catálogo simple.
- * lectura: funciones que pueden consultar; escritura: funciones que pueden editar.
+/*
+ * Función: RutasCatalogo
+ * Objetivo: Registra las rutas CRUD de un catálogo simple. lectura: funciones que pueden
+ *           consultar; escritura: funciones que pueden editar.
+ * Entrada: ruta, modelo, nombre, esquema, { lectura, escritura }
+ * Salida: Ninguna (registra las rutas en el router)
  */
-function RutasCatalogo(ruta, model, nombre, esquema, { lectura, escritura }) 
+function RutasCatalogo(ruta, modelo, nombre, esquema, { lectura, escritura })
 {
-  const controlador = CrearControladorCrud(model, nombre);
+  const controlador = CrearControladorCrud(modelo, nombre);
   rutas.get(
     ruta,
     Autenticar,
@@ -81,10 +105,16 @@ function RutasCatalogo(ruta, model, nombre, esquema, { lectura, escritura })
   );
 }
 
-// --- Salud -------------------------------------------------------------
+/*------------------------------------------------------------------
+ * Sección: Salud
+ * Objetivo: Ruta pública para comprobar que la API responde.
+ *------------------------------------------------------------------*/
 rutas.get('/salud', (_req, res) => res.json({ estado: 'ok' }));
 
-// --- Panel (inicio del administrador) ----------------------------------
+/*------------------------------------------------------------------
+ * Sección: Panel (inicio del administrador)
+ * Objetivo: Indicadores y actividad reciente del panel.
+ *------------------------------------------------------------------*/
 rutas.get(
   '/panel',
   Autenticar,
@@ -92,7 +122,10 @@ rutas.get(
   ManejarAsincrono(ControladorPanel.Resumen),
 );
 
-// --- Autenticación -----------------------------------------------------
+/*------------------------------------------------------------------
+ * Sección: Autenticación
+ * Objetivo: Inicio de sesión, datos de la sesión y cambio de contraseña.
+ *------------------------------------------------------------------*/
 rutas.post(
   '/auth/login',
   Validar(esquemas.login),
@@ -106,7 +139,10 @@ rutas.put(
   ManejarAsincrono(ControladorAutenticacion.CambiarContrasena),
 );
 
-// --- Gestión de usuarios ----------------------------------------------
+/*------------------------------------------------------------------
+ * Sección: Gestión de usuarios
+ * Objetivo: Consulta, cambio, alta y baja por lista de usuarios, perfiles y funciones.
+ *------------------------------------------------------------------*/
 const adm_usuarios = Puede('gestionar_usuarios');
 const consulta_usuarios = Puede('gestionar_usuarios', 'gestionar_prestamos', 'gestionar_multas');
 rutas.get(
@@ -217,7 +253,11 @@ RutasCatalogo('/funciones', ModeloFuncion, 'Función', esquemas.funcion, {
   escritura: ['gestionar_usuarios'],
 });
 
-// --- Catálogo de libros -----------------------------------------------
+/*------------------------------------------------------------------
+ * Sección: Catálogo de libros
+ * Objetivo: Búsqueda, listado, ficha, alta, edición, estatus y copias de los libros;
+ *           catálogos de editoriales, autores y temas.
+ *------------------------------------------------------------------*/
 const consulta_catalogo = ['buscar_libros', 'gestionar_libros'];
 const adm_libros = Puede('gestionar_libros');
 
@@ -327,7 +367,10 @@ RutasCatalogo('/temas', ModeloTema, 'Tema', esquemas.tema, {
   escritura: ['gestionar_libros'],
 });
 
-// --- Circulación -------------------------------------------------------
+/*------------------------------------------------------------------
+ * Sección: Circulación
+ * Objetivo: Préstamos, devoluciones, renovaciones, multas y lista de espera.
+ *------------------------------------------------------------------*/
 rutas.get(
   '/prestamos',
   Autenticar,
@@ -410,7 +453,10 @@ rutas.delete(
   ManejarAsincrono(ControladorListaEspera.Cancelar),
 );
 
-// --- Adquisiciones -----------------------------------------------------
+/*------------------------------------------------------------------
+ * Sección: Adquisiciones
+ * Objetivo: Libros nuevos y órdenes de compra.
+ *------------------------------------------------------------------*/
 RutasCatalogo('/nuevos-libros', ModeloNuevoLibro, 'Libro nuevo', esquemas.nuevo_libro, {
   lectura: ['solicitar_compra', 'gestionar_compras'],
   escritura: ['solicitar_compra', 'gestionar_compras'],
@@ -452,7 +498,10 @@ rutas.patch(
   ManejarAsincrono(ControladorOrdenesCompra.CambiarEstatus),
 );
 
-// --- Políticas ---------------------------------------------------------
+/*------------------------------------------------------------------
+ * Sección: Políticas
+ * Objetivo: Políticas de la biblioteca (lectura pública).
+ *------------------------------------------------------------------*/
 {
   const controlador = CrearControladorCrud(ModeloPolitica, 'Política');
   rutas.get('/politicas', Validar(esquemas.paginacion, 'query'), ManejarAsincrono(controlador.Listar)); // pública
@@ -481,7 +530,10 @@ rutas.patch(
   );
 }
 
-// --- Chatbot -----------------------------------------------------------
+/*------------------------------------------------------------------
+ * Sección: Chatbot
+ * Objetivo: Preguntas al chatbot y administración de sus respuestas.
+ *------------------------------------------------------------------*/
 rutas.post(
   '/chatbot/preguntar',
   Autenticar,

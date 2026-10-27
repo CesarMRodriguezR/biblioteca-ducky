@@ -1,17 +1,65 @@
+/*
+ * ******************************************************************
+ * Nombre del programa: API-ENTORNO · entorno.js
+ * Función: Leer el archivo .env y exponer la configuración de la API con valores por defecto.
+ * Autor: Equipo CCJMops
+ * Fecha: 26/10/2026
+ * Entrada: Archivo .env (ver .env.example)
+ * Salida: Constante ENTORNO
+ * Nomenclatura: Variables en snake_case, funciones en CamelCase,
+ *               constantes en SNAKE_CASE (mayúsculas completas),
+ *               clases y módulos en CamelCase.
+ * ******************************************************************
+ */
+
+/*
+ * ******************************************************************
+ * Contenido de listado:
+ *     Módulo            Objetivo
+ *     ConvertirEntero   Convertir un texto a entero o usar el valor por defecto
+ *     ConvertirNumero   Convertir un texto a número o usar el valor por defecto
+ *     ENTORNO           Configuración de la API: modo, puerto, CORS, base de…
+ * ******************************************************************
+ */
+
+/*
+ * ******************************************************************
+ * Instrucciones de reutilización:
+ * (1) En producción JWT_SECRET es obligatorio; si falta, la API no arranca.
+ * ******************************************************************
+ */
+
 import 'dotenv/config';
 
-const ConvertirEntero = (value, fallback) => 
+/*
+ * Función: ConvertirEntero
+ * Objetivo: Convertir un texto a entero o usar el valor por defecto.
+ * Entrada: valor, valor_defecto
+ * Salida: Número entero
+ */
+const ConvertirEntero = (valor, valor_defecto) =>
 {
-  const parsed = Number.parseInt(value, 10);
-  return Number.isNaN(parsed) ? fallback : parsed;
+  const convertido = Number.parseInt(valor, 10);
+  return Number.isNaN(convertido) ? valor_defecto : convertido;
 };
 
-const ConvertirNumero = (value, fallback) => 
+/*
+ * Función: ConvertirNumero
+ * Objetivo: Convertir un texto a número o usar el valor por defecto.
+ * Entrada: valor, valor_defecto
+ * Salida: Número
+ */
+const ConvertirNumero = (valor, valor_defecto) =>
 {
-  const parsed = Number(value);
-  return Number.isNaN(parsed) ? fallback : parsed;
+  const convertido = Number(valor);
+  return Number.isNaN(convertido) ? valor_defecto : convertido;
 };
 
+/*
+ * Constante: ENTORNO
+ * Objetivo: Configuración de la API: modo, puerto, CORS, base de datos, JWT y reglas de
+ *           circulación.
+ */
 const ENTORNO = {
   MODO: process.env.NODE_ENV || 'development',
   PUERTO: ConvertirEntero(process.env.PORT, 3000),
@@ -42,7 +90,7 @@ const ENTORNO = {
   },
 };
 
-if (ENTORNO.MODO === 'production' && ENTORNO.JWT.SECRETO === 'cambia-este-secreto') 
+if (ENTORNO.MODO === 'production' && ENTORNO.JWT.SECRETO === 'cambia-este-secreto')
 {
   throw new Error('JWT_SECRET debe definirse en producción');
 }

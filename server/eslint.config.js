@@ -36,6 +36,7 @@ export default [
       'no-undef': 'error',
       'no-unused-vars': ['error', { args: 'none' }],
       'no-labels': 'error',
+      '@stylistic/no-trailing-spaces': 'error',
     },
   },
 ];

@@ -1,8 +1,35 @@
-/**
- * Pruebas de integración contra una BD recién cargada con
- * database/01_schema.sql y database/02_seed.sql.
- * Ejecutar: npm run db:reset && npm test
+/*
+ * ******************************************************************
+ * Nombre del programa: API-PRUEBAS · api.prueba.js
+ * Función: Pruebas de integración de la API contra la base de datos semilla.
+ * Autor: Equipo CCJMops
+ * Fecha: 26/10/2026
+ * Entrada: Base de datos reiniciada (npm run db:reset)
+ * Salida: Resultado de node --test
+ * Nomenclatura: Variables en snake_case, funciones en CamelCase,
+ *               constantes en SNAKE_CASE (mayúsculas completas),
+ *               clases y módulos en CamelCase.
+ * ******************************************************************
  */
+
+/*
+ * ******************************************************************
+ * Contenido de listado:
+ *     Módulo                Objetivo
+ *     tokens                Guardar el token de sesión de cada usuario de prueba
+ *     Solicitar             Hacer una petición HTTP a la API de prueba con token…
+ *     IniciarSesionPrueba   Iniciar sesión con un usuario de prueba
+ * ******************************************************************
+ */
+
+/*
+ * ******************************************************************
+ * Instrucciones de reutilización:
+ * (1) Ejecutar con npm test después de npm run db:reset; las pruebas modifican los datos
+ *     semilla.
+ * ******************************************************************
+ */
+
 process.env.NODE_ENV = 'test';
 
 import { test, before, after } from 'node:test';
@@ -10,12 +37,22 @@ import assert from 'node:assert/strict';
 import { aplicacion } from '../src/aplicacion.js';
 import { pool, Consultar } from '../src/configuracion/conexion.js';
 
-let server;
+let servidor;
 let base;
+/*
+ * Módulo: tokens
+ * Objetivo: Guardar el token de sesión de cada usuario de prueba.
+ */
 const tokens = {};
 const CONTRASENA = 'Ducky2026!';
 
-async function Solicitar(metodo, ruta, { token, body } = {}) 
+/*
+ * Función: Solicitar
+ * Objetivo: Hacer una petición HTTP a la API de prueba con token opcional.
+ * Entrada: metodo, ruta, { token, body } (opcional)
+ * Salida: Promesa con { status, data }
+ */
+async function Solicitar(metodo, ruta, { token, body: cuerpo } = {})
 {
   const res = await fetch(`${base}${ruta}`, {
     method: metodo,
@@ -23,10 +60,10 @@ async function Solicitar(metodo, ruta, { token, body } = {})
       'Content-Type': 'application/json',
       ...(token && { Authorization: `Bearer ${token}` }),
     },
-    body: body ? JSON.stringify(body) : undefined,
+    body: cuerpo ? JSON.stringify(cuerpo) : undefined,
   });
   const tipo = res.headers.get('content-type') || '';
-  if (tipo.includes('application/pdf')) 
+  if (tipo.includes('application/pdf'))
   {
     return { status: res.status, tipo, bytes: Buffer.from(await res.arrayBuffer()) };
   }
@@ -34,19 +71,25 @@ async function Solicitar(metodo, ruta, { token, body } = {})
   return { status: res.status, data: texto ? JSON.parse(texto) : null };
 }
 
-async function IniciarSesionPrueba(usuario, contrasena = CONTRASENA) 
+/*
+ * Función: IniciarSesionPrueba
+ * Objetivo: Iniciar sesión con un usuario de prueba.
+ * Entrada: usuario, contrasena (opcional)
+ * Salida: Promesa con el token de sesión
+ */
+async function IniciarSesionPrueba(usuario, contrasena = CONTRASENA)
 {
-  const { status, data } = await Solicitar('POST', '/auth/login', {
+  const { status: estado_http, data: datos } = await Solicitar('POST', '/auth/login', {
     body: { Nombre_Usuario: usuario, Contrasena_Usuario: contrasena },
   });
-  assert.equal(status, 200, JSON.stringify(data));
-  return data.token;
+  assert.equal(estado_http, 200, JSON.stringify(datos));
+  return datos.token;
 }
 
-before(async () => 
+before(async () =>
 {
-  server = aplicacion.listen(0);
-  base = `http://127.0.0.1:${server.address().port}/api`;
+  servidor = aplicacion.listen(0);
+  base = `http://127.0.0.1:${servidor.address().port}/api`;
   tokens.admin = await IniciarSesionPrueba('felipe.rodriguez');
   tokens.biblio = await IniciarSesionPrueba('catherine.ramirez');
   tokens.alumna = await IniciarSesionPrueba('marcela.guerra');
@@ -56,7 +99,7 @@ before(async () =>
   for (const [usuario, matricula, perfil] of [
     ['ana.prueba', '9000001', 4],
     ['beto.prueba', '9000002', 3],
-  ]) 
+  ])
   {
     const resultado = await Solicitar('POST', '/usuarios', {
       token: tokens.admin,
@@ -74,14 +117,17 @@ before(async () =>
   tokens.beto = await IniciarSesionPrueba('beto.prueba');
 });
 
-after(async () => 
+after(async () =>
 {
-  server.close();
+  servidor.close();
   await pool.end();
 });
 
-// --- GU01 Autenticación ------------------------------------------------
-test('GU01: inicio de sesión fallido cuenta intentos y bloquea al quinto', async () => 
+/*------------------------------------------------------------------
+ * Sección: GU01 Autenticación
+ * Objetivo: Probar el inicio de sesión, los intentos fallidos y el bloqueo.
+ *------------------------------------------------------------------*/
+test('GU01: inicio de sesión fallido cuenta intentos y bloquea al quinto', async () =>
 {
   const Intento = () =>
     Solicitar('POST', '/auth/login', {
@@ -91,7 +137,7 @@ test('GU01: inicio de sesión fallido cuenta intentos y bloquea al quinto', asyn
   assert.equal(r1.status, 401);
   assert.equal(r1.data.error, 'Usuario o contraseña incorrectos.');
   assert.equal(r1.data.detalles.intentos_restantes, 4);
-  for (let indice = 0; indice < 3; indice += 1) 
+  for (let indice = 0; indice < 3; indice += 1)
   {
     await Intento();
   }
@@ -112,7 +158,7 @@ test('GU01: inicio de sesión fallido cuenta intentos y bloquea al quinto', asyn
   await IniciarSesionPrueba('maria.ortiz');
 });
 
-test('GU01: campos vacíos devuelven 400 con mensaje por campo', async () => 
+test('GU01: campos vacíos devuelven 400 con mensaje por campo', async () =>
 {
   const resultado = await Solicitar('POST', '/auth/login', {
     body: { Nombre_Usuario: '', Contrasena_Usuario: '' },
@@ -125,16 +171,16 @@ test('GU01: campos vacíos devuelven 400 con mensaje por campo', async () =>
   assert.equal(resultado.data.detalles[0].mensaje, 'Este campo es obligatorio.');
 });
 
-test('la sesión trae el perfil y sus funciones', async () => 
+test('la sesión trae el perfil y sus funciones', async () =>
 {
-  const { data } = await Solicitar('GET', '/auth/me', { token: tokens.alumna });
-  assert.equal(data.Nombre_Rol, 'Alumno');
-  assert.equal(data.Nombre_Completo, 'Marcela Guerra');
-  assert.ok(data.funciones.includes('buscar_libros'));
-  assert.ok(!data.funciones.includes('gestionar_libros'));
+  const { data: datos } = await Solicitar('GET', '/auth/me', { token: tokens.alumna });
+  assert.equal(datos.Nombre_Rol, 'Alumno');
+  assert.equal(datos.Nombre_Completo, 'Marcela Guerra');
+  assert.ok(datos.funciones.includes('buscar_libros'));
+  assert.ok(!datos.funciones.includes('gestionar_libros'));
 });
 
-test('validación de perfil: el alumno recibe 403 en funciones restringidas', async () => 
+test('validación de perfil: el alumno recibe 403 en funciones restringidas', async () =>
 {
   assert.equal((await Solicitar('GET', '/usuarios', { token: tokens.alumna })).status, 403);
   assert.equal((await Solicitar('GET', '/libros/listado', { token: tokens.alumna })).status, 403);
@@ -154,8 +200,11 @@ test('validación de perfil: el alumno recibe 403 en funciones restringidas', as
   );
 });
 
-// --- BL01 / GL05 Búsqueda y ficha -------------------------------------
-test('BL01: búsqueda sin filtros muestra 18 libros activos en páginas de 6', async () => 
+/*------------------------------------------------------------------
+ * Sección: BL01 / GL05 Búsqueda y ficha
+ * Objetivo: Probar la búsqueda del catálogo y la ficha según el rol.
+ *------------------------------------------------------------------*/
+test('BL01: búsqueda sin filtros muestra 18 libros activos en páginas de 6', async () =>
 {
   const resultado = await Solicitar('GET', '/libros', { token: tokens.alumna });
   assert.equal(resultado.status, 200);
@@ -164,7 +213,7 @@ test('BL01: búsqueda sin filtros muestra 18 libros activos en páginas de 6', a
   assert.ok(resultado.data.datos.every((dato) => dato.Estatus === 'Activo'));
 });
 
-test('BL01: búsqueda por campo (Autor «Tanenbaum», Título, ISBN sin resultados)', async () => 
+test('BL01: búsqueda por campo (Autor «Tanenbaum», Título, ISBN sin resultados)', async () =>
 {
   const autor = await Solicitar('GET', '/libros?campo=autor&q=Tanenbaum', { token: tokens.alumna });
   assert.equal(autor.data.total, 2);
@@ -178,7 +227,7 @@ test('BL01: búsqueda por campo (Autor «Tanenbaum», Título, ISBN sin resultad
   assert.equal(isbn.data.total, 0);
 });
 
-test('GL05: la ficha completa (con códigos de copia) solo la ve quien gestiona libros', async () => 
+test('GL05: la ficha completa (con códigos de copia) solo la ve quien gestiona libros', async () =>
 {
   const alumna = await Solicitar('GET', '/libros/1', { token: tokens.alumna });
   assert.equal(alumna.data.Titulo, 'Introduction to Algorithms');
@@ -201,8 +250,11 @@ test('GL05: la ficha completa (con códigos de copia) solo la ve quien gestiona 
   assert.equal(inactivo_admin.data.Estatus, 'Inactivo');
 });
 
-// --- GL06 Listado ------------------------------------------------------
-test('GL06: listado con filtro y PDF', async () => 
+/*------------------------------------------------------------------
+ * Sección: GL06 Listado
+ * Objetivo: Probar la vista previa del listado y su PDF.
+ *------------------------------------------------------------------*/
+test('GL06: listado con filtro y PDF', async () =>
 {
   const resultado = await Solicitar('GET', '/libros/listado?campo=autor&q=Tanenbaum', {
     token: tokens.admin,
@@ -217,8 +269,11 @@ test('GL06: listado con filtro y PDF', async () =>
   assert.equal(pdf.bytes.subarray(0, 4).toString(), '%PDF');
 });
 
-// --- GL02 Alta de libro ------------------------------------------------
-test('GL02: alta con datos inválidos devuelve un mensaje por campo', async () => 
+/*------------------------------------------------------------------
+ * Sección: GL02 Alta de libro
+ * Objetivo: Probar el alta de ficha, el ISBN duplicado y el alta de ejemplares.
+ *------------------------------------------------------------------*/
+test('GL02: alta con datos inválidos devuelve un mensaje por campo', async () =>
 {
   const resultado = await Solicitar('POST', '/libros', {
     token: tokens.admin,
@@ -234,7 +289,7 @@ test('GL02: alta con datos inválidos devuelve un mensaje por campo', async () =
   assert.match(por_campo.Precio, /mayor a \$0\.00/);
 });
 
-test('GL02: ISBN duplicado devuelve la ficha existente y luego alta completa con ejemplares', async () => 
+test('GL02: ISBN duplicado devuelve la ficha existente y luego alta completa con ejemplares', async () =>
 {
   const existente = await Solicitar('GET', '/libros/isbn/978-0-262-03384-8', {
     token: tokens.admin,
@@ -271,8 +326,11 @@ test('GL02: ISBN duplicado devuelve la ficha existente y luego alta completa con
   assert.equal(copias.data.Pasillo, '4');
 });
 
-// --- GL04 Edición ------------------------------------------------------
-test('GL04: el ISBN no se cambia y las copias solo aumentan', async () => 
+/*------------------------------------------------------------------
+ * Sección: GL04 Edición
+ * Objetivo: Probar la edición de la ficha y el cambio de estado de las copias.
+ *------------------------------------------------------------------*/
+test('GL04: el ISBN no se cambia y las copias solo aumentan', async () =>
 {
   const isbn = await Solicitar('PUT', '/libros/3', {
     token: tokens.admin,
@@ -301,7 +359,7 @@ test('GL04: el ISBN no se cambia y las copias solo aumentan', async () =>
   assert.equal(ok.data.Ejemplares_Totales, 4);
 });
 
-test('GL04: cambio de estado de copia bloqueado si está en préstamo', async () => 
+test('GL04: cambio de estado de copia bloqueado si está en préstamo', async () =>
 {
   const libro = await Solicitar('GET', '/libros/3', { token: tokens.admin });
   const prestada = libro.data.ejemplares.find((ejemplar) => ejemplar.Estatus === 'En prestamo');
@@ -328,8 +386,11 @@ test('GL04: cambio de estado de copia bloqueado si está en préstamo', async ()
   assert.equal(sistema.status, 400);
 });
 
-// --- GL03 Baja ---------------------------------------------------------
-test('GL03: retiro de copia e inactivación de libro', async () => 
+/*------------------------------------------------------------------
+ * Sección: GL03 Baja
+ * Objetivo: Probar el retiro de copias y la inactivación del libro.
+ *------------------------------------------------------------------*/
+test('GL03: retiro de copia e inactivación de libro', async () =>
 {
   // Clean Code: EJ-00202 está en préstamo
   const en_prestamo = await Solicitar('POST', '/libros/2/ejemplares/2/baja', {
@@ -375,8 +436,11 @@ test('GL03: retiro de copia e inactivación de libro', async () =>
   assert.equal(reactivar.data.Estatus, 'Activo');
 });
 
-// --- GU02 Usuarios -----------------------------------------------------
-test('GU02: consulta por matrícula y cambio de datos con contraseña segura', async () => 
+/*------------------------------------------------------------------
+ * Sección: GU02 Usuarios
+ * Objetivo: Probar la consulta, el cambio, la carga y baja por lista de usuarios, y los perfiles.
+ *------------------------------------------------------------------*/
+test('GU02: consulta por matrícula y cambio de datos con contraseña segura', async () =>
 {
   const usuario = await Solicitar('GET', '/usuarios/matricula/3120558', { token: tokens.admin });
   assert.equal(usuario.data.Nombre_Usuario, 'luis.moreno');
@@ -405,7 +469,7 @@ test('GU02: consulta por matrícula y cambio de datos con contraseña segura', a
   assert.ok(lista.data.total >= 11);
 });
 
-test('GU02: alta de cuentas por lista con errores, rol obligatorio y contraseña inicial', async () => 
+test('GU02: alta de cuentas por lista con errores, rol obligatorio y contraseña inicial', async () =>
 {
   const filas = [
     {
@@ -473,7 +537,7 @@ test('GU02: alta de cuentas por lista con errores, rol obligatorio y contraseña
   assert.equal(repetida.data.errores[0].Error, 'Ya existe una cuenta con esta matrícula');
 });
 
-test('GU02: baja por lista rechaza cuentas con préstamos o multas', async () => 
+test('GU02: baja por lista rechaza cuentas con préstamos o multas', async () =>
 {
   const [{ total }] = await Consultar(
     'SELECT COUNT(*) AS total FROM Usuarios WHERE Estatus <> \'Inactivo\'',
@@ -512,7 +576,7 @@ test('GU02: baja por lista rechaza cuentas con préstamos o multas', async () =>
   );
 });
 
-test('GU02: gestión de perfiles (Administrador protegido)', async () => 
+test('GU02: gestión de perfiles (Administrador protegido)', async () =>
 {
   const perfiles = await Solicitar('GET', '/perfiles', { token: tokens.admin });
   assert.equal(perfiles.data.length, 5);
@@ -536,8 +600,11 @@ test('GU02: gestión de perfiles (Administrador protegido)', async () =>
   });
 });
 
-// --- Circulación (API, sin pantallas en el prototipo) ------------------
-test('préstamo solo de copias de Consulta externa; lista de espera y apartado', async () => 
+/*------------------------------------------------------------------
+ * Sección: Circulación (API, sin pantallas en el prototipo)
+ * Objetivo: Probar préstamos, renovaciones, devoluciones, multas y lista de espera.
+ *------------------------------------------------------------------*/
+test('préstamo solo de copias de Consulta externa; lista de espera y apartado', async () =>
 {
   // The Algorithm Design Manual (17): todas las copias en préstamo
   const sin_copias = await Solicitar('POST', '/prestamos', {
@@ -594,7 +661,7 @@ test('préstamo solo de copias de Consulta externa; lista de espera y apartado',
   );
 });
 
-test('renovación hasta 2 veces y devolución tardía con multa que bloquea préstamos', async () => 
+test('renovación hasta 2 veces y devolución tardía con multa que bloquea préstamos', async () =>
 {
   const parametro = await Solicitar('POST', '/prestamos', { token: tokens.ana, body: { id_libro: 12 } });
   assert.equal(parametro.status, 201, JSON.stringify(parametro.data));
@@ -640,8 +707,11 @@ test('renovación hasta 2 veces y devolución tardía con multa que bloquea pré
   );
 });
 
-// --- GL01 Solicitud de compra -----------------------------------------
-test('GL01: solicitud de libro nuevo y de más copias; flujo de estados', async () => 
+/*------------------------------------------------------------------
+ * Sección: GL01 Solicitud de compra
+ * Objetivo: Probar las solicitudes de compra y el flujo de estatus de las órdenes.
+ *------------------------------------------------------------------*/
+test('GL01: solicitud de libro nuevo y de más copias; flujo de estados', async () =>
 {
   const en_catalogo = await Solicitar('POST', '/ordenes-compra', {
     token: tokens.admin,
@@ -701,7 +771,7 @@ test('GL01: solicitud de libro nuevo y de más copias; flujo de estados', async 
 
   const antes = (await Solicitar('GET', '/libros/1', { token: tokens.admin })).data
     .Ejemplares_Totales;
-  for (const Estatus of ['En revision', 'Aprobada', 'Recibida']) 
+  for (const Estatus of ['En revision', 'Aprobada', 'Recibida'])
   {
     const resultado = await Solicitar('PATCH', `/ordenes-compra/${orden.data.id_orden}/estatus`, {
       token: tokens.admin,
@@ -714,8 +784,11 @@ test('GL01: solicitud de libro nuevo y de más copias; flujo de estados', async 
   assert.equal(despues, antes + 2);
 });
 
-// --- Panel, chatbot y políticas ---------------------------------------
-test('panel con indicadores y actividad reciente', async () => 
+/*------------------------------------------------------------------
+ * Sección: Panel, chatbot y políticas
+ * Objetivo: Probar el panel, el chatbot y la lectura de políticas.
+ *------------------------------------------------------------------*/
+test('panel con indicadores y actividad reciente', async () =>
 {
   const resultado = await Solicitar('GET', '/panel', { token: tokens.admin });
   assert.equal(resultado.status, 200);
@@ -725,7 +798,7 @@ test('panel con indicadores y actividad reciente', async () =>
   assert.equal(resultado.data.actividad[0].Accion, 'ESTATUS_COMPRA');
 });
 
-test('chatbot y políticas', async () => 
+test('chatbot y políticas', async () =>
 {
   const resultado = await Solicitar('POST', '/chatbot/preguntar', {
     token: tokens.alumna,

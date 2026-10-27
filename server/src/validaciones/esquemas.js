@@ -1,23 +1,81 @@
+/*
+ * ******************************************************************
+ * Nombre del programa: API-ESQUEMAS · esquemas.js
+ * Función: Esquemas zod de validación de cada petición, con los mensajes del prototipo.
+ * Autor: Equipo CCJMops
+ * Fecha: 26/10/2026
+ * Entrada: Cuerpo, consulta o parámetros de la petición
+ * Salida: Datos convertidos o lista de errores por campo
+ * Nomenclatura: Variables en snake_case, funciones en CamelCase,
+ *               constantes en SNAKE_CASE (mayúsculas completas),
+ *               clases y módulos en CamelCase.
+ * ******************************************************************
+ */
+
+/*
+ * ******************************************************************
+ * Contenido de listado:
+ *     Módulo            Objetivo
+ *     TextoOpcional     Esquema de texto opcional con longitud máxima
+ *     ConvertirATexto   Convierte números (p. ej. celdas de Excel) a texto sin…
+ *     Texto             Esquema de texto obligatorio con longitud máxima
+ *     Requerido         Esquema de texto obligatorio con el mensaje «Este campo…
+ *     TextoLista        Esquema de texto de una fila de la lista cargada (acepta…
+ *     esquemas          Esquemas de validación de cada ruta de la API
+ * ******************************************************************
+ */
+
+/*
+ * ******************************************************************
+ * Instrucciones de reutilización:
+ * (1) Se aplican con Validar(esquema, origen) en rutas/rutas.js; los mensajes están en español.
+ * ******************************************************************
+ */
+
 import { z } from 'zod';
 
 // Mensajes por defecto en español (locales de zod 4).
 z.config(z.locales.es());
 
 const id = z.coerce.number().int().positive();
-const TextoOpcional = (max) => z.string().trim().max(max).optional().nullable();
+/*
+ * Función: TextoOpcional
+ * Objetivo: Esquema de texto opcional con longitud máxima.
+ * Entrada: maximo
+ * Salida: Esquema zod
+ */
+const TextoOpcional = (maximo) => z.string().trim().max(maximo).optional().nullable();
 const fecha = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Formato YYYY-MM-DD');
 const booleano = z
   .union([z.boolean(), z.enum(['true', 'false', '1', '0'])])
   .transform((valor) => valor === true || valor === 'true' || valor === '1');
 
-/** Convierte números (p. ej. celdas de Excel) a texto sin volver texto a null/undefined. */
+/*
+ * Función: ConvertirATexto
+ * Objetivo: Convierte números (p. ej. celdas de Excel) a texto sin volver texto a
+ *           null/undefined.
+ * Entrada: valor
+ * Salida: Texto o el valor original
+ */
 const ConvertirATexto = (valor) => (typeof valor === 'number' ? String(valor) : valor);
-const Texto = (max) => z.preprocess(ConvertirATexto, z.string().trim().max(max));
+/*
+ * Función: Texto
+ * Objetivo: Esquema de texto obligatorio con longitud máxima.
+ * Entrada: maximo
+ * Salida: Esquema zod
+ */
+const Texto = (maximo) => z.preprocess(ConvertirATexto, z.string().trim().max(maximo));
 const obligatorio = 'Este campo es obligatorio.';
-const Requerido = (max) =>
+/*
+ * Función: Requerido
+ * Objetivo: Esquema de texto obligatorio con el mensaje «Este campo es obligatorio.».
+ * Entrada: maximo
+ * Salida: Esquema zod
+ */
+const Requerido = (maximo) =>
   z.preprocess(
     ConvertirATexto,
-    z.string({ error: obligatorio }).trim().min(1, obligatorio).max(max),
+    z.string({ error: obligatorio }).trim().min(1, obligatorio).max(maximo),
   );
 const contrasena_segura = z
   .string()
@@ -29,7 +87,7 @@ const isbn = z
   .trim()
   .min(1, obligatorio)
   .regex(/^[0-9-]+$/, 'Formato inválido: solo números y guiones.')
-  .refine((valor) => 
+  .refine((valor) =>
   {
     const dia = valor.replace(/-/g, '').length;
     return dia === 10 || dia === 13;
@@ -44,8 +102,14 @@ const numero_copias = z.coerce
   .int('Debe ser un número entero.')
   .min(1, 'Debe ser 1 o más; no se aceptan cero ni negativos.')
   .max(500);
-const TextoLista = (max) =>
-  Texto(max)
+/*
+ * Función: TextoLista
+ * Objetivo: Esquema de texto de una fila de la lista cargada (acepta vacío).
+ * Entrada: maximo
+ * Salida: Esquema zod
+ */
+const TextoLista = (maximo) =>
+  Texto(maximo)
     .nullish()
     .transform((valor) => valor ?? '');
 const fila_lista = z.object({
@@ -63,6 +127,10 @@ const paginacion = {
   offset: z.coerce.number().int().min(0).default(0),
 };
 
+/*
+ * Módulo: esquemas
+ * Objetivo: Esquemas de validación de cada ruta de la API.
+ */
 const esquemas = {
   id_param: z.object({ id }),
 
@@ -109,13 +177,13 @@ const esquemas = {
       Matricula_Nomina: z.any().optional(),
       Nombre_Usuario: z.any().optional(),
     })
-    .superRefine((datos, ctx) => 
+    .superRefine((datos, contexto) =>
     {
-      ['Matricula_Nomina', 'Nombre_Usuario'].forEach((campo) => 
+      ['Matricula_Nomina', 'Nombre_Usuario'].forEach((campo) =>
       {
-        if (datos[campo] !== undefined) 
+        if (datos[campo] !== undefined)
         {
-          ctx.addIssue({
+          contexto.addIssue({
             code: z.ZodIssueCode.custom,
             path: [campo],
             message: 'Este dato no se puede modificar.',

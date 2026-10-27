@@ -1,36 +1,89 @@
-/**
- * Controladores de los módulos "Préstamo Libros" y "Devolución Préstamos":
- * préstamos, devoluciones, renovaciones, multas y lista de espera.
- *
- * Regla general de alcance: quien tiene la función de gestión ve y opera
- * sobre todos los usuarios; los demás solo sobre sus propios registros.
+/*
+ * ******************************************************************
+ * Nombre del programa: API-CIRCULACION · ControladorCirculacion.js
+ * Función: Préstamos, devoluciones, renovaciones, multas y lista de espera.
+ * Autor: Equipo CCJMops
+ * Fecha: 26/10/2026
+ * Entrada: Peticiones HTTP enrutadas desde rutas/rutas.js
+ * Salida: Respuestas HTTP en formato JSON
+ * Nomenclatura: Variables en snake_case, funciones en CamelCase,
+ *               constantes en SNAKE_CASE (mayúsculas completas),
+ *               clases y módulos en CamelCase.
+ * ******************************************************************
  */
+
+/*
+ * ******************************************************************
+ * Contenido de listado:
+ *     Módulo                   Objetivo
+ *     CalcularAlcance          Devuelve el id de usuario a filtrar según los permisos
+ *     VerificarPropietario     Rechazar con 403 si el registro no es del usuario y no…
+ *     ControladorPrestamos     Manejadores de préstamos, devoluciones y renovaciones
+ *     ControladorMultas        Manejadores de multas y su pago
+ *     ControladorListaEspera   Manejadores de la lista de espera
+ * ******************************************************************
+ */
+
+/*
+ * ******************************************************************
+ * Instrucciones de reutilización:
+ * (1) Controlador del patrón MVC: no contiene SQL; usa los modelos de src/modelos.
+ * (2) Cada método se registra en rutas/rutas.js envuelto en ManejarAsincrono, que envía los
+ *     errores a ManejarErrores.
+ * (3) Los permisos se revisan antes (RequiereFuncion) y los datos llegan validados por los
+ *     esquemas zod.
+ * (4) Los errores de regla de negocio se lanzan como ErrorHttp con el código HTTP
+ *     correspondiente.
+ * ******************************************************************
+ */
+
 import { ErrorHttp } from '../utilidades/ErrorHttp.js';
 import { ModeloPrestamo } from '../modelos/ModeloPrestamo.js';
 import { ModeloMulta } from '../modelos/ModeloMulta.js';
 import { ModeloListaEspera } from '../modelos/ModeloListaEspera.js';
 import { TieneFuncion } from '../intermediarios/autenticacion.js';
 
-/** Devuelve el id de usuario a filtrar según los permisos. */
-function CalcularAlcance(req, funcion_gestion, id_solicitado) 
+/*
+ * Función: CalcularAlcance
+ * Objetivo: Devuelve el id de usuario a filtrar según los permisos.
+ * Entrada: req, funcion_gestion, id_solicitado
+ * Salida: id_usuario a filtrar o undefined si puede ver todos
+ */
+function CalcularAlcance(req, funcion_gestion, id_solicitado)
 {
-  if (TieneFuncion(req, funcion_gestion)) 
+  if (TieneFuncion(req, funcion_gestion))
   {
     return id_solicitado;
   }
   return req.usuario.id_usuario;
 }
 
-function VerificarPropietario(req, registro, funcion_gestion) 
+/*
+ * Función: VerificarPropietario
+ * Objetivo: Rechazar con 403 si el registro no es del usuario y no tiene la función de gestión.
+ * Entrada: req, registro, funcion_gestion
+ * Salida: Ninguna (lanza ErrorHttp)
+ */
+function VerificarPropietario(req, registro, funcion_gestion)
 {
-  if (!TieneFuncion(req, funcion_gestion) && registro.id_usuario !== req.usuario.id_usuario) 
+  if (!TieneFuncion(req, funcion_gestion) && registro.id_usuario !== req.usuario.id_usuario)
   {
     throw ErrorHttp.Prohibido();
   }
 }
 
+/*
+ * Módulo: ControladorPrestamos
+ * Objetivo: Manejadores de préstamos, devoluciones y renovaciones.
+ */
 const ControladorPrestamos = {
-  async Listar(req, res) 
+  /*
+   * Función: Listar
+   * Objetivo: Atender GET /api/prestamos.
+   * Entrada: req: petición HTTP (ya autenticada y validada); res: respuesta HTTP
+   * Salida: Respuesta HTTP en formato JSON
+   */
+  async Listar(req, res)
   {
     const { id_usuario, estado, limit, offset } = req.consulta_valida;
     res.json(
@@ -43,10 +96,16 @@ const ControladorPrestamos = {
     );
   },
 
-  async Obtener(req, res) 
+  /*
+   * Función: Obtener
+   * Objetivo: Atender GET /api/prestamos/:id.
+   * Entrada: req: petición HTTP (ya autenticada y validada); res: respuesta HTTP
+   * Salida: Respuesta HTTP en formato JSON
+   */
+  async Obtener(req, res)
   {
     const prestamo = await ModeloPrestamo.BuscarPorId(req.params.id);
-    if (!prestamo) 
+    if (!prestamo)
     {
       throw ErrorHttp.NoEncontrado('Préstamo no encontrado');
     }
@@ -54,15 +113,21 @@ const ControladorPrestamos = {
     res.json(prestamo);
   },
 
-  /** POST /prestamos — un usuario pide para sí; el bibliotecario puede indicar id_usuario. */
-  async Crear(req, res) 
+  /*
+   * Función: Crear
+   * Objetivo: POST /prestamos — un usuario pide para sí; el bibliotecario puede indicar
+   *           id_usuario.
+   * Entrada: req: petición HTTP (ya autenticada y validada); res: respuesta HTTP
+   * Salida: Respuesta HTTP en formato JSON
+   */
+  async Crear(req, res)
   {
     const { id_libro, num_copia, id_usuario: id_solicitado } = req.body;
     if (
       id_solicitado &&
       id_solicitado !== req.usuario.id_usuario &&
       !TieneFuncion(req, 'gestionar_prestamos')
-    ) 
+    )
     {
       throw ErrorHttp.Prohibido('Solo puedes solicitar préstamos para ti');
     }
@@ -74,8 +139,13 @@ const ControladorPrestamos = {
     res.status(201).json(prestamo);
   },
 
-  /** POST /prestamos/:id/devolucion */
-  async Devolver(req, res) 
+  /*
+   * Función: Devolver
+   * Objetivo: POST /prestamos/:id/devolucion
+   * Entrada: req: petición HTTP (ya autenticada y validada); res: respuesta HTTP
+   * Salida: Respuesta HTTP en formato JSON
+   */
+  async Devolver(req, res)
   {
     const resultado = await ModeloPrestamo.Devolver(req.params.id, {
       fecha_devolucion: req.body?.Fecha_Devolucion,
@@ -83,11 +153,16 @@ const ControladorPrestamos = {
     res.status(201).json(resultado);
   },
 
-  /** POST /prestamos/:id/renovacion */
-  async Renovar(req, res) 
+  /*
+   * Función: Renovar
+   * Objetivo: POST /prestamos/:id/renovacion
+   * Entrada: req: petición HTTP (ya autenticada y validada); res: respuesta HTTP
+   * Salida: Respuesta HTTP en formato JSON
+   */
+  async Renovar(req, res)
   {
     const prestamo = await ModeloPrestamo.BuscarPorId(req.params.id);
-    if (!prestamo) 
+    if (!prestamo)
     {
       throw ErrorHttp.NoEncontrado('Préstamo no encontrado');
     }
@@ -96,8 +171,18 @@ const ControladorPrestamos = {
   },
 };
 
+/*
+ * Módulo: ControladorMultas
+ * Objetivo: Manejadores de multas y su pago.
+ */
 const ControladorMultas = {
-  async Listar(req, res) 
+  /*
+   * Función: Listar
+   * Objetivo: Atender GET /api/multas.
+   * Entrada: req: petición HTTP (ya autenticada y validada); res: respuesta HTTP
+   * Salida: Respuesta HTTP en formato JSON
+   */
+  async Listar(req, res)
   {
     const { id_usuario, pendientes, limit, offset } = req.consulta_valida;
     res.json(
@@ -110,10 +195,16 @@ const ControladorMultas = {
     );
   },
 
-  async Obtener(req, res) 
+  /*
+   * Función: Obtener
+   * Objetivo: Atender GET /api/multas/:id.
+   * Entrada: req: petición HTTP (ya autenticada y validada); res: respuesta HTTP
+   * Salida: Respuesta HTTP en formato JSON
+   */
+  async Obtener(req, res)
   {
     const multa = await ModeloMulta.BuscarPorId(req.params.id);
-    if (!multa) 
+    if (!multa)
     {
       throw ErrorHttp.NoEncontrado('Multa no encontrada');
     }
@@ -121,19 +212,41 @@ const ControladorMultas = {
     res.json(multa);
   },
 
-  async Crear(req, res) 
+  /*
+   * Función: Crear
+   * Objetivo: Atender POST /api/multas.
+   * Entrada: req: petición HTTP (ya autenticada y validada); res: respuesta HTTP
+   * Salida: Respuesta HTTP en formato JSON
+   */
+  async Crear(req, res)
   {
     res.status(201).json(await ModeloMulta.Crear(req.body));
   },
 
-  async Pagar(req, res) 
+  /*
+   * Función: Pagar
+   * Objetivo: Atender POST /api/multas/:id/pago.
+   * Entrada: req: petición HTTP (ya autenticada y validada); res: respuesta HTTP
+   * Salida: Respuesta HTTP en formato JSON
+   */
+  async Pagar(req, res)
   {
     res.json(await ModeloMulta.Pagar(req.params.id, req.body?.Fecha_Pagado));
   },
 };
 
+/*
+ * Módulo: ControladorListaEspera
+ * Objetivo: Manejadores de la lista de espera.
+ */
 const ControladorListaEspera = {
-  async Listar(req, res) 
+  /*
+   * Función: Listar
+   * Objetivo: Atender GET /api/lista-espera.
+   * Entrada: req: petición HTTP (ya autenticada y validada); res: respuesta HTTP
+   * Salida: Respuesta HTTP en formato JSON
+   */
+  async Listar(req, res)
   {
     const {
       id_usuario,
@@ -153,17 +266,29 @@ const ControladorListaEspera = {
     );
   },
 
-  async Inscribir(req, res) 
+  /*
+   * Función: Inscribir
+   * Objetivo: Atender POST /api/lista-espera.
+   * Entrada: req: petición HTTP (ya autenticada y validada); res: respuesta HTTP
+   * Salida: Respuesta HTTP en formato JSON
+   */
+  async Inscribir(req, res)
   {
     res
       .status(201)
       .json(await ModeloListaEspera.Inscribir(req.usuario.id_usuario, req.body.id_libro));
   },
 
-  async Cancelar(req, res) 
+  /*
+   * Función: Cancelar
+   * Objetivo: Atender DELETE /api/lista-espera/:id.
+   * Entrada: req: petición HTTP (ya autenticada y validada); res: respuesta HTTP
+   * Salida: Respuesta HTTP en formato JSON
+   */
+  async Cancelar(req, res)
   {
     const registro = await ModeloListaEspera.BuscarPorId(req.params.id);
-    if (!registro) 
+    if (!registro)
     {
       throw ErrorHttp.NoEncontrado('Registro de lista de espera no encontrado');
     }

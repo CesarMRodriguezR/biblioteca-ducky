@@ -1,5 +1,43 @@
+/*
+ * ******************************************************************
+ * Nombre del programa: API-CHATBOT · ModeloChatbot.js
+ * Función: Preguntas frecuentes del chatbot y búsqueda de la respuesta más parecida.
+ * Autor: Equipo CCJMops
+ * Fecha: 26/10/2026
+ * Entrada: Datos validados por los controladores
+ * Salida: Filas de la base de datos MariaDB o ErrorHttp si se rompe una regla
+ * Nomenclatura: Variables en snake_case, funciones en CamelCase,
+ *               constantes en SNAKE_CASE (mayúsculas completas),
+ *               clases y módulos en CamelCase.
+ * ******************************************************************
+ */
+
+/*
+ * ******************************************************************
+ * Contenido de listado:
+ *     Módulo             Objetivo
+ *     SELECT_RESPUESTA   Consulta base de pregunta, respuesta y fuente
+ *     ModeloChatbot      Acceso a las preguntas frecuentes del chatbot
+ * ******************************************************************
+ */
+
+/*
+ * ******************************************************************
+ * Instrucciones de reutilización:
+ * (1) Modelo del patrón MVC: contiene la lógica de negocio y el acceso a la base de datos.
+ * (2) Toda consulta es parametrizada (?); nunca se concatenan datos del usuario en el SQL.
+ * (3) Requiere la base de datos creada con database/01_schema.sql y la conexión de
+ *     configuracion/conexion.js.
+ * (4) Las operaciones que modifican varias tablas usan EjecutarEnTransaccion.
+ * ******************************************************************
+ */
+
 import { Consultar, EjecutarEnTransaccion } from '../configuracion/conexion.js';
 
+/*
+ * Constante: SELECT_RESPUESTA
+ * Objetivo: Consulta base de pregunta, respuesta y fuente.
+ */
 const SELECT_RESPUESTA = `
   SELECT p.id_preguntas, p.Pregunta, c.id_contenidos, c.Respuesta, f.id_fuentes, f.Fuente`;
 
@@ -32,14 +70,21 @@ const PALABRAS_VACIAS = new Set([
   'se',
 ]);
 
+/*
+ * Módulo: ModeloChatbot
+ * Objetivo: Acceso a las preguntas frecuentes del chatbot.
+ */
 const ModeloChatbot = {
-  /**
-   * Busca la respuesta más parecida a la pregunta del usuario.
-   * Usa FULLTEXT de MariaDB y, si no hay coincidencia, palabras clave con LIKE.
+  /*
+   * Función: Responder
+   * Objetivo: Busca la respuesta más parecida a la pregunta del usuario. Usa FULLTEXT de
+   *           MariaDB y, si no hay coincidencia, palabras clave con LIKE.
+   * Entrada: texto
+   * Salida: Promesa con { encontrada, respuesta, pregunta?, fuente? }
    */
-  async Responder(texto) 
+  async Responder(texto)
   {
-    let rows = await Consultar(
+    let filas = await Consultar(
       `${SELECT_RESPUESTA},
               MATCH(p.Pregunta) AGAINST (? IN NATURAL LANGUAGE MODE) AS Relevancia
          FROM preguntasChatbot p
@@ -51,17 +96,17 @@ const ModeloChatbot = {
       [texto, texto],
     );
 
-    if (!rows.length) 
+    if (!filas.length)
     {
       const palabras = texto
         .toLowerCase()
         .replace(/[¿?¡!.,;:]/g, ' ')
         .split(/\s+/)
         .filter((parte) => parte.length > 2 && !PALABRAS_VACIAS.has(parte));
-      if (palabras.length) 
+      if (palabras.length)
       {
         const coincidencias = palabras.map(() => '(p.Pregunta LIKE ?)').join(' + ');
-        rows = await Consultar(
+        filas = await Consultar(
           `${SELECT_RESPUESTA}, (${coincidencias}) AS Relevancia
              FROM preguntasChatbot p
              JOIN contenidosChatbot c ON c.id_preguntas = p.id_preguntas
@@ -74,7 +119,7 @@ const ModeloChatbot = {
       }
     }
 
-    if (!rows.length) 
+    if (!filas.length)
     {
       return {
         encontrada: false,
@@ -82,7 +127,7 @@ const ModeloChatbot = {
         sugerencias: await ModeloChatbot.PreguntasFrecuentes(4),
       };
     }
-    const [mejor, ...resto] = rows;
+    const [mejor, ...resto] = filas;
     return {
       encontrada: true,
       respuesta: mejor,
@@ -90,7 +135,13 @@ const ModeloChatbot = {
     };
   },
 
-  PreguntasFrecuentes(limit = 10) 
+  /*
+   * Función: PreguntasFrecuentes
+   * Objetivo: Obtener las preguntas frecuentes para mostrarlas como sugerencias.
+   * Entrada: limit (opcional)
+   * Salida: Promesa con las preguntas
+   */
+  PreguntasFrecuentes(limit = 10)
   {
     return Consultar(
       'SELECT id_preguntas, Pregunta FROM preguntasChatbot ORDER BY id_preguntas LIMIT ?',
@@ -98,7 +149,13 @@ const ModeloChatbot = {
     );
   },
 
-  Listar() 
+  /*
+   * Función: Listar
+   * Objetivo: Listar todas las preguntas con su respuesta y fuente.
+   * Entrada: Ninguna
+   * Salida: Promesa con las filas encontradas
+   */
+  Listar()
   {
     return Consultar(
       `${SELECT_RESPUESTA}
@@ -109,76 +166,99 @@ const ModeloChatbot = {
     );
   },
 
-  async BuscarPregunta(id, conn) 
+  /*
+   * Función: BuscarPregunta
+   * Objetivo: Obtener una pregunta con su respuesta.
+   * Entrada: id, conexion
+   * Salida: Promesa con la pregunta o null
+   */
+  async BuscarPregunta(id, conexion)
   {
-    const rows = await Consultar(
+    const filas = await Consultar(
       `${SELECT_RESPUESTA}
          FROM preguntasChatbot p
          LEFT JOIN contenidosChatbot c ON c.id_preguntas = p.id_preguntas
          LEFT JOIN fuentesChatbot f    ON f.id_fuentes = c.id_fuentes
         WHERE p.id_preguntas = ?`,
       [id],
-      conn,
+      conexion,
     );
-    return rows[0] || null;
+    return filas[0] || null;
   },
 
-  /** Alta de pregunta con su respuesta y fuente. */
-  Crear({ Pregunta, Respuesta, id_fuentes }) 
+  /*
+   * Función: Crear
+   * Objetivo: Alta de pregunta con su respuesta y fuente.
+   * Entrada: { Pregunta, Respuesta, id_fuentes }
+   * Salida: Promesa con el registro creado
+   */
+  Crear({ Pregunta, Respuesta, id_fuentes })
   {
-    return EjecutarEnTransaccion(async (conn) => 
+    return EjecutarEnTransaccion(async (conexion) =>
     {
       const resultado = await Consultar(
         'INSERT INTO preguntasChatbot (Pregunta) VALUES (?)',
         [Pregunta],
-        conn,
+        conexion,
       );
       await Consultar(
         'INSERT INTO contenidosChatbot (Respuesta, id_preguntas, id_fuentes) VALUES (?, ?, ?)',
         [Respuesta, resultado.insertId, id_fuentes],
-        conn,
+        conexion,
       );
-      return ModeloChatbot.BuscarPregunta(resultado.insertId, conn);
+      return ModeloChatbot.BuscarPregunta(resultado.insertId, conexion);
     });
   },
 
-  Actualizar(id, { Pregunta, Respuesta, id_fuentes }) 
+  /*
+   * Función: Actualizar
+   * Objetivo: Modificar un pregunta del chatbot existente.
+   * Entrada: id, { Pregunta, Respuesta, id_fuentes }
+   * Salida: Promesa con el registro actualizado
+   */
+  Actualizar(id, { Pregunta, Respuesta, id_fuentes })
   {
-    return EjecutarEnTransaccion(async (conn) => 
+    return EjecutarEnTransaccion(async (conexion) =>
     {
-      if (Pregunta !== undefined) 
+      if (Pregunta !== undefined)
       {
         await Consultar(
           'UPDATE preguntasChatbot SET Pregunta = ? WHERE id_preguntas = ?',
           [Pregunta, id],
-          conn,
+          conexion,
         );
       }
-      if (Respuesta !== undefined || id_fuentes !== undefined) 
+      if (Respuesta !== undefined || id_fuentes !== undefined)
       {
         const sets = [];
-        const params = [];
-        if (Respuesta !== undefined) 
+        const parametros = [];
+        if (Respuesta !== undefined)
         {
           sets.push('Respuesta = ?');
-          params.push(Respuesta);
+          parametros.push(Respuesta);
         }
-        if (id_fuentes !== undefined) 
+        if (id_fuentes !== undefined)
         {
           sets.push('id_fuentes = ?');
-          params.push(id_fuentes);
+          parametros.push(id_fuentes);
         }
         await Consultar(
           `UPDATE contenidosChatbot SET ${sets.join(', ')} WHERE id_preguntas = ?`,
-          [...params, id],
-          conn,
+          [...parametros, id],
+          conexion,
         );
       }
-      return ModeloChatbot.BuscarPregunta(id, conn);
+      return ModeloChatbot.BuscarPregunta(id, conexion);
     });
   },
 
-  async Eliminar(id) 
+  /*
+   * Función: Eliminar
+   * Objetivo: Eliminar una pregunta y su respuesta.
+   * Entrada: id
+   * Salida: Promesa con true si se eliminó el registro
+   */
+  async Eliminar(id)
   {
     const resultado = await Consultar('DELETE FROM preguntasChatbot WHERE id_preguntas = ?', [id]);
     return resultado.affectedRows > 0;

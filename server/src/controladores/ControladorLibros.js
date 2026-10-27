@@ -1,3 +1,43 @@
+/*
+ * ******************************************************************
+ * Nombre del programa: BD-SP02-GL · ControladorLibros.js
+ * Función: Catálogo, listado, alta, edición, estatus y copias de los libros.
+ * Autor: Equipo CCJMops
+ * Fecha: 26/10/2026
+ * Entrada: Peticiones HTTP enrutadas desde rutas/rutas.js
+ * Salida: Respuestas HTTP en formato JSON
+ * Nomenclatura: Variables en snake_case, funciones en CamelCase,
+ *               constantes en SNAKE_CASE (mayúsculas completas),
+ *               clases y módulos en CamelCase.
+ * ******************************************************************
+ */
+
+/*
+ * ******************************************************************
+ * Contenido de listado:
+ *     Módulo              Objetivo
+ *     ETIQUETAS_CAMPO     Nombre visible de cada campo de búsqueda para el listado
+ *     ETIQUETAS_MOTIVO    Nombre visible de cada motivo de baja
+ *     FiltrosDesdeQuery   Traduce los parámetros de búsqueda de la URL a filtros…
+ *     DescribirFiltro     Describir el filtro aplicado para el encabezado del listado
+ *     LibroEditable       Verificar que el libro exista y esté activo antes de…
+ *     ControladorLibros   Manejadores del catálogo de libros y sus copias
+ * ******************************************************************
+ */
+
+/*
+ * ******************************************************************
+ * Instrucciones de reutilización:
+ * (1) Controlador del patrón MVC: no contiene SQL; usa los modelos de src/modelos.
+ * (2) Cada método se registra en rutas/rutas.js envuelto en ManejarAsincrono, que envía los
+ *     errores a ManejarErrores.
+ * (3) Los permisos se revisan antes (RequiereFuncion) y los datos llegan validados por los
+ *     esquemas zod.
+ * (4) Los errores de regla de negocio se lanzan como ErrorHttp con el código HTTP
+ *     correspondiente.
+ * ******************************************************************
+ */
+
 import { ErrorHttp } from '../utilidades/ErrorHttp.js';
 import { ModeloLibro } from '../modelos/ModeloLibro.js';
 import { ModeloEjemplar } from '../modelos/ModeloEjemplar.js';
@@ -5,6 +45,10 @@ import { ModeloBitacora } from '../modelos/ModeloBitacora.js';
 import { TieneFuncion } from '../intermediarios/autenticacion.js';
 import { GenerarListadoPdf } from '../utilidades/GenerarListadoPdf.js';
 
+/*
+ * Constante: ETIQUETAS_CAMPO
+ * Objetivo: Nombre visible de cada campo de búsqueda para el listado.
+ */
 const ETIQUETAS_CAMPO = {
   todos: 'Todos',
   titulo: 'Título',
@@ -14,6 +58,10 @@ const ETIQUETAS_CAMPO = {
   anio: 'Año',
   tema: 'Tema',
 };
+/*
+ * Constante: ETIQUETAS_MOTIVO
+ * Objetivo: Nombre visible de cada motivo de baja.
+ */
 const ETIQUETAS_MOTIVO = {
   Perdido: 'Perdido',
   Robado: 'Robado',
@@ -21,8 +69,13 @@ const ETIQUETAS_MOTIVO = {
   Obsoleto: 'Obsoleto',
 };
 
-/** Traduce los parámetros de búsqueda de la URL a filtros del modelo. */
-function FiltrosDesdeQuery(req) 
+/*
+ * Función: FiltrosDesdeQuery
+ * Objetivo: Traduce los parámetros de búsqueda de la URL a filtros del modelo.
+ * Entrada: req
+ * Salida: Objeto de filtros para ModeloLibro.Buscar
+ */
+function FiltrosDesdeQuery(req)
 {
   const { q: texto_busqueda, campo, orden, desde, hasta, tema, editorial, disponibles, inactivos } =
     req.consulta_valida;
@@ -39,36 +92,62 @@ function FiltrosDesdeQuery(req)
   };
 }
 
-function DescribirFiltro({ q: texto_busqueda, campo }) 
+/*
+ * Función: DescribirFiltro
+ * Objetivo: Describir el filtro aplicado para el encabezado del listado.
+ * Entrada: { q, campo }
+ * Salida: Texto como «Autor «Tanenbaum»» o «Sin filtro (todos los libros)»
+ */
+function DescribirFiltro({ q: texto_busqueda, campo })
 {
-  if (!texto_busqueda) 
+  if (!texto_busqueda)
   {
     return 'Sin filtro (todos los libros)';
   }
   return `${ETIQUETAS_CAMPO[campo] || 'Todos'} «${texto_busqueda}»`;
 }
 
-async function LibroEditable(id) 
+/*
+ * Función: LibroEditable
+ * Objetivo: Verificar que el libro exista y esté activo antes de modificar sus copias.
+ * Entrada: id
+ * Salida: Promesa con el libro; ErrorHttp si no procede
+ */
+async function LibroEditable(id)
 {
   const libro = await ModeloLibro.BuscarPorId(id);
-  if (!libro) 
+  if (!libro)
   {
     throw ErrorHttp.NoEncontrado('Libro no encontrado');
   }
   return libro;
 }
 
+/*
+ * Módulo: ControladorLibros
+ * Objetivo: Manejadores del catálogo de libros y sus copias.
+ */
 const ControladorLibros = {
-  /** GET /libros — búsqueda en el catálogo. */
-  async Buscar(req, res) 
+  /*
+   * Función: Buscar
+   * Objetivo: GET /libros — búsqueda en el catálogo.
+   * Entrada: req: petición HTTP (ya autenticada y validada); res: respuesta HTTP
+   * Salida: Respuesta HTTP en formato JSON
+   */
+  async Buscar(req, res)
   {
     const { limit, offset } = req.consulta_valida;
     const resultado = await ModeloLibro.Buscar({ ...FiltrosDesdeQuery(req), limit, offset });
     res.json({ ...resultado, limit, offset });
   },
 
-  /** GET /libros/listado — vista previa del listado (todas las coincidencias). */
-  async Listado(req, res) 
+  /*
+   * Función: Listado
+   * Objetivo: GET /libros/listado — vista previa del listado (todas las coincidencias).
+   * Entrada: req: petición HTTP (ya autenticada y validada); res: respuesta HTTP
+   * Salida: Respuesta HTTP en formato JSON
+   */
+  async Listado(req, res)
   {
     const filtros = FiltrosDesdeQuery(req);
     const libros = await ModeloLibro.Listado(filtros);
@@ -81,8 +160,13 @@ const ControladorLibros = {
     });
   },
 
-  /** GET /libros/listado.pdf — el mismo listado como archivo PDF. */
-  async ListadoPdf(req, res) 
+  /*
+   * Función: ListadoPdf
+   * Objetivo: GET /libros/listado.pdf — el mismo listado como archivo PDF.
+   * Entrada: req: petición HTTP (ya autenticada y validada); res: respuesta HTTP
+   * Salida: Respuesta HTTP con el PDF del listado
+   */
+  async ListadoPdf(req, res)
   {
     const filtros = FiltrosDesdeQuery(req);
     const libros = await ModeloLibro.Listado(filtros);
@@ -98,33 +182,47 @@ const ControladorLibros = {
     }).pipe(res);
   },
 
-  /**
-   * GET /libros/:id — ficha del libro. Quien gestiona libros ve cada
-   * ejemplar con su código; los demás ven el conteo por estado.
+  /*
+   * Función: Obtener
+   * Objetivo: GET /libros/:id — ficha del libro. Quien gestiona libros ve cada ejemplar con su
+   *           código; los demás ven el conteo por estado.
+   * Entrada: req: petición HTTP (ya autenticada y validada); res: respuesta HTTP
+   * Salida: Respuesta HTTP en formato JSON
    */
-  async Obtener(req, res) 
+  async Obtener(req, res)
   {
     const gestiona = TieneFuncion(req, 'gestionar_libros');
     const libro = await ModeloLibro.BuscarPorId(req.params.id, { completa: gestiona });
-    if (!libro || (libro.Estatus !== 'Activo' && !gestiona)) 
+    if (!libro || (libro.Estatus !== 'Activo' && !gestiona))
     {
       throw ErrorHttp.NoEncontrado('No hay ningún libro registrado con esos datos.');
     }
     res.json(libro);
   },
 
-  /** GET /libros/isbn/:isbn — se valida primero en el alta de libro. */
-  async PorIsbn(req, res) 
+  /*
+   * Función: PorIsbn
+   * Objetivo: GET /libros/isbn/:isbn — se valida primero en el alta de libro.
+   * Entrada: req: petición HTTP (ya autenticada y validada); res: respuesta HTTP
+   * Salida: Respuesta HTTP en formato JSON
+   */
+  async PorIsbn(req, res)
   {
     const libro = await ModeloLibro.BuscarPorIsbn(req.params.isbn);
-    if (!libro) 
+    if (!libro)
     {
       throw ErrorHttp.NoEncontrado('No hay ningún libro registrado con ese ISBN.');
     }
     res.json(libro);
   },
 
-  async Crear(req, res) 
+  /*
+   * Función: Crear
+   * Objetivo: Atender POST /api/libros.
+   * Entrada: req: petición HTTP (ya autenticada y validada); res: respuesta HTTP
+   * Salida: Respuesta HTTP en formato JSON
+   */
+  async Crear(req, res)
   {
     const libro = await ModeloLibro.Crear(req.body, req.usuario.id_usuario);
     await ModeloBitacora.Registrar(
@@ -135,7 +233,13 @@ const ControladorLibros = {
     res.status(201).json(libro);
   },
 
-  async Actualizar(req, res) 
+  /*
+   * Función: Actualizar
+   * Objetivo: Atender PUT /api/libros/:id.
+   * Entrada: req: petición HTTP (ya autenticada y validada); res: respuesta HTTP
+   * Salida: Respuesta HTTP en formato JSON
+   */
+  async Actualizar(req, res)
   {
     await LibroEditable(req.params.id);
     const libro = await ModeloLibro.Actualizar(req.params.id, req.body);
@@ -147,8 +251,13 @@ const ControladorLibros = {
     res.json(libro);
   },
 
-  /** PATCH /libros/:id/estatus — activar o inactivar el libro completo. */
-  async CambiarEstatus(req, res) 
+  /*
+   * Función: CambiarEstatus
+   * Objetivo: PATCH /libros/:id/estatus — activar o inactivar el libro completo.
+   * Entrada: req: petición HTTP (ya autenticada y validada); res: respuesta HTTP
+   * Salida: Respuesta HTTP en formato JSON
+   */
+  async CambiarEstatus(req, res)
   {
     const libro = await ModeloLibro.CambiarEstatus(req.params.id, req.body.Estatus);
     const accion = req.body.Estatus === 'Activo' ? 'Reactivación' : 'Inactivación';
@@ -160,14 +269,24 @@ const ControladorLibros = {
     res.json(libro);
   },
 
-  // Ejemplares --------------------------------------------------------
-  async ListarEjemplares(req, res) 
+  /*
+   * Función: ListarEjemplares
+   * Objetivo: Atender GET /api/libros/:id/ejemplares (copias con código, ubicación y estado).
+   * Entrada: req: petición HTTP (ya autenticada y validada); res: respuesta HTTP
+   * Salida: Respuesta HTTP en formato JSON
+   */
+  async ListarEjemplares(req, res)
   {
     res.json(await ModeloEjemplar.BuscarPorLibro(req.params.id));
   },
 
-  /** POST /libros/:id/ejemplares — agrega copias con su ubicación. */
-  async AgregarEjemplares(req, res) 
+  /*
+   * Función: AgregarEjemplares
+   * Objetivo: POST /libros/:id/ejemplares — agrega copias con su ubicación.
+   * Entrada: req: petición HTTP (ya autenticada y validada); res: respuesta HTTP
+   * Salida: Respuesta HTTP en formato JSON
+   */
+  async AgregarEjemplares(req, res)
   {
     const libro = await LibroEditable(req.params.id);
     const { cantidad, ...ubicacion } = req.body;
@@ -180,13 +299,19 @@ const ControladorLibros = {
     res.status(201).json(await ModeloLibro.BuscarPorId(req.params.id));
   },
 
-  /** PUT /libros/:id/ejemplares/:num_copia — cambio de estado o ubicación de una copia. */
-  async ActualizarEjemplar(req, res) 
+  /*
+   * Función: ActualizarEjemplar
+   * Objetivo: PUT /libros/:id/ejemplares/:num_copia — cambio de estado o ubicación de una
+   *           copia.
+   * Entrada: req: petición HTTP (ya autenticada y validada); res: respuesta HTTP
+   * Salida: Respuesta HTTP en formato JSON
+   */
+  async ActualizarEjemplar(req, res)
   {
     const { id, num_copia } = req.params;
     const libro = await LibroEditable(id);
     const copia = await ModeloEjemplar.CambiarEstado(id, num_copia, req.body);
-    if (req.body.Estatus) 
+    if (req.body.Estatus)
     {
       await ModeloBitacora.Registrar(
         req.usuario.id_usuario,
@@ -197,8 +322,13 @@ const ControladorLibros = {
     res.json(copia);
   },
 
-  /** POST /libros/:id/ejemplares/:num_copia/baja — retiro de una copia con motivo. */
-  async RetirarEjemplar(req, res) 
+  /*
+   * Función: RetirarEjemplar
+   * Objetivo: POST /libros/:id/ejemplares/:num_copia/baja — retiro de una copia con motivo.
+   * Entrada: req: petición HTTP (ya autenticada y validada); res: respuesta HTTP
+   * Salida: Respuesta HTTP en formato JSON
+   */
+  async RetirarEjemplar(req, res)
   {
     const { id, num_copia } = req.params;
     await LibroEditable(id);

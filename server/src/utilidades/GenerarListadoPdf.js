@@ -1,10 +1,41 @@
-/**
- * Genera el PDF "Listado de libros" (pantalla BD-SP02-GL06 del prototipo).
- * Carta horizontal, tabla con #, Título, Autor, Editorial, ISBN, Año,
- * Tema, Sinopsis y Copias; pie con "Página X de Y".
+/*
+ * ******************************************************************
+ * Nombre del programa: BD-SP02-GL06 · GenerarListadoPdf.js
+ * Función: Generar el listado de libros en PDF (tamaño carta, horizontal) con paginación.
+ * Autor: Equipo CCJMops
+ * Fecha: 26/10/2026
+ * Entrada: Filas de vw_catalogo y datos del encabezado
+ * Salida: Documento PDF en flujo
+ * Nomenclatura: Variables en snake_case, funciones en CamelCase,
+ *               constantes en SNAKE_CASE (mayúsculas completas),
+ *               clases y módulos en CamelCase.
+ * ******************************************************************
  */
+
+/*
+ * ******************************************************************
+ * Contenido de listado:
+ *     Módulo              Objetivo
+ *     COLORES             Colores del listado
+ *     COLUMNAS            Columnas del listado con su título, ancho y valor
+ *     FormatearFecha      Mostrar la fecha y hora de generación en formato local
+ *     GenerarListadoPdf   Dibujar el listado de libros con encabezado, tabla y…
+ * ******************************************************************
+ */
+
+/*
+ * ******************************************************************
+ * Instrucciones de reutilización:
+ * (1) Funciones de apoyo sin acceso a la base de datos; se pueden usar en cualquier capa.
+ * ******************************************************************
+ */
+
 import PDFDocument from 'pdfkit';
 
+/*
+ * Constante: COLORES
+ * Objetivo: Colores del listado.
+ */
 const COLORES = {
   texto: '#1C2533',
   suave: '#6B7686',
@@ -12,6 +43,10 @@ const COLORES = {
   azul: '#10306B',
 };
 
+/*
+ * Constante: COLUMNAS
+ * Objetivo: Columnas del listado con su título, ancho y valor.
+ */
 const COLUMNAS = [
   { titulo: '#', ancho: 22, valor: (_l, indice) => String(indice + 1) },
   { titulo: 'Título', ancho: 120, valor: (libro) => libro.Titulo, negrita: true },
@@ -24,43 +59,50 @@ const COLUMNAS = [
   { titulo: 'Copias', ancho: 40, valor: (libro) => String(libro.Ejemplares_Totales ?? 0) },
 ];
 
-function FormatearFecha(fecha) 
+/*
+ * Función: FormatearFecha
+ * Objetivo: Mostrar la fecha y hora de generación en formato local.
+ * Entrada: fecha
+ * Salida: Texto como «23 oct 2026, 14:05»
+ */
+function FormatearFecha(fecha)
 {
   return fecha
     .toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' })
     .replace('.', '');
 }
 
-/**
- * @param {object[]} libros   Filas de vw_catalogo
- * @param {object}   meta     { generado_por, filtro, fecha }
- * @returns {PDFKit.PDFDocument} documento listo para hacer pipe a la respuesta
+/*
+ * Función: GenerarListadoPdf
+ * Objetivo: Dibujar el listado de libros con encabezado, tabla y número de página.
+ * Entrada: libros, { generado_por, filtro, fecha? }
+ * Salida: PDFDocument listo para enviar con pipe()
  */
-function GenerarListadoPdf(libros, { generado_por, filtro, fecha = new Date() }) 
+function GenerarListadoPdf(libros, { generado_por, filtro, fecha = new Date() })
 {
-  const doc = new PDFDocument({
+  const documento = new PDFDocument({
     size: 'LETTER',
     layout: 'landscape',
     margin: 40,
     bufferPages: true,
     info: { Title: 'Listado de libros', Author: 'Biblioteca Universidad Ducky' },
   });
-  const izquierda = doc.page.margins.left;
-  const derecha = doc.page.width - doc.page.margins.right;
-  const limite_inferior = doc.page.height - doc.page.margins.bottom - 24;
+  const izquierda = documento.page.margins.left;
+  const derecha = documento.page.width - documento.page.margins.right;
+  const limite_inferior = documento.page.height - documento.page.margins.bottom - 24;
 
   // Encabezado
-  doc
+  documento
     .font('Helvetica')
     .fontSize(8)
     .fillColor(COLORES.suave)
     .text('BIBLIOTECA · CATÁLOGO', izquierda, 40, { characterSpacing: 1.2 });
-  doc
+  documento
     .font('Helvetica-Bold')
     .fontSize(18)
     .fillColor(COLORES.texto)
     .text('Listado de libros', izquierda, 54);
-  doc
+  documento
     .font('Helvetica')
     .fontSize(9)
     .fillColor(COLORES.suave)
@@ -68,22 +110,27 @@ function GenerarListadoPdf(libros, { generado_por, filtro, fecha = new Date() })
       align: 'right',
       width: derecha - izquierda,
     });
-  doc
+  documento
     .font('Helvetica')
     .fillColor(COLORES.texto)
     .text(`Filtro: ${filtro}`, izquierda, 60, { align: 'right', width: derecha - izquierda });
-  doc.moveTo(izquierda, 82).lineTo(derecha, 82).lineWidth(1).strokeColor(COLORES.texto).stroke();
+  documento
+    .moveTo(izquierda, 82)
+    .lineTo(derecha, 82)
+    .lineWidth(1)
+    .strokeColor(COLORES.texto)
+    .stroke();
 
-  const DibujarEncabezados = (posicion_inicial) => 
+  const DibujarEncabezados = (posicion_inicial) =>
   {
     let posicion_x = izquierda;
-    doc.font('Helvetica').fontSize(8).fillColor(COLORES.suave);
-    COLUMNAS.forEach((elemento) => 
+    documento.font('Helvetica').fontSize(8).fillColor(COLORES.suave);
+    COLUMNAS.forEach((elemento) =>
     {
-      doc.text(elemento.titulo, posicion_x, posicion_inicial, { width: elemento.ancho - 6 });
+      documento.text(elemento.titulo, posicion_x, posicion_inicial, { width: elemento.ancho - 6 });
       posicion_x += elemento.ancho;
     });
-    doc
+    documento
       .moveTo(izquierda, posicion_inicial + 14)
       .lineTo(derecha, posicion_inicial + 14)
       .lineWidth(0.5)
@@ -94,33 +141,35 @@ function GenerarListadoPdf(libros, { generado_por, filtro, fecha = new Date() })
 
   let posicion_y = DibujarEncabezados(92);
 
-  libros.forEach((libro, indice) => 
+  libros.forEach((libro, indice) =>
   {
-    const alturas = COLUMNAS.map((elemento) => 
+    const alturas = COLUMNAS.map((elemento) =>
     {
-      doc.font(elemento.negrita ? 'Helvetica-Bold' : 'Helvetica').fontSize(8);
-      return doc.heightOfString(elemento.valor(libro, indice), { width: elemento.ancho - 6 });
+      documento.font(elemento.negrita ? 'Helvetica-Bold' : 'Helvetica').fontSize(8);
+      return documento.heightOfString(elemento.valor(libro, indice), { width: elemento.ancho - 6 });
     });
     const alto = Math.max(...alturas) + 10;
-    if (posicion_y + alto > limite_inferior) 
+    if (posicion_y + alto > limite_inferior)
     {
-      doc.addPage();
+      documento.addPage();
       posicion_y = DibujarEncabezados(40);
     }
     let posicion_x = izquierda;
-    COLUMNAS.forEach((elemento) => 
+    COLUMNAS.forEach((elemento) =>
     {
-      doc
+      documento
         .font(elemento.negrita ? 'Helvetica-Bold' : 'Helvetica')
         .fontSize(8)
-        .fillColor(elemento.titulo === '#' || elemento.titulo === 'Sinopsis' ? COLORES.suave : COLORES.texto)
+        .fillColor(
+          elemento.titulo === '#' || elemento.titulo === 'Sinopsis' ? COLORES.suave : COLORES.texto,
+        )
         .text(elemento.valor(libro, indice), posicion_x, posicion_y + 3, {
           width: elemento.ancho - 6,
         });
       posicion_x += elemento.ancho;
     });
     posicion_y += alto;
-    doc
+    documento
       .moveTo(izquierda, posicion_y - 2)
       .lineTo(derecha, posicion_y - 2)
       .lineWidth(0.5)
@@ -128,35 +177,39 @@ function GenerarListadoPdf(libros, { generado_por, filtro, fecha = new Date() })
       .stroke();
   });
 
-  if (posicion_y + 20 > limite_inferior) 
+  if (posicion_y + 20 > limite_inferior)
   {
-    doc.addPage();
+    documento.addPage();
     posicion_y = 40;
   }
-  doc
+  documento
     .font('Helvetica-Bold')
     .fontSize(9)
     .fillColor(COLORES.texto)
-    .text(`Total: ${libros.length} ${libros.length === 1 ? 'libro' : 'libros'}`, izquierda, posicion_y + 8);
+    .text(
+      `Total: ${libros.length} ${libros.length === 1 ? 'libro' : 'libros'}`,
+      izquierda,
+      posicion_y + 8,
+    );
 
   // Pie de página en todas las hojas
-  const rango = doc.bufferedPageRange();
-  for (let indice = 0; indice < rango.count; indice += 1) 
+  const rango = documento.bufferedPageRange();
+  for (let indice = 0; indice < rango.count; indice += 1)
   {
-    doc.switchToPage(indice);
-    doc
+    documento.switchToPage(indice);
+    documento
       .font('Helvetica')
       .fontSize(8)
       .fillColor(COLORES.suave)
       .text(
         `Página ${indice + 1} de ${rango.count} · Biblioteca Universidad Ducky`,
         izquierda,
-        doc.page.height - doc.page.margins.bottom - 4,
+        documento.page.height - documento.page.margins.bottom - 4,
         { width: derecha - izquierda, align: 'center', lineBreak: false },
       );
   }
-  doc.end();
-  return doc;
+  documento.end();
+  return documento;
 }
 
 export { GenerarListadoPdf };

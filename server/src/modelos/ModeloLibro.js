@@ -1,8 +1,50 @@
+/*
+ * ******************************************************************
+ * Nombre del programa: BD-SP02-GL · ModeloLibro.js
+ * Función: Fichas bibliográficas: búsqueda del catálogo, alta, edición y estatus de los libros.
+ * Autor: Equipo CCJMops
+ * Fecha: 26/10/2026
+ * Entrada: Datos validados por los controladores
+ * Salida: Filas de la base de datos MariaDB o ErrorHttp si se rompe una regla
+ * Nomenclatura: Variables en snake_case, funciones en CamelCase,
+ *               constantes en SNAKE_CASE (mayúsculas completas),
+ *               clases y módulos en CamelCase.
+ * ******************************************************************
+ */
+
+/*
+ * ******************************************************************
+ * Contenido de listado:
+ *     Módulo                 Objetivo
+ *     ORDENES                Cláusula ORDER BY de cada opción de orden del catálogo
+ *     ParsearAutores         Convierte el texto de autores del formulario en…
+ *     ObtenerIdsAutores      Obtener los ids de los autores del texto, dándolos de…
+ *     ObtenerIdsTemas        Obtener los ids de los temas del texto, dándolos de alta…
+ *     ReemplazarRelaciones   Reemplazar los autores y temas relacionados con el libro
+ *     ConstruirFiltro        Armar la condición WHERE y sus parámetros a partir de los…
+ *     ModeloLibro            Acceso a las fichas bibliográficas y al catálogo
+ * ******************************************************************
+ */
+
+/*
+ * ******************************************************************
+ * Instrucciones de reutilización:
+ * (1) Modelo del patrón MVC: contiene la lógica de negocio y el acceso a la base de datos.
+ * (2) Toda consulta es parametrizada (?); nunca se concatenan datos del usuario en el SQL.
+ * (3) Requiere la base de datos creada con database/01_schema.sql y la conexión de
+ *     configuracion/conexion.js.
+ * (4) Las operaciones que modifican varias tablas usan EjecutarEnTransaccion.
+ * ******************************************************************
+ */
+
 import { Consultar, EjecutarEnTransaccion } from '../configuracion/conexion.js';
 import { ErrorHttp } from '../utilidades/ErrorHttp.js';
 import { ModeloEjemplar } from './ModeloEjemplar.js';
 
-/** Columnas de vw_catalogo para cada filtro "Buscar por" del prototipo. */
+/*
+ * Constante: CAMPOS_BUSQUEDA
+ * Objetivo: Columnas de vw_catalogo para cada filtro "Buscar por" del prototipo.
+ */
 const CAMPOS_BUSQUEDA = {
   titulo: ['c.Titulo'],
   autor: ['c.Autores'],
@@ -13,6 +55,10 @@ const CAMPOS_BUSQUEDA = {
 };
 CAMPOS_BUSQUEDA.todos = Object.values(CAMPOS_BUSQUEDA).flat();
 
+/*
+ * Constante: ORDENES
+ * Objetivo: Cláusula ORDER BY de cada opción de orden del catálogo.
+ */
 const ORDENES = {
   titulo: 'c.Titulo ASC',
   autor: 'c.Autores_Apellidos ASC, c.Titulo ASC',
@@ -21,20 +67,23 @@ const ORDENES = {
   disponibles: 'c.Ejemplares_Disponibles DESC, c.Titulo ASC',
 };
 
-/**
- * Convierte el texto de autores del formulario en registros.
- * Acepta "Apellido, Nombre" o "Nombre Apellido", separados por ";", " & " o " y ".
- *   "Kernighan, B. W.; Ritchie, D. M." → [{Apellido_Paterno:'Kernighan', Nombre:'B. W.'}, ...]
+/*
+ * Función: ParsearAutores
+ * Objetivo: Convierte el texto de autores del formulario en registros. Acepta "Apellido,
+ *           Nombre" o "Nombre Apellido", separados por ";", " & " o " y ". "Kernighan, B. W.;
+ *           Ritchie, D. M." → [{Apellido_Paterno:'Kernighan', Nombre:'B. W.'}, ...]
+ * Entrada: texto
+ * Salida: Lista de { Nombre, Apellido_Paterno }
  */
-function ParsearAutores(texto) 
+function ParsearAutores(texto)
 {
   return String(texto)
     .split(/;|\s&\s|\sy\s/)
     .map((parte) => parte.trim())
     .filter(Boolean)
-    .map((parte) => 
+    .map((parte) =>
     {
-      if (parte.includes(',')) 
+      if (parte.includes(','))
       {
         const [apellido, ...resto] = parte.split(',');
         return { Apellido_Paterno: apellido.trim(), Nombre: resto.join(',').trim() || '—' };
@@ -45,26 +94,32 @@ function ParsearAutores(texto)
     });
 }
 
-async function ObtenerIdsAutores(conn, texto) 
+/*
+ * Función: ObtenerIdsAutores
+ * Objetivo: Obtener los ids de los autores del texto, dándolos de alta si no existen.
+ * Entrada: conexion, texto
+ * Salida: Promesa con los ids
+ */
+async function ObtenerIdsAutores(conexion, texto)
 {
   const ids = [];
-  for (const elemento of ParsearAutores(texto)) 
+  for (const elemento of ParsearAutores(texto))
   {
     const [existente] = await Consultar(
       'SELECT id_autor FROM Autores WHERE Apellido_Paterno = ? AND Nombre = ? LIMIT 1',
       [elemento.Apellido_Paterno, elemento.Nombre],
-      conn,
+      conexion,
     );
-    if (existente) 
+    if (existente)
     {
       ids.push(existente.id_autor);
     }
-    else 
+    else
     {
       const resultado = await Consultar(
         'INSERT INTO Autores (Nombre, Apellido_Paterno) VALUES (?, ?)',
         [elemento.Nombre, elemento.Apellido_Paterno],
-        conn,
+        conexion,
       );
       ids.push(resultado.insertId);
     }
@@ -72,67 +127,86 @@ async function ObtenerIdsAutores(conn, texto)
   return [...new Set(ids)];
 }
 
-async function ObtenerIdsTemas(conn, texto) 
+/*
+ * Función: ObtenerIdsTemas
+ * Objetivo: Obtener los ids de los temas del texto, dándolos de alta si no existen.
+ * Entrada: conexion, texto
+ * Salida: Promesa con los ids
+ */
+async function ObtenerIdsTemas(conexion, texto)
 {
   const ids = [];
   const nombres = String(texto)
     .split(',')
     .map((parte) => parte.trim())
     .filter(Boolean);
-  for (const nombre of nombres) 
+  for (const nombre of nombres)
   {
     const [existente] = await Consultar(
       'SELECT id_tema FROM Temas WHERE Nombre_Tema = ?',
       [nombre],
-      conn,
+      conexion,
     );
-    if (existente) 
+    if (existente)
     {
       ids.push(existente.id_tema);
     }
-    else 
+    else
     {
-      const resultado = await Consultar('INSERT INTO Temas (Nombre_Tema) VALUES (?)', [nombre], conn);
+      const resultado = await Consultar('INSERT INTO Temas (Nombre_Tema) VALUES (?)', [nombre], conexion);
       ids.push(resultado.insertId);
     }
   }
   return ids;
 }
 
-async function ReemplazarRelaciones(conn, id_libro, { Autor, Tema }) 
+/*
+ * Función: ReemplazarRelaciones
+ * Objetivo: Reemplazar los autores y temas relacionados con el libro.
+ * Entrada: conexion, id_libro, { Autor, Tema }
+ * Salida: Promesa sin valor
+ */
+async function ReemplazarRelaciones(conexion, id_libro, { Autor, Tema })
 {
-  if (Autor !== undefined) 
+  if (Autor !== undefined)
   {
-    const autores = await ObtenerIdsAutores(conn, Autor);
-    if (!autores.length) 
+    const autores = await ObtenerIdsAutores(conexion, Autor);
+    if (!autores.length)
     {
       throw ErrorHttp.SolicitudInvalida('Indica al menos un autor');
     }
-    await Consultar('DELETE FROM AutoresLibros WHERE id_libro = ?', [id_libro], conn);
-    for (const id_autor of autores) 
+    await Consultar('DELETE FROM AutoresLibros WHERE id_libro = ?', [id_libro], conexion);
+    for (const id_autor of autores)
     {
       await Consultar(
         'INSERT INTO AutoresLibros (id_libro, id_autor) VALUES (?, ?)',
         [id_libro, id_autor],
-        conn,
+        conexion,
       );
     }
   }
-  if (Tema !== undefined) 
+  if (Tema !== undefined)
   {
-    const temas = await ObtenerIdsTemas(conn, Tema);
-    await Consultar('DELETE FROM TemasLibros WHERE id_libro = ?', [id_libro], conn);
-    for (const id_tema of temas) 
+    const temas = await ObtenerIdsTemas(conexion, Tema);
+    await Consultar('DELETE FROM TemasLibros WHERE id_libro = ?', [id_libro], conexion);
+    for (const id_tema of temas)
     {
       await Consultar(
         'INSERT INTO TemasLibros (id_libro, id_tema) VALUES (?, ?)',
         [id_libro, id_tema],
-        conn,
+        conexion,
       );
     }
   }
 }
 
+/*
+ * Función: ConstruirFiltro
+ * Objetivo: Armar la condición WHERE y sus parámetros a partir de los filtros de búsqueda.
+ * Entrada: { q, campo?, id_tema, id_editorial, solo_disponibles, incluir_inactivos, anio_desde,
+ *          anio_hasta }
+ * Salida: { condicion, parametros }
+ */
 function ConstruirFiltro({
   q: texto_busqueda,
   campo = 'todos',
@@ -142,95 +216,118 @@ function ConstruirFiltro({
   incluir_inactivos,
   anio_desde,
   anio_hasta,
-}) 
+})
 {
-  const where = [];
-  const params = [];
-  if (!incluir_inactivos) 
+  const condicion = [];
+  const parametros = [];
+  if (!incluir_inactivos)
   {
-    where.push("c.Estatus = 'Activo'");
+    condicion.push("c.Estatus = 'Activo'");
   }
-  if (texto_busqueda) 
+  if (texto_busqueda)
   {
     const columnas = CAMPOS_BUSQUEDA[campo] || CAMPOS_BUSQUEDA.todos;
-    where.push(`(${columnas.map((col) => `${col} LIKE ?`).join(' OR ')})`);
-    columnas.forEach(() => params.push(`%${texto_busqueda}%`));
+    condicion.push(`(${columnas.map((columna) => `${columna} LIKE ?`).join(' OR ')})`);
+    columnas.forEach(() => parametros.push(`%${texto_busqueda}%`));
   }
-  if (id_tema) 
+  if (id_tema)
   {
-    where.push(
+    condicion.push(
       'EXISTS (SELECT 1 FROM TemasLibros tl WHERE tl.id_libro = c.id_libro AND tl.id_tema = ?)',
     );
-    params.push(id_tema);
+    parametros.push(id_tema);
   }
-  if (id_editorial) 
+  if (id_editorial)
   {
-    where.push('c.id_editorial = ?');
-    params.push(id_editorial);
+    condicion.push('c.id_editorial = ?');
+    parametros.push(id_editorial);
   }
-  if (anio_desde) 
+  if (anio_desde)
   {
-    where.push('c.Anio >= ?');
-    params.push(anio_desde);
+    condicion.push('c.Anio >= ?');
+    parametros.push(anio_desde);
   }
-  if (anio_hasta) 
+  if (anio_hasta)
   {
-    where.push('c.Anio <= ?');
-    params.push(anio_hasta);
+    condicion.push('c.Anio <= ?');
+    parametros.push(anio_hasta);
   }
-  if (solo_disponibles) 
+  if (solo_disponibles)
   {
-    where.push('c.Ejemplares_Disponibles > 0');
+    condicion.push('c.Ejemplares_Disponibles > 0');
   }
-  return { where_sql: where.length ? `WHERE ${where.join(' AND ')}` : '', params };
+  return { where_sql: condicion.length ? `WHERE ${condicion.join(' AND ')}` : '', params: parametros };
 }
 
+/*
+ * Módulo: ModeloLibro
+ * Objetivo: Acceso a las fichas bibliográficas y al catálogo.
+ */
 const ModeloLibro = {
   parsear_autores: ParsearAutores,
 
-  /** Búsqueda del catálogo con filtro por campo, rango de años, orden y paginación. */
-  async Buscar({ orden = 'titulo', limit = 6, offset = 0, ...filtros } = {}) 
+  /*
+   * Función: Buscar
+   * Objetivo: Búsqueda del catálogo con filtro por campo, rango de años, orden y paginación.
+   * Entrada: { orden?, limit?, offset?, ...filtros } (opcional)
+   * Salida: Promesa con { total, datos }
+   */
+  async Buscar({ orden = 'titulo', limit = 6, offset = 0, ...filtros } = {})
   {
-    const { where_sql, params } = ConstruirFiltro(filtros);
+    const { where_sql, params: parametros } = ConstruirFiltro(filtros);
     const [{ total }] = await Consultar(
       `SELECT COUNT(*) AS total FROM vw_catalogo c ${where_sql}`,
-      params,
+      parametros,
     );
     const datos = await Consultar(
       `SELECT c.* FROM vw_catalogo c ${where_sql}
         ORDER BY ${ORDENES[orden] || ORDENES.titulo}
         LIMIT ? OFFSET ?`,
-      [...params, Number(limit), Number(offset)],
+      [...parametros, Number(limit), Number(offset)],
     );
     return { total, datos };
   },
 
-  /** Todas las coincidencias, sin paginar (listado imprimible). */
-  Listado({ orden = 'titulo', ...filtros } = {}) 
+  /*
+   * Función: Listado
+   * Objetivo: Todas las coincidencias, sin paginar (listado imprimible).
+   * Entrada: { orden?, ...filtros } (opcional)
+   * Salida: Promesa con todas las filas que coinciden
+   */
+  Listado({ orden = 'titulo', ...filtros } = {})
   {
-    const { where_sql, params } = ConstruirFiltro(filtros);
+    const { where_sql, params: parametros } = ConstruirFiltro(filtros);
     return Consultar(
       `SELECT c.* FROM vw_catalogo c ${where_sql} ORDER BY ${ORDENES[orden] || ORDENES.titulo}`,
-      params,
+      parametros,
     );
   },
 
-  async BuscarPorIsbn(isbn) 
+  /*
+   * Función: BuscarPorIsbn
+   * Objetivo: Obtener la ficha de un libro por su ISBN.
+   * Entrada: isbn
+   * Salida: Promesa con la ficha o null
+   */
+  async BuscarPorIsbn(isbn)
   {
-    const rows = await Consultar('SELECT id_libro FROM Libros WHERE ISBN = ?', [isbn]);
-    return rows[0] ? ModeloLibro.BuscarPorId(rows[0].id_libro) : null;
+    const filas = await Consultar('SELECT id_libro FROM Libros WHERE ISBN = ?', [isbn]);
+    return filas[0] ? ModeloLibro.BuscarPorId(filas[0].id_libro) : null;
   },
 
-  /**
-   * Ficha del libro. Con `completa` incluye la lista de ejemplares con
-   * código y ubicación; sin ella, solo el conteo por estado (vista de
-   * alumnos, profesores y colaboradores).
+  /*
+   * Función: BuscarPorId
+   * Objetivo: Ficha del libro. Con `completa` incluye la lista de ejemplares con código y
+   *           ubicación; sin ella, solo el conteo por estado (vista de alumnos, profesores y
+   *           colaboradores).
+   * Entrada: id, { completa? } (opcional), conexion
+   * Salida: Promesa con la ficha o null si no existe
    */
-  async BuscarPorId(id, { completa = true } = {}, conn) 
+  async BuscarPorId(id, { completa = true } = {}, conexion)
   {
-    const rows = await Consultar('SELECT * FROM vw_catalogo WHERE id_libro = ?', [id], conn);
-    const libro = rows[0];
-    if (!libro) 
+    const filas = await Consultar('SELECT * FROM vw_catalogo WHERE id_libro = ?', [id], conexion);
+    const libro = filas[0];
+    if (!libro)
     {
       return null;
     }
@@ -240,15 +337,15 @@ const ModeloLibro = {
         `SELECT a.* FROM AutoresLibros al JOIN Autores a ON a.id_autor = al.id_autor
           WHERE al.id_libro = ? ORDER BY a.id_autor`,
         [id],
-        conn,
+        conexion,
       ),
       Consultar(
         `SELECT t.* FROM TemasLibros tl JOIN Temas t ON t.id_tema = tl.id_tema
           WHERE tl.id_libro = ? ORDER BY t.Nombre_Tema`,
         [id],
-        conn,
+        conexion,
       ),
-      ModeloEjemplar.BuscarPorLibro(id, conn),
+      ModeloEjemplar.BuscarPorLibro(id, conexion),
     ]);
 
     const activos = ejemplares.filter((ejemplar) => ejemplar.Estatus !== 'Baja');
@@ -271,24 +368,29 @@ const ModeloLibro = {
     };
   },
 
-  /** Alta de ficha bibliográfica (sin ejemplares; se agregan después). */
-  Crear(datos, id_usuario) 
+  /*
+   * Función: Crear
+   * Objetivo: Alta de ficha bibliográfica (sin ejemplares; se agregan después).
+   * Entrada: datos, id_usuario
+   * Salida: Promesa con el registro creado
+   */
+  Crear(datos, id_usuario)
   {
-    return EjecutarEnTransaccion(async (conn) => 
+    return EjecutarEnTransaccion(async (conexion) =>
     {
       const [duplicado] = await Consultar(
         'SELECT id_libro FROM Libros WHERE ISBN = ?',
         [datos.ISBN],
-        conn,
+        conexion,
       );
-      if (duplicado) 
+      if (duplicado)
       {
         throw ErrorHttp.Conflicto('Ya existe una ficha con ese ISBN', {
           codigo: 'ISBN_DUPLICADO',
           id_libro: duplicado.id_libro,
         });
       }
-      const result = await Consultar(
+      const resultado = await Consultar(
         `INSERT INTO Libros (ISBN, Titulo, Anio, Sinopsis, id_editorial, id_usuario, Precio, Estatus)
          VALUES (?, ?, ?, ?, ?, ?, ?, 'Activo')`,
         [
@@ -300,32 +402,35 @@ const ModeloLibro = {
           id_usuario,
           datos.Precio,
         ],
-        conn,
+        conexion,
       );
-      await ReemplazarRelaciones(conn, result.insertId, datos);
-      return ModeloLibro.BuscarPorId(result.insertId, {}, conn);
+      await ReemplazarRelaciones(conexion, resultado.insertId, datos);
+      return ModeloLibro.BuscarPorId(resultado.insertId, {}, conexion);
     });
   },
 
-  /**
-   * Edición de ficha. Reglas del prototipo: el ISBN no cambia, un libro
-   * inactivo no se edita y el número de copias solo puede aumentar
-   * (para reducir se usa "Dar de baja").
+  /*
+   * Función: Actualizar
+   * Objetivo: Edición de ficha. Reglas del prototipo: el ISBN no cambia, un libro inactivo no
+   *           se edita y el número de copias solo puede aumentar (para reducir se usa "Dar de
+   *           baja").
+   * Entrada: id, { Numero_Copias, ...datos }
+   * Salida: Promesa con el registro actualizado
    */
-  Actualizar(id, { Numero_Copias, ...datos }) 
+  Actualizar(id, { Numero_Copias, ...datos })
   {
-    return EjecutarEnTransaccion(async (conn) => 
+    return EjecutarEnTransaccion(async (conexion) =>
     {
       const [libro] = await Consultar(
         'SELECT * FROM Libros WHERE id_libro = ? FOR UPDATE',
         [id],
-        conn,
+        conexion,
       );
-      if (!libro) 
+      if (!libro)
       {
         throw ErrorHttp.NoEncontrado('Libro no encontrado');
       }
-      if (libro.Estatus !== 'Activo') 
+      if (libro.Estatus !== 'Activo')
       {
         throw ErrorHttp.Conflicto(
           'Este libro está inactivo y no se puede editar. Primero reactívalo desde Libros.',
@@ -334,7 +439,7 @@ const ModeloLibro = {
           },
         );
       }
-      if (datos.ISBN !== undefined && datos.ISBN !== libro.ISBN) 
+      if (datos.ISBN !== undefined && datos.ISBN !== libro.ISBN)
       {
         throw ErrorHttp.SolicitudInvalida('No se puede cambiar el ISBN de un libro.', {
           codigo: 'ISBN_INMUTABLE',
@@ -343,84 +448,87 @@ const ModeloLibro = {
 
       const campos = ['Titulo', 'Anio', 'Sinopsis', 'id_editorial', 'Precio'];
       const sets = [];
-      const params = [];
-      campos.forEach((campo) => 
+      const parametros = [];
+      campos.forEach((campo) =>
       {
-        if (datos[campo] !== undefined) 
+        if (datos[campo] !== undefined)
         {
           sets.push(`${campo} = ?`);
-          params.push(datos[campo]);
+          parametros.push(datos[campo]);
         }
       });
-      if (sets.length) 
+      if (sets.length)
       {
         await Consultar(
           `UPDATE Libros SET ${sets.join(', ')} WHERE id_libro = ?`,
-          [...params, id],
-          conn,
+          [...parametros, id],
+          conexion,
         );
       }
-      await ReemplazarRelaciones(conn, id, datos);
+      await ReemplazarRelaciones(conexion, id, datos);
 
-      if (Numero_Copias !== undefined) 
+      if (Numero_Copias !== undefined)
       {
         const [{ actuales }] = await Consultar(
           'SELECT COUNT(*) AS actuales FROM Ejemplares WHERE id_libro = ? AND Estatus <> \'Baja\'',
           [id],
-          conn,
+          conexion,
         );
-        if (Numero_Copias < actuales) 
+        if (Numero_Copias < actuales)
         {
           throw ErrorHttp.SolicitudInvalida(
             'Para reducir copias usa «Dar de baja» con un motivo.',
             { codigo: 'REDUCIR_COPIAS' },
           );
         }
-        if (Numero_Copias > actuales) 
+        if (Numero_Copias > actuales)
         {
-          const [ref] = await Consultar(
+          const [referencia] = await Consultar(
             `SELECT Pasillo, Estante, Nivel FROM Ejemplares WHERE id_libro = ? AND Estatus <> 'Baja'
               ORDER BY num_copia LIMIT 1`,
             [id],
-            conn,
+            conexion,
           );
-          await ModeloEjemplar.Agregar(id, Numero_Copias - actuales, ref || {}, conn);
+          await ModeloEjemplar.Agregar(id, Numero_Copias - actuales, referencia || {}, conexion);
         }
       }
-      return ModeloLibro.BuscarPorId(id, {}, conn);
+      return ModeloLibro.BuscarPorId(id, {}, conexion);
     });
   },
 
-  /**
-   * Activa o inactiva el libro completo. Para inactivar, ninguna copia
-   * puede estar en préstamo o apartada. Un libro inactivo deja de
-   * aparecer en el catálogo y sus copias no se pueden prestar.
+  /*
+   * Función: CambiarEstatus
+   * Objetivo: Activa o inactiva el libro completo. Para inactivar, ninguna copia puede estar en
+   *           préstamo o apartada. Un libro inactivo deja de aparecer en el catálogo y sus
+   *           copias no se pueden prestar.
+   * Entrada: id, estatus
+   * Salida: Promesa con la ficha actualizada
    */
-  CambiarEstatus(id, estatus) 
+  CambiarEstatus(id, estatus)
   {
-    return EjecutarEnTransaccion(async (conn) => 
+    return EjecutarEnTransaccion(async (conexion) =>
     {
       const [libro] = await Consultar(
         'SELECT * FROM Libros WHERE id_libro = ? FOR UPDATE',
         [id],
-        conn,
+        conexion,
       );
-      if (!libro) 
+      if (!libro)
       {
         throw ErrorHttp.NoEncontrado('Libro no encontrado');
       }
-      if (libro.Estatus === estatus) 
+      if (libro.Estatus === estatus)
       {
         throw ErrorHttp.Conflicto(`El libro ya está ${estatus.toLowerCase()}`);
       }
-      if (estatus === 'Inactivo') 
+      if (estatus === 'Inactivo')
       {
         const prestadas = await Consultar(
           'SELECT Codigo FROM Ejemplares WHERE id_libro = ? AND Estatus IN (\'En prestamo\',\'Apartado\')',
           [id],
-          conn,
+          conexion,
         );
-        if (prestadas.length) 
+        if (prestadas.length)
         {
           const codigos = prestadas.map((prestada) => prestada.Codigo).join(', ');
           throw ErrorHttp.Conflicto(
@@ -429,12 +537,18 @@ const ModeloLibro = {
           );
         }
       }
-      await Consultar('UPDATE Libros SET Estatus = ? WHERE id_libro = ?', [estatus, id], conn);
-      return ModeloLibro.BuscarPorId(id, {}, conn);
+      await Consultar('UPDATE Libros SET Estatus = ? WHERE id_libro = ?', [estatus, id], conexion);
+      return ModeloLibro.BuscarPorId(id, {}, conexion);
     });
   },
 
-  async ContarActivos() 
+  /*
+   * Función: ContarActivos
+   * Objetivo: Contar los libros activos del catálogo.
+   * Entrada: Ninguna
+   * Salida: Promesa con el número de registros activos
+   */
+  async ContarActivos()
   {
     const [{ n: total }] = await Consultar('SELECT COUNT(*) AS n FROM Libros WHERE Estatus = \'Activo\'');
     return total;
