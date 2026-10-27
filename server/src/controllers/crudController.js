@@ -1,6 +1,4 @@
-'use strict';
-
-const HttpError = require('../utils/HttpError');
+import { HttpError } from '../utils/HttpError.js';
 
 /**
  * Genera los manejadores CRUD estándar para un modelo basado en BaseModel.
@@ -37,4 +35,4 @@ function crudController(model, nombre) {
   };
 }
 
-module.exports = crudController;
+export { crudController };

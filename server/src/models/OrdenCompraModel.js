@@ -1,15 +1,13 @@
-'use strict';
-
 /**
  * Solicitudes de compra (módulo "Solicitar libros" del prototipo).
  * Una orden puede incluir títulos nuevos (NuevosLibros) y/o más copias de
  * libros que ya están en el catálogo (OrdenLibrosExistentes).
  * Flujo: Pendiente → En revision → Aprobada → Recibida, o Rechazada.
  */
-const { query, withTransaction } = require('../config/db');
-const HttpError = require('../utils/HttpError');
-const { hoy } = require('../utils/fechas');
-const EjemplarModel = require('./EjemplarModel');
+import { query, withTransaction } from '../config/db.js';
+import { HttpError } from '../utils/HttpError.js';
+import { hoy } from '../utils/fechas.js';
+import { EjemplarModel } from './EjemplarModel.js';
 
 const TRANSICIONES = {
   Pendiente: ['En revision', 'Aprobada', 'Rechazada'],
@@ -203,4 +201,4 @@ const OrdenCompraModel = {
   },
 };
 
-module.exports = OrdenCompraModel;
+export { OrdenCompraModel };

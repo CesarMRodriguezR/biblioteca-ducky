@@ -1,8 +1,6 @@
-'use strict';
-
-const BaseModel = require('./BaseModel');
-const { query, withTransaction } = require('../config/db');
-const HttpError = require('../utils/HttpError');
+import { BaseModel } from './BaseModel.js';
+import { query, withTransaction } from '../config/db.js';
+import { HttpError } from '../utils/HttpError.js';
 
 /** El perfil Administrador tiene acceso completo y sus funciones no se modifican. */
 const PERFIL_PROTEGIDO = 'Administrador';
@@ -66,4 +64,4 @@ class PerfilModelClass extends BaseModel {
   }
 }
 
-module.exports = new PerfilModelClass();
+export const PerfilModel = new PerfilModelClass();

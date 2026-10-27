@@ -1,16 +1,14 @@
-'use strict';
-
 /**
  * Modelo de circulación: préstamos, devoluciones y renovaciones.
  * Contiene las reglas de negocio (modelo "rico") y las ejecuta en
  * transacciones para que ejemplares, lista de espera y multas queden
  * siempre consistentes.
  */
-const { query, withTransaction } = require('../config/db');
-const env = require('../config/env');
-const HttpError = require('../utils/HttpError');
-const { hoy, sumarDias, diferenciaDias } = require('../utils/fechas');
-const EjemplarModel = require('./EjemplarModel');
+import { query, withTransaction } from '../config/db.js';
+import { env } from '../config/env.js';
+import { HttpError } from '../utils/HttpError.js';
+import { hoy, sumarDias, diferenciaDias } from '../utils/fechas.js';
+import { EjemplarModel } from './EjemplarModel.js';
 
 const { diasPrestamo, maxRenovaciones, maxPrestamosActivos, multaPorDia } = env.reglas;
 
@@ -286,4 +284,4 @@ async function elegirEjemplar(conn, idUsuario, idLibro, numCopia) {
   return copia;
 }
 
-module.exports = PrestamoModel;
+export { PrestamoModel };

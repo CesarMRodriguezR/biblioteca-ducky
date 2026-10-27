@@ -1,7 +1,5 @@
-'use strict';
-
-const HttpError = require('../utils/HttpError');
-const ChatbotModel = require('../models/ChatbotModel');
+import { HttpError } from '../utils/HttpError.js';
+import { ChatbotModel } from '../models/ChatbotModel.js';
 
 const ChatbotController = {
   /** POST /chatbot/preguntar — responde con la pregunta frecuente más parecida. */
@@ -40,4 +38,4 @@ const ChatbotController = {
   },
 };
 
-module.exports = ChatbotController;
+export { ChatbotController };

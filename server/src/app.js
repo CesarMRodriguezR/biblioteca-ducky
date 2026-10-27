@@ -1,12 +1,10 @@
-'use strict';
-
-const express = require('express');
-const cors = require('cors');
-const helmet = require('helmet');
-const morgan = require('morgan');
-const env = require('./config/env');
-const rutas = require('./routes');
-const { notFound, errorHandler } = require('./middlewares/errorHandler');
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import morgan from 'morgan';
+import { env } from './config/env.js';
+import { router as rutas } from './routes/index.js';
+import { notFound, errorHandler } from './middlewares/errorHandler.js';
 
 const app = express();
 
@@ -20,4 +18,4 @@ app.use('/api', rutas);
 app.use(notFound);
 app.use(errorHandler);
 
-module.exports = app;
+export { app };

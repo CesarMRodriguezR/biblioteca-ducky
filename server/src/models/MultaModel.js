@@ -1,8 +1,6 @@
-'use strict';
-
-const { query } = require('../config/db');
-const HttpError = require('../utils/HttpError');
-const { hoy } = require('../utils/fechas');
+import { query } from '../config/db.js';
+import { HttpError } from '../utils/HttpError.js';
+import { hoy } from '../utils/fechas.js';
 
 const SELECT_MULTA = `
   SELECT m.*, u.Nombre_Usuario, u.Matricula_Nomina, l.Titulo,
@@ -53,4 +51,4 @@ const MultaModel = {
   },
 };
 
-module.exports = MultaModel;
+export { MultaModel };

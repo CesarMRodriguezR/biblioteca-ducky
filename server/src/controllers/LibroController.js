@@ -1,11 +1,9 @@
-'use strict';
-
-const HttpError = require('../utils/HttpError');
-const LibroModel = require('../models/LibroModel');
-const EjemplarModel = require('../models/EjemplarModel');
-const BitacoraModel = require('../models/BitacoraModel');
-const { tieneFuncion } = require('../middlewares/auth');
-const { generarListadoPdf } = require('../utils/listadoPdf');
+import { HttpError } from '../utils/HttpError.js';
+import { LibroModel } from '../models/LibroModel.js';
+import { EjemplarModel } from '../models/EjemplarModel.js';
+import { BitacoraModel } from '../models/BitacoraModel.js';
+import { tieneFuncion } from '../middlewares/auth.js';
+import { generarListadoPdf } from '../utils/listadoPdf.js';
 
 const ETIQUETAS_CAMPO = {
   todos: 'Todos', titulo: 'Título', autor: 'Autor', editorial: 'Editorial', isbn: 'ISBN', anio: 'Año', tema: 'Tema',
@@ -166,4 +164,4 @@ const LibroController = {
   },
 };
 
-module.exports = LibroController;
+export { LibroController };

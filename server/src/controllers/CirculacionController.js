@@ -1,5 +1,3 @@
-'use strict';
-
 /**
  * Controladores de los módulos "Préstamo Libros" y "Devolución Préstamos":
  * préstamos, devoluciones, renovaciones, multas y lista de espera.
@@ -7,11 +5,11 @@
  * Regla general de alcance: quien tiene la función de gestión ve y opera
  * sobre todos los usuarios; los demás solo sobre sus propios registros.
  */
-const HttpError = require('../utils/HttpError');
-const PrestamoModel = require('../models/PrestamoModel');
-const MultaModel = require('../models/MultaModel');
-const ListaEsperaModel = require('../models/ListaEsperaModel');
-const { tieneFuncion } = require('../middlewares/auth');
+import { HttpError } from '../utils/HttpError.js';
+import { PrestamoModel } from '../models/PrestamoModel.js';
+import { MultaModel } from '../models/MultaModel.js';
+import { ListaEsperaModel } from '../models/ListaEsperaModel.js';
+import { tieneFuncion } from '../middlewares/auth.js';
 
 /** Devuelve el id de usuario a filtrar según los permisos. */
 function alcance(req, funcionGestion, idSolicitado) {
@@ -127,4 +125,4 @@ const ListaEsperaController = {
   },
 };
 
-module.exports = { PrestamoController, MultaController, ListaEsperaController };
+export { PrestamoController, MultaController, ListaEsperaController };

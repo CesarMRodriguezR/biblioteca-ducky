@@ -1,5 +1,3 @@
-'use strict';
-
 /**
  * Ejemplares (copias físicas). Estados:
  *   Disponible        → se consulta dentro de la biblioteca.
@@ -8,8 +6,8 @@
  *   Apartado          → reservado para el primero de la lista de espera.
  *   Baja              → retirada con un motivo (Perdido, Robado, Dañado, Obsoleto).
  */
-const { query, withTransaction } = require('../config/db');
-const HttpError = require('../utils/HttpError');
+import { query, withTransaction } from '../config/db.js';
+import { HttpError } from '../utils/HttpError.js';
 
 const ESTADOS_EDITABLES = ['Disponible', 'Consulta externa'];
 
@@ -177,4 +175,4 @@ const EjemplarModel = {
   },
 };
 
-module.exports = EjemplarModel;
+export { EjemplarModel };

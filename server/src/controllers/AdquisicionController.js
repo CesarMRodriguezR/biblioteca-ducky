@@ -1,9 +1,7 @@
-'use strict';
-
-const HttpError = require('../utils/HttpError');
-const OrdenCompraModel = require('../models/OrdenCompraModel');
-const BitacoraModel = require('../models/BitacoraModel');
-const { tieneFuncion } = require('../middlewares/auth');
+import { HttpError } from '../utils/HttpError.js';
+import { OrdenCompraModel } from '../models/OrdenCompraModel.js';
+import { BitacoraModel } from '../models/BitacoraModel.js';
+import { tieneFuncion } from '../middlewares/auth.js';
 
 const OrdenCompraController = {
   /** Quien gestiona compras ve todas las órdenes; los demás, solo las suyas. */
@@ -48,4 +46,4 @@ const OrdenCompraController = {
   },
 };
 
-module.exports = { OrdenCompraController };
+export { OrdenCompraController };

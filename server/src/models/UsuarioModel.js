@@ -1,7 +1,5 @@
-'use strict';
-
-const bcrypt = require('bcryptjs');
-const { query, withTransaction } = require('../config/db');
+import bcrypt from 'bcryptjs';
+import { query, withTransaction } from '../config/db.js';
 
 const MAX_INTENTOS = 5;
 
@@ -318,4 +316,4 @@ const UsuarioModel = {
   },
 };
 
-module.exports = UsuarioModel;
+export { UsuarioModel };

@@ -1,9 +1,7 @@
-'use strict';
-
 /**
  * Modelos de tablas simples (catálogos) que solo necesitan CRUD.
  */
-const BaseModel = require('./BaseModel');
+import { BaseModel } from './BaseModel.js';
 
 const EditorialModel = new BaseModel({
   table: 'Editoriales',
@@ -58,12 +56,4 @@ const FuenteChatbotModel = new BaseModel({
   searchable: ['Fuente'],
 });
 
-module.exports = {
-  EditorialModel,
-  AutorModel,
-  TemaModel,
-  FuncionModel,
-  PoliticaModel,
-  NuevoLibroModel,
-  FuenteChatbotModel,
-};
+export { EditorialModel, AutorModel, TemaModel, FuncionModel, PoliticaModel, NuevoLibroModel, FuenteChatbotModel };

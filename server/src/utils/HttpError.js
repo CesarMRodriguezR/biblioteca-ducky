@@ -1,5 +1,3 @@
-'use strict';
-
 class HttpError extends Error {
   constructor(status, message, details = undefined) {
     super(message);
@@ -15,4 +13,4 @@ class HttpError extends Error {
   static conflict(message, details) { return new HttpError(409, message, details); }
 }
 
-module.exports = HttpError;
+export { HttpError };

@@ -1,8 +1,6 @@
-'use strict';
-
-const { query, withTransaction } = require('../config/db');
-const HttpError = require('../utils/HttpError');
-const EjemplarModel = require('./EjemplarModel');
+import { query, withTransaction } from '../config/db.js';
+import { HttpError } from '../utils/HttpError.js';
+import { EjemplarModel } from './EjemplarModel.js';
 
 /** Columnas de vw_catalogo para cada filtro "Buscar por" del prototipo. */
 const CAMPOS_BUSQUEDA = {
@@ -302,4 +300,4 @@ const LibroModel = {
   },
 };
 
-module.exports = LibroModel;
+export { LibroModel };

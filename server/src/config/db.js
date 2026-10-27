@@ -1,7 +1,5 @@
-'use strict';
-
-const mariadb = require('mariadb');
-const env = require('./env');
+import mariadb from 'mariadb';
+import { env } from './env.js';
 
 const pool = mariadb.createPool({
   ...env.db,
@@ -44,4 +42,4 @@ async function withTransaction(work) {
   }
 }
 
-module.exports = { pool, query, withTransaction };
+export { pool, query, withTransaction };

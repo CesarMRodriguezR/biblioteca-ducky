@@ -1,10 +1,8 @@
-'use strict';
-
-const HttpError = require('../utils/HttpError');
-const UsuarioModel = require('../models/UsuarioModel');
-const PerfilModel = require('../models/PerfilModel');
-const BitacoraModel = require('../models/BitacoraModel');
-const crudController = require('./crudController');
+import { HttpError } from '../utils/HttpError.js';
+import { UsuarioModel } from '../models/UsuarioModel.js';
+import { PerfilModel } from '../models/PerfilModel.js';
+import { BitacoraModel } from '../models/BitacoraModel.js';
+import { crudController } from './crudController.js';
 
 const UsuarioController = {
   /** GET /usuarios — "Usuarios válidos" con búsqueda por matrícula y paginación. */
@@ -107,4 +105,4 @@ const PerfilController = {
   },
 };
 
-module.exports = { UsuarioController, PerfilController };
+export { UsuarioController, PerfilController };

@@ -1,6 +1,4 @@
-'use strict';
-
-require('dotenv').config();
+import 'dotenv/config';
 
 const toInt = (value, fallback) => {
   const parsed = Number.parseInt(value, 10);
@@ -45,4 +43,4 @@ if (env.nodeEnv === 'production' && env.jwt.secret === 'cambia-este-secreto') {
   throw new Error('JWT_SECRET debe definirse en producción');
 }
 
-module.exports = env;
+export { env };

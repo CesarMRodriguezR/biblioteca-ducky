@@ -1,5 +1,3 @@
-'use strict';
-
 /**
  * Pruebas de integración contra una BD recién cargada con
  * database/01_schema.sql y database/02_seed.sql.
@@ -7,10 +5,10 @@
  */
 process.env.NODE_ENV = 'test';
 
-const { test, before, after } = require('node:test');
-const assert = require('node:assert/strict');
-const app = require('../src/app');
-const { pool, query } = require('../src/config/db');
+import { test, before, after } from 'node:test';
+import assert from 'node:assert/strict';
+import { app } from '../src/app.js';
+import { pool, query } from '../src/config/db.js';
 
 let server;
 let base;

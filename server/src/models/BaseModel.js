@@ -1,6 +1,4 @@
-'use strict';
-
-const { query } = require('../config/db');
+import { query } from '../config/db.js';
 
 /**
  * Modelo genérico para tablas con llave primaria simple.
@@ -90,4 +88,4 @@ class BaseModel {
   }
 }
 
-module.exports = BaseModel;
+export { BaseModel };

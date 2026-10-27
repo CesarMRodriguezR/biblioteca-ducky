@@ -1,7 +1,5 @@
-'use strict';
-
-const { query, withTransaction } = require('../config/db');
-const HttpError = require('../utils/HttpError');
+import { query, withTransaction } from '../config/db.js';
+import { HttpError } from '../utils/HttpError.js';
 
 const SELECT_LISTA = `
   SELECT le.*, l.Titulo, l.ISBN, u.Nombre_Usuario, u.Matricula_Nomina,
@@ -127,4 +125,4 @@ const ListaEsperaModel = {
   },
 };
 
-module.exports = ListaEsperaModel;
+export { ListaEsperaModel };

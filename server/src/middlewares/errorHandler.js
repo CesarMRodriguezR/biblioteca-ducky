@@ -1,6 +1,4 @@
-'use strict';
-
-const env = require('../config/env');
+import { env } from '../config/env.js';
 
 const ERRORES_SQL = {
   ER_DUP_ENTRY: { status: 409, message: 'Ya existe un registro con esos datos' },
@@ -35,4 +33,4 @@ function errorHandler(err, _req, res, _next) {
   });
 }
 
-module.exports = { notFound, errorHandler };
+export { notFound, errorHandler };

@@ -1,6 +1,4 @@
-'use strict';
-
-const { query } = require('../config/db');
+import { query } from '../config/db.js';
 
 /**
  * Bitácora de acciones relevantes. Alimenta la "Actividad reciente" del
@@ -31,4 +29,4 @@ const BitacoraModel = {
   },
 };
 
-module.exports = BitacoraModel;
+export { BitacoraModel };

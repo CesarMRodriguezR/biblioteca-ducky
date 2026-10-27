@@ -1,9 +1,7 @@
-'use strict';
-
-const jwt = require('jsonwebtoken');
-const env = require('../config/env');
-const HttpError = require('../utils/HttpError');
-const UsuarioModel = require('../models/UsuarioModel');
+import jwt from 'jsonwebtoken';
+import { env } from '../config/env.js';
+import { HttpError } from '../utils/HttpError.js';
+import { UsuarioModel } from '../models/UsuarioModel.js';
 
 /**
  * Verifica el token Bearer y carga en req.usuario los datos y funciones
@@ -52,4 +50,4 @@ function tieneFuncion(req, funcion) {
   return (req.usuario?.funciones || []).includes(funcion);
 }
 
-module.exports = { autenticar, requiereFuncion, tieneFuncion };
+export { autenticar, requiereFuncion, tieneFuncion };

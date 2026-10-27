@@ -1,9 +1,7 @@
-'use strict';
-
-const UsuarioModel = require('../models/UsuarioModel');
-const LibroModel = require('../models/LibroModel');
-const OrdenCompraModel = require('../models/OrdenCompraModel');
-const BitacoraModel = require('../models/BitacoraModel');
+import { UsuarioModel } from '../models/UsuarioModel.js';
+import { LibroModel } from '../models/LibroModel.js';
+import { OrdenCompraModel } from '../models/OrdenCompraModel.js';
+import { BitacoraModel } from '../models/BitacoraModel.js';
 
 const PanelController = {
   /** GET /panel — indicadores y actividad reciente (pantalla "Panel"). */
@@ -18,4 +16,4 @@ const PanelController = {
   },
 };
 
-module.exports = PanelController;
+export { PanelController };

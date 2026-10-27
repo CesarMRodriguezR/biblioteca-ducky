@@ -1,5 +1,3 @@
-'use strict';
-
 /** Fecha local en formato YYYY-MM-DD. */
 function hoy() {
   return formatear(new Date());
@@ -27,4 +25,4 @@ function diferenciaDias(aIso, bIso) {
   return Math.round(ms / 86400000);
 }
 
-module.exports = { hoy, formatear, sumarDias, diferenciaDias };
+export { hoy, formatear, sumarDias, diferenciaDias };

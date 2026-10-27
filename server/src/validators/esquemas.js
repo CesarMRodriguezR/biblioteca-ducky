@@ -1,6 +1,4 @@
-'use strict';
-
-const { z } = require('zod');
+import { z } from 'zod';
 
 // Mensajes por defecto en español (locales de zod 4).
 z.config(z.locales.es());
@@ -312,4 +310,4 @@ const esquemas = {
   fuente: z.object({ Fuente: z.string().trim().min(1).max(255) }),
 };
 
-module.exports = esquemas;
+export { esquemas };

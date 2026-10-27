@@ -1,6 +1,4 @@
-'use strict';
-
-const { query, withTransaction } = require('../config/db');
+import { query, withTransaction } from '../config/db.js';
 
 const SELECT_RESPUESTA = `
   SELECT p.id_preguntas, p.Pregunta, c.id_contenidos, c.Respuesta, f.id_fuentes, f.Fuente`;
@@ -125,4 +123,4 @@ const ChatbotModel = {
   },
 };
 
-module.exports = ChatbotModel;
+export { ChatbotModel };

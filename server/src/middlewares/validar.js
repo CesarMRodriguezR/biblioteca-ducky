@@ -1,6 +1,4 @@
-'use strict';
-
-const HttpError = require('../utils/HttpError');
+import { HttpError } from '../utils/HttpError.js';
 
 /**
  * Valida req[origen] con un esquema zod y reemplaza el valor por el parseado.
@@ -26,4 +24,4 @@ const validar = (esquema, origen = 'body') => (req, _res, next) => {
   return next();
 };
 
-module.exports = validar;
+export { validar };

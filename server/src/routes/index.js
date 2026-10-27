@@ -1,5 +1,3 @@
-'use strict';
-
 /**
  * Rutas de la API. Cada ruta declara: autenticación, permiso (función del
  * perfil), validación y controlador. Mapa de módulos del diagrama:
@@ -12,26 +10,22 @@
  *   Devolución Préstamos → /prestamos/:id/devolucion, /multas
  *   Chatbot / Políticas  → /chatbot, /politicas
  */
-const { Router } = require('express');
-const h = require('../utils/asyncHandler');
-const validar = require('../middlewares/validar');
-const { autenticar, requiereFuncion: puede } = require('../middlewares/auth');
-const s = require('../validators/esquemas');
+import expressPaquete from 'express';
+const { Router } = expressPaquete;
+import { asyncHandler as h } from '../utils/asyncHandler.js';
+import { validar } from '../middlewares/validar.js';
+import { autenticar, requiereFuncion as puede } from '../middlewares/auth.js';
+import { esquemas as s } from '../validators/esquemas.js';
 
-const AuthController = require('../controllers/AuthController');
-const { UsuarioController, PerfilController } = require('../controllers/UsuarioController');
-const LibroController = require('../controllers/LibroController');
-const {
-  PrestamoController, MultaController, ListaEsperaController,
-} = require('../controllers/CirculacionController');
-const { OrdenCompraController } = require('../controllers/AdquisicionController');
-const ChatbotController = require('../controllers/ChatbotController');
-const PanelController = require('../controllers/PanelController');
-const crudController = require('../controllers/crudController');
-const {
-  EditorialModel, AutorModel, TemaModel, FuncionModel, PoliticaModel,
-  NuevoLibroModel, FuenteChatbotModel,
-} = require('../models/catalogos');
+import { AuthController } from '../controllers/AuthController.js';
+import { UsuarioController, PerfilController } from '../controllers/UsuarioController.js';
+import { LibroController } from '../controllers/LibroController.js';
+import { PrestamoController, MultaController, ListaEsperaController } from '../controllers/CirculacionController.js';
+import { OrdenCompraController } from '../controllers/AdquisicionController.js';
+import { ChatbotController } from '../controllers/ChatbotController.js';
+import { PanelController } from '../controllers/PanelController.js';
+import { crudController } from '../controllers/crudController.js';
+import { EditorialModel, AutorModel, TemaModel, FuncionModel, PoliticaModel, NuevoLibroModel, FuenteChatbotModel } from '../models/catalogos.js';
 
 const router = Router();
 const conId = validar(s.idParam, 'params');
@@ -181,4 +175,4 @@ router.delete('/chatbot/preguntas/:id', autenticar, admChatbot, conId, h(Chatbot
 rutasCatalogo('/chatbot/fuentes', FuenteChatbotModel, 'Fuente', s.fuente,
   { lectura: ['gestionar_chatbot'], escritura: ['gestionar_chatbot'] });
 
-module.exports = router;
+export { router };

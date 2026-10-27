@@ -1,11 +1,9 @@
-'use strict';
-
 /**
  * Genera el PDF "Listado de libros" (pantalla BD-SP02-GL06 del prototipo).
  * Carta horizontal, tabla con #, Título, Autor, Editorial, ISBN, Año,
  * Tema, Sinopsis y Copias; pie con "Página X de Y".
  */
-const PDFDocument = require('pdfkit');
+import PDFDocument from 'pdfkit';
 
 const COLORES = {
   texto: '#1C2533',
@@ -107,4 +105,4 @@ function generarListadoPdf(libros, { generadoPor, filtro, fecha = new Date() }) 
   return doc;
 }
 
-module.exports = { generarListadoPdf };
+export { generarListadoPdf };

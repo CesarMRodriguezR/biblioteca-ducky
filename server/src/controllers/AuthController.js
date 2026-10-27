@@ -1,9 +1,7 @@
-'use strict';
-
-const jwt = require('jsonwebtoken');
-const env = require('../config/env');
-const HttpError = require('../utils/HttpError');
-const UsuarioModel = require('../models/UsuarioModel');
+import jwt from 'jsonwebtoken';
+import { env } from '../config/env.js';
+import { HttpError } from '../utils/HttpError.js';
+import { UsuarioModel } from '../models/UsuarioModel.js';
 
 const MENSAJE_CREDENCIALES = 'Usuario o contraseña incorrectos.';
 
@@ -62,4 +60,4 @@ const AuthController = {
   },
 };
 
-module.exports = AuthController;
+export { AuthController };
