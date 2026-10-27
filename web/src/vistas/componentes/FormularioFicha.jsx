@@ -42,7 +42,7 @@ import { AreaTexto, Entrada, Selector } from './interfaz.jsx';
 export function FormularioFicha({
   ficha,
   errores,
-  Cambiar,
+  cambiar: Cambiar,
   editoriales,
   bloqueados = [],
   ocultos = [],
