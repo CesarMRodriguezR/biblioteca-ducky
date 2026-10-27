@@ -7,12 +7,10 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "backgroundColor": "#10306b",
-    "splash": {
-      "image": "./assets/logo-ducky.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#10306b"
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "mx.edu.ducky.biblio"
     },
-    "ios": { "supportsTablet": false, "bundleIdentifier": "mx.edu.ducky.biblio" },
     "android": {
       "package": "mx.edu.ducky.biblio",
       "adaptiveIcon": {
@@ -22,7 +20,20 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       }
     },
-    "web": { "favicon": "./assets/favicon.png" },
-    "plugins": ["expo-secure-store"]
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-secure-store",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/logo-ducky.png",
+          "imageWidth": 120,
+          "resizeMode": "contain",
+          "backgroundColor": "#10306b"
+        }
+      ]
+    ]
   }
 }
