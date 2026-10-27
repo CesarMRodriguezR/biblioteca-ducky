@@ -1,0 +1,216 @@
+/*
+ * ******************************************************************
+ * Nombre del programa: BD-SP01-GU01 · pagina-inicio-sesion.css
+ * Función: Estilos de la pantalla de inicio de sesión: imagen de la biblioteca y formulario.
+ * Autor: Equipo CCJMops
+ * Fecha: 26/10/2026
+ * Entrada: Ninguna
+ * Salida: Ninguna
+ * Nomenclatura: Clases y propiedades personalizadas (variables CSS) en kebab-case.
+ * ******************************************************************
+ */
+
+/******************************************************************/
+/* Contenido de listado:
+/*     Sección              Objetivo
+/*     Estructura           Dos columnas: imagen y formulario
+/*     Imagen               Marca, lema y adorno sobre la fotografía
+/*     Formulario           Campos, botón y avisos del inicio de sesión
+/*     Pantallas pequeñas   Una sola columna en pantallas angostas
+/******************************************************************/
+
+/*----
+(1) Se importa solo en PaginaInicioSesion.jsx.
+(2) Usa las propiedades personalizadas de estilos-globales.css; requiere /biblioteca-fondo.jpg en public/.
+----*/
+
+/*------------------------------------------------------------------
+ * Sección: Estructura
+ * Objetivo: Dividir la pantalla en la imagen y el panel del formulario.
+ ------------------------------------------------------------------*/
+.inicio-sesion
+{
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  min-height: 100vh;
+  background: var(--blanco);
+}
+
+/*------------------------------------------------------------------
+ * Sección: Imagen
+ * Objetivo: Imagen de fondo con la marca, el lema y el adorno dorado.
+ ------------------------------------------------------------------*/
+.inicio-sesion-imagen
+{
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 56px;
+  color: var(--blanco);
+  background:
+    linear-gradient(
+      180deg,
+      rgba(16, 48, 107, 0.55) 0%,
+      rgba(16, 48, 107, 0.35) 45%,
+      rgba(14, 30, 66, 0.92) 100%
+    ),
+    url('/biblioteca-fondo.jpg') center top / cover no-repeat,
+    var(--azul-principal);
+}
+
+.inicio-sesion-marca
+{
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--dorado);
+}
+
+.inicio-sesion-lema h2
+{
+  color: var(--blanco);
+  font-size: 46px;
+  line-height: 54px;
+  font-weight: 700;
+}
+
+.inicio-sesion-lema p
+{
+  margin-top: 20px;
+  max-width: 440px;
+  font-size: 15px;
+  line-height: 22px;
+}
+
+.inicio-sesion-adorno
+{
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 28px;
+}
+
+.inicio-sesion-adorno span
+{
+  width: 56px;
+  height: 1px;
+  background: var(--dorado);
+}
+
+.inicio-sesion-adorno i
+{
+  width: 6px;
+  height: 6px;
+  background: var(--dorado);
+  transform: rotate(45deg);
+}
+
+/*------------------------------------------------------------------
+ * Sección: Formulario
+ * Objetivo: Panel, campos, botón y avisos de error del inicio de sesión.
+ ------------------------------------------------------------------*/
+.inicio-sesion-panel
+{
+  position: relative;
+  display: grid;
+  place-items: center;
+  padding: 56px;
+}
+
+.inicio-sesion-volver
+{
+  position: absolute;
+  top: 64px;
+  left: 56px;
+}
+
+.inicio-sesion-formulario
+{
+  width: min(380px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.inicio-sesion-formulario h1
+{
+  margin-top: -6px;
+}
+
+.inicio-sesion-formulario > p
+{
+  margin-top: -14px;
+  font-size: 14px;
+}
+
+.inicio-sesion-formulario .entrada
+{
+  border-color: var(--azul-brillante);
+}
+
+.inicio-sesion-formulario .campo-con-error .entrada
+{
+  border-color: var(--error);
+}
+
+.inicio-sesion-boton
+{
+  width: 100%;
+  margin-top: 4px;
+}
+
+/*
+ * Componente: Aviso de inicio de sesión
+ * Función: Mensaje de error o advertencia del inicio de sesión.
+ * Uso: class="inicio-sesion-aviso inicio-sesion-aviso-error".
+ */
+.inicio-sesion-aviso
+{
+  display: flex;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid currentColor;
+  font-size: 13.5px;
+}
+
+.inicio-sesion-aviso p
+{
+  color: var(--texto-secundario);
+  font-size: 12.5px;
+  margin-top: 2px;
+}
+
+.inicio-sesion-aviso-error
+{
+  color: var(--error);
+  background: var(--error-fondo);
+}
+
+.inicio-sesion-aviso-advertencia
+{
+  color: var(--advertencia);
+  background: var(--advertencia-fondo);
+}
+
+/*------------------------------------------------------------------
+ * Sección: Pantallas pequeñas
+ * Objetivo: Mostrar solo una columna en pantallas de menos de 900 px.
+ ------------------------------------------------------------------*/
+@media (max-width: 900px)
+{
+  .inicio-sesion
+  {
+    grid-template-columns: 1fr;
+  }
+
+  .inicio-sesion-imagen
+  {
+    display: none;
+  }
+}

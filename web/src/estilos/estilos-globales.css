@@ -1,0 +1,1381 @@
+/*
+ * ******************************************************************
+ * Nombre del programa: WEB-ESTILOS · estilos-globales.css
+ * Función: Estilos globales de la versión web tomados del sistema de diseño del prototipo de Figma.
+ * Autor: Equipo CCJMops
+ * Fecha: 26/10/2026
+ * Entrada: Ninguna
+ * Salida: Ninguna
+ * Nomenclatura: Clases y propiedades personalizadas (variables CSS) en kebab-case.
+ * ******************************************************************
+ */
+
+/******************************************************************/
+/* Contenido de listado:
+/*     Sección       Objetivo
+/*     Tokens        Colores, tipografía, radios y sombras del sistema de diseño
+/*     Base          Estilos generales de body, encabezados, enlaces y foco
+/*     Estructura    Barra lateral, encabezado y área de contenido
+/*     Componentes   Botones, campos, insignias, alertas, tablas y paginación
+/*     Portada       Portada generada a partir del tema del libro
+/*     Modal         Ventana modal y su fondo
+/*     Impresión     Reglas @media print del listado de libros
+/*     Utilidades    Clases de apoyo de tamaño y espaciado
+/*     Catálogo      Rejilla y tarjetas de libros del catálogo
+/******************************************************************/
+
+/*----
+(1) Secciones presentadas según el orden del contenido del listado.
+(2) Todo color, radio o tipografía se toma de una propiedad personalizada (var(--azul-principal)).
+(3) La hoja se importa una sola vez en principal.jsx; la versión móvil no usa CSS (usa tema.js).
+----*/
+
+/*------------------------------------------------------------------
+ * Sección: Tokens
+ * Objetivo: Definir los colores, tipografías, radios y sombras del sistema de diseño.
+ ------------------------------------------------------------------*/
+:root
+{
+  /* sistema */
+  --azul-principal: #10306b;
+  --azul-brillante: #1a8fd6;
+  --dorado: #c99a2e;
+  --texto-principal: #1c2533;
+  --texto-secundario: #4a5668;
+  --texto-suave: #6b7686;
+  --linea-divisoria: #dce3ec;
+  --fondo-gris: #f6f8fb;
+  --blanco: #ffffff;
+
+  /* estados */
+  --exito: #1f7a4d;
+  --exito-fondo: #e6f4ec;
+  --advertencia: #9a5b00;
+  --advertencia-fondo: #fdf1de;
+  --informacion: #0a6bad;
+  --informacion-fondo: #e3f2fb;
+  --error: #b42318;
+  --error-fondo: #fdecea;
+  --morado: #6b3fd4;
+  --morado-fondo: #efe9fc;
+  --neutro: #4a5668;
+  --neutro-fondo: #eef1f5;
+
+  /* tipografía */
+  --fuente-titulos: 'Poppins', system-ui, sans-serif;
+  --fuente-texto: 'Lato', system-ui, sans-serif;
+
+  /* forma */
+  --radio-8: 8px;
+  --radio-control: 10px;
+  --radio-12: 12px;
+  --radio-tarjeta: 14px;
+  --radio-pastilla: 999px;
+  --sombra-1: 0 2px 8px rgba(16, 48, 107, 0.06), 0 1px 2px rgba(16, 48, 107, 0.06);
+  --ancho-barra-lateral: 248px;
+}
+
+/*------------------------------------------------------------------
+ * Sección: Base
+ * Objetivo: Estilos generales de body, encabezados, enlaces y foco del teclado.
+ ------------------------------------------------------------------*/
+*,
+*::before,
+*::after
+{
+  box-sizing: border-box;
+}
+
+html,
+body,
+#raiz
+{
+  height: 100%;
+}
+
+body
+{
+  margin: 0;
+  font-family: var(--fuente-texto);
+  font-size: 15px;
+  line-height: 1.4;
+  color: var(--texto-principal);
+  background: var(--fondo-gris);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4
+{
+  font-family: var(--fuente-titulos);
+  margin: 0;
+  color: var(--texto-principal);
+}
+
+h1
+{
+  font-size: 34px;
+  line-height: 40px;
+  font-weight: 700;
+}
+
+h2
+{
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: 600;
+}
+
+h3
+{
+  font-size: 18px;
+  line-height: 24px;
+  font-weight: 600;
+}
+
+p
+{
+  margin: 0;
+}
+
+a
+{
+  color: inherit;
+  text-decoration: none;
+}
+
+button
+{
+  font-family: inherit;
+}
+
+.texto-nota
+{
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--texto-suave);
+}
+
+.texto-secundario
+{
+  color: var(--texto-secundario);
+}
+
+.solo-lectores
+{
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+:focus-visible
+{
+  outline: 2px solid var(--azul-brillante);
+  outline-offset: 2px;
+}
+
+/*------------------------------------------------------------------
+ * Sección: Estructura de la aplicación
+ * Objetivo: Barra lateral, encabezado y área de contenido de las pantallas.
+ ------------------------------------------------------------------*/
+.aplicacion
+{
+  display: flex;
+  min-height: 100vh;
+}
+
+.barra-lateral
+{
+  position: fixed;
+  inset: 0 auto 0 0;
+  width: var(--ancho-barra-lateral);
+  background: var(--azul-principal);
+  color: var(--blanco);
+  display: flex;
+  flex-direction: column;
+  padding: 24px 16px;
+  z-index: 10;
+}
+
+.barra-lateral-marca
+{
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 8px 24px;
+}
+
+.barra-lateral-icono
+{
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--azul-brillante);
+  display: grid;
+  place-items: center;
+  color: var(--blanco);
+}
+
+.barra-lateral-nombre
+{
+  font-family: var(--fuente-titulos);
+  font-weight: 700;
+  font-size: 20px;
+  line-height: 24px;
+}
+
+.barra-lateral-subtitulo
+{
+  font-size: 12px;
+  opacity: 0.85;
+}
+
+.barra-lateral-navegacion
+{
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.barra-lateral-enlace
+{
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 14px;
+  border-radius: var(--radio-control);
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--blanco);
+}
+
+.barra-lateral-enlace:hover
+{
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.barra-lateral-enlace-activo
+{
+  background: var(--blanco);
+  color: var(--azul-principal);
+}
+
+.barra-lateral-enlace-activo:hover
+{
+  background: var(--blanco);
+}
+
+.barra-lateral-pie
+{
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 4px;
+}
+
+.avatar
+{
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.16);
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.barra-lateral-usuario
+{
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  line-height: 17px;
+}
+
+.barra-lateral-usuario strong
+{
+  display: block;
+}
+
+.barra-lateral-usuario span
+{
+  opacity: 0.85;
+}
+
+.barra-lateral-salir
+{
+  background: none;
+  border: 0;
+  color: var(--blanco);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 8px;
+}
+
+.barra-lateral-salir:hover
+{
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.principal
+{
+  flex: 1;
+  margin-left: var(--ancho-barra-lateral);
+  min-width: 0;
+}
+
+.encabezado
+{
+  background: var(--blanco);
+  border-bottom: 1px solid var(--linea-divisoria);
+  padding: 20px 32px 18px;
+}
+
+.encabezado-miga
+{
+  font-size: 13px;
+  color: var(--texto-secundario);
+  margin-bottom: 2px;
+}
+
+.contenido
+{
+  padding: 32px;
+  max-width: 1180px;
+}
+
+/*------------------------------------------------------------------
+ * Sección: Componentes
+ * Objetivo: Tarjetas, botones, campos, insignias, alertas, tablas, radio, interruptor, paginación y filtros.
+ ------------------------------------------------------------------*/
+/*
+ * Componente: Tarjeta
+ * Función: Contenedor blanco con borde y sombra.
+ * Uso: class="tarjeta tarjeta-rellena"
+ */
+.tarjeta
+{
+  background: var(--blanco);
+  border: 1px solid var(--linea-divisoria);
+  border-radius: var(--radio-tarjeta);
+  box-shadow: var(--sombra-1);
+}
+
+.tarjeta-rellena
+{
+  padding: 24px;
+}
+
+/*
+ * Componente: Botón
+ * Función: Botón de acción con sus variantes.
+ * Uso: class="boton boton-primario"; variantes: primario, secundario, peligro, texto, chico e icono.
+ */
+.boton
+{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 20px;
+  border-radius: var(--radio-control);
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+  border: 1.5px solid transparent;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    color 0.15s;
+  white-space: nowrap;
+}
+
+.boton:disabled
+{
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.boton-primario
+{
+  background: var(--azul-principal);
+  color: var(--blanco);
+}
+
+.boton-primario:hover:not(:disabled)
+{
+  background: #0b2552;
+}
+
+.boton-secundario
+{
+  background: var(--blanco);
+  color: var(--azul-principal);
+  border-color: var(--azul-principal);
+}
+
+.boton-secundario:hover:not(:disabled)
+{
+  background: #f0f4fa;
+}
+
+.boton-peligro
+{
+  background: var(--blanco);
+  color: var(--error);
+  border-color: var(--error);
+}
+
+.boton-peligro:hover:not(:disabled)
+{
+  background: var(--error-fondo);
+}
+
+.boton-texto
+{
+  background: none;
+  color: var(--azul-principal);
+  padding: 0 12px;
+}
+
+.boton-texto:hover:not(:disabled)
+{
+  background: #f0f4fa;
+}
+
+.boton-chico
+{
+  height: 36px;
+  padding: 0 14px;
+  font-size: 14px;
+}
+
+.boton-icono
+{
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 10px;
+  background: var(--blanco);
+  border: 1px solid var(--linea-divisoria);
+  color: var(--texto-principal);
+}
+
+.boton-icono:hover:not(:disabled)
+{
+  border-color: var(--azul-principal);
+}
+
+.boton-icono-peligro
+{
+  color: var(--error);
+  border-color: var(--error);
+}
+
+/*
+ * Componente: Campo
+ * Función: Etiqueta, control, ayuda y mensaje de error de un formulario.
+ * Uso: class="campo" (campo-con-error cuando hay error).
+ */
+.campo
+{
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.campo-etiqueta
+{
+  font-weight: 700;
+  font-size: 15px;
+  line-height: 20px;
+}
+
+.campo-ayuda
+{
+  font-size: 12.5px;
+  line-height: 17px;
+  color: var(--texto-suave);
+}
+
+.campo-mensaje-error
+{
+  font-size: 12.5px;
+  line-height: 17px;
+  color: var(--error);
+  font-weight: 700;
+}
+
+.campo-con-error .campo-etiqueta
+{
+  color: var(--error);
+}
+/*
+ * Componente: Entrada, selector y área de texto
+ * Función: Controles de captura de los formularios.
+ * Uso: class="entrada", class="selector" o class="area-texto".
+ */
+.entrada,
+.selector,
+.area-texto
+{
+  width: 100%;
+  height: 44px;
+  padding: 0 14px;
+  border: 1.5px solid var(--linea-divisoria);
+  border-radius: var(--radio-control);
+  font-family: inherit;
+  font-size: 15px;
+  color: var(--texto-principal);
+  background: var(--blanco);
+}
+
+.area-texto
+{
+  height: auto;
+  min-height: 88px;
+  padding: 12px 14px;
+  resize: vertical;
+}
+
+.entrada:focus,
+.selector:focus,
+.area-texto:focus
+{
+  outline: none;
+  border-color: var(--azul-brillante);
+}
+
+.entrada:disabled,
+.selector:disabled,
+.area-texto:disabled
+{
+  background: #f1f4f8;
+  color: var(--texto-suave);
+}
+
+.campo-con-error .entrada,
+.campo-con-error .selector,
+.campo-con-error .area-texto
+{
+  border-color: var(--error);
+}
+
+.selector
+{
+  appearance: none;
+  padding-right: 40px;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%231c2533' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+}
+
+.entrada-icono
+{
+  position: relative;
+}
+
+.entrada-icono > svg
+{
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--texto-suave);
+}
+
+.entrada-buscar
+{
+  position: relative;
+}
+
+.entrada-buscar > svg
+{
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--texto-secundario);
+}
+
+.entrada-buscar .entrada
+{
+  padding-left: 40px;
+}
+
+/*
+ * Componente: Insignia
+ * Función: Mostrar el estado de una copia, un usuario o una solicitud.
+ * Uso: class="insignia insignia-exito"; tonos: exito, advertencia, informacion, error, morado y neutro.
+ */
+.insignia
+{
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: var(--radio-pastilla);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 18px;
+  white-space: nowrap;
+}
+
+.insignia::before
+{
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.insignia-exito
+{
+  color: var(--exito);
+  background: var(--exito-fondo);
+}
+
+.insignia-advertencia
+{
+  color: var(--advertencia);
+  background: var(--advertencia-fondo);
+}
+
+.insignia-informacion
+{
+  color: var(--informacion);
+  background: var(--informacion-fondo);
+}
+
+.insignia-error
+{
+  color: var(--error);
+  background: var(--error-fondo);
+}
+
+.insignia-morado
+{
+  color: var(--morado);
+  background: var(--morado-fondo);
+}
+
+.insignia-neutro
+{
+  color: var(--neutro);
+  background: var(--neutro-fondo);
+}
+
+/*
+ * Componente: Alerta
+ * Función: Mensaje de éxito, advertencia, información o error.
+ * Uso: class="alerta alerta-error".
+ */
+.alerta
+{
+  display: flex;
+  gap: 12px;
+  padding: 14px 18px;
+  border-radius: var(--radio-12);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.alerta-punto
+{
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  margin-top: 6px;
+  flex-shrink: 0;
+}
+
+.alerta-titulo
+{
+  font-weight: 700;
+}
+
+.alerta-texto
+{
+  color: var(--texto-principal);
+}
+
+.alerta-exito
+{
+  background: var(--exito-fondo);
+  color: var(--exito);
+}
+
+.alerta-error
+{
+  background: var(--error-fondo);
+  color: var(--error);
+}
+
+.alerta-advertencia
+{
+  background: var(--advertencia-fondo);
+  color: var(--advertencia);
+}
+
+.alerta-informacion
+{
+  background: var(--informacion-fondo);
+  color: var(--informacion);
+}
+
+/*
+ * Componente: Tabla
+ * Función: Dar formato a las tablas de copias, usuarios y solicitudes.
+ * Uso: class="tabla" dentro de class="tabla-envoltura"; modificadores tabla-seleccionable y tabla-compacta.
+ */
+.tabla-envoltura
+{
+  overflow: hidden;
+  padding: 0;
+}
+
+.tabla
+{
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14.5px;
+}
+
+.tabla th
+{
+  text-align: left;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--texto-secundario);
+  background: #f9fbfd;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--linea-divisoria);
+}
+
+.tabla td
+{
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--linea-divisoria);
+  vertical-align: middle;
+}
+
+.tabla tr:last-child td
+{
+  border-bottom: 0;
+}
+
+.tabla-seleccionable tbody tr
+{
+  cursor: pointer;
+}
+
+.tabla-seleccionable tbody tr:hover
+{
+  background: #f9fbfd;
+}
+
+.fila-deshabilitada td
+{
+  color: var(--texto-suave);
+}
+
+.tabla-vacia
+{
+  padding: 32px;
+  text-align: center;
+  color: var(--texto-suave);
+}
+
+/*
+ * Componente: Radio
+ * Función: Indicador de la opción elegida.
+ * Uso: class="radio radio-marcado".
+ */
+.radio
+{
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1.5px solid #9aa5b5;
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.radio-marcado
+{
+  border-color: var(--azul-principal);
+}
+
+.radio-marcado::after
+{
+  content: '';
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--azul-principal);
+}
+
+.radio-deshabilitado
+{
+  border-color: var(--linea-divisoria);
+}
+
+/*
+ * Componente: Interruptor
+ * Función: Interruptor de encendido y apagado.
+ * Uso: class="interruptor interruptor-activo".
+ */
+.interruptor
+{
+  width: 40px;
+  height: 22px;
+  border-radius: 999px;
+  background: #c7cfdb;
+  border: 0;
+  position: relative;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+
+.interruptor::after
+{
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--blanco);
+  transition: transform 0.15s;
+}
+
+.interruptor-activo
+{
+  background: var(--azul-brillante);
+}
+
+.interruptor-activo::after
+{
+  transform: translateX(18px);
+}
+
+.interruptor:disabled
+{
+  cursor: not-allowed;
+  background: #8a97ab;
+}
+
+/*
+ * Componente: Paginación
+ * Función: Botones de página anterior, actual y siguiente.
+ * Uso: class="paginacion" con botones class="paginacion-boton".
+ */
+.paginacion
+{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.paginacion-boton
+{
+  min-width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: 1.5px solid var(--azul-principal);
+  background: var(--blanco);
+  color: var(--azul-principal);
+  font-weight: 700;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+.paginacion-boton-actual
+{
+  background: var(--azul-principal);
+  color: var(--blanco);
+}
+
+.paginacion-boton:disabled
+{
+  border-color: var(--linea-divisoria);
+  color: #b7c0cc;
+  cursor: not-allowed;
+}
+
+.enlace-volver
+{
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--informacion);
+  font-weight: 700;
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+
+.enlace-volver:hover
+{
+  text-decoration: underline;
+}
+
+/*
+ * Componente: Filtros
+ * Función: Botones de filtro «Buscar por» del catálogo.
+ * Uso: class="filtro filtro-activo" dentro de class="filtros".
+ */
+.filtros
+{
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.filtro
+{
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 8px;
+  border: 1px solid var(--linea-divisoria);
+  background: var(--blanco);
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  color: var(--texto-principal);
+}
+
+.filtro-activo
+{
+  background: var(--azul-principal);
+  color: var(--blanco);
+  border-color: var(--azul-principal);
+}
+
+.etiqueta-dato
+{
+  font-size: 11.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--texto-secundario);
+}
+
+.valor-dato
+{
+  font-weight: 700;
+  margin-top: 2px;
+}
+
+/*
+ * Componente: Distribución
+ * Función: Rejillas, columnas, filas y espacios entre elementos.
+ * Uso: class="rejilla-3", class="fila espacio-12", class="margen-arriba-16".
+ */
+.rejilla-2
+{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px 16px;
+}
+
+.rejilla-3
+{
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.rejilla-4
+{
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.columnas
+{
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.85fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.pila
+{
+  display: flex;
+  flex-direction: column;
+}
+
+.fila
+{
+  display: flex;
+  align-items: center;
+}
+
+.espacio-8
+{
+  gap: 8px;
+}
+
+.espacio-12
+{
+  gap: 12px;
+}
+
+.espacio-16
+{
+  gap: 16px;
+}
+
+.espacio-24
+{
+  gap: 24px;
+}
+
+.entre
+{
+  justify-content: space-between;
+}
+
+.fin
+{
+  justify-content: flex-end;
+}
+
+.margen-arriba-8
+{
+  margin-top: 8px;
+}
+
+.margen-arriba-16
+{
+  margin-top: 16px;
+}
+
+.margen-arriba-24
+{
+  margin-top: 24px;
+}
+
+.margen-arriba-32
+{
+  margin-top: 32px;
+}
+
+.margen-abajo-16
+{
+  margin-bottom: 16px;
+}
+
+/*
+ * Componente: Tarjeta de acción
+ * Función: Acceso rápido con ícono, título y flecha.
+ * Uso: class="tarjeta-accion" con un fondo: fondo-azul, fondo-brillante o fondo-dorado.
+ */
+.tarjeta-accion
+{
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  padding: 20px;
+  text-align: left;
+  cursor: pointer;
+  border: 1px solid var(--linea-divisoria);
+  background: var(--blanco);
+  width: 100%;
+  font: inherit;
+  color: inherit;
+}
+
+.tarjeta-accion:hover
+{
+  border-color: var(--azul-brillante);
+}
+
+.tarjeta-accion-icono
+{
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  color: var(--blanco);
+  flex-shrink: 0;
+}
+
+.tarjeta-accion-titulo
+{
+  font-family: var(--fuente-titulos);
+  font-weight: 600;
+  font-size: 17px;
+}
+
+.tarjeta-accion-flecha
+{
+  margin-left: auto;
+  color: var(--azul-brillante);
+  align-self: center;
+}
+
+.fondo-azul
+{
+  background: var(--azul-principal);
+}
+
+.fondo-brillante
+{
+  background: var(--azul-brillante);
+}
+
+.fondo-dorado
+{
+  background: var(--dorado);
+}
+
+.cargando
+{
+  padding: 48px;
+  text-align: center;
+  color: var(--texto-suave);
+}
+
+/*------------------------------------------------------------------
+ * Sección: Portada generada
+ * Objetivo: Portada de color con el ícono del tema del libro.
+ ------------------------------------------------------------------*/
+.portada
+{
+  position: relative;
+  overflow: hidden;
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  color: rgba(255, 255, 255, 0.92);
+  flex-shrink: 0;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+}
+
+.portada::before
+{
+  content: '';
+  position: absolute;
+  inset: 40% -30% -30% -30%;
+  background: rgba(255, 255, 255, 0.09);
+  transform: rotate(-22deg);
+}
+
+.portada-tema
+{
+  position: absolute;
+  left: 10%;
+  bottom: 8%;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 700;
+  opacity: 0.85;
+  right: 6%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.portada-tema::before
+{
+  content: '';
+  display: block;
+  width: 28px;
+  height: 2px;
+  background: currentColor;
+  margin-bottom: 4px;
+}
+
+/*------------------------------------------------------------------
+ * Sección: Modal
+ * Objetivo: Ventana modal y su fondo oscurecido.
+ ------------------------------------------------------------------*/
+.modal-fondo
+{
+  position: fixed;
+  inset: 0;
+  background: rgba(28, 37, 51, 0.82);
+  display: grid;
+  place-items: center;
+  z-index: 50;
+  padding: 32px;
+}
+
+.modal
+{
+  background: var(--blanco);
+  border-radius: var(--radio-tarjeta);
+  width: min(980px, 100%);
+  max-height: calc(100vh - 64px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.modal-encabezado
+{
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--linea-divisoria);
+}
+
+.modal-cuerpo
+{
+  overflow: auto;
+  padding: 24px;
+}
+
+/*------------------------------------------------------------------
+ * Sección: Impresión del listado
+ * Objetivo: Reglas @media print para imprimir solo el listado de libros.
+ ------------------------------------------------------------------*/
+@media print
+{
+  body *
+  {
+    visibility: hidden;
+  }
+
+  .imprimible,
+  .imprimible *
+  {
+    visibility: visible;
+  }
+
+  .imprimible
+  {
+    position: absolute;
+    inset: 0;
+    padding: 0;
+  }
+
+  .modal-fondo
+  {
+    background: none;
+  }
+}
+
+/*------------------------------------------------------------------
+ * Sección: Utilidades adicionales
+ * Objetivo: Clases de apoyo de tamaño y espaciado.
+ ------------------------------------------------------------------*/
+.crece
+{
+  flex: 1 1 260px;
+  min-width: 0;
+}
+
+.columna-completa
+{
+  grid-column: 1 / -1;
+}
+
+.buscador-libros
+{
+  width: 250px;
+  max-width: 100%;
+}
+
+.tabla-compacta th,
+.tabla-compacta td
+{
+  padding: 8px 10px;
+  font-size: 13px;
+  vertical-align: top;
+}
+
+/*------------------------------------------------------------------
+ * Sección: Catálogo
+ * Objetivo: Rejilla y tarjetas de libros del catálogo.
+ ------------------------------------------------------------------*/
+.rejilla-libros
+{
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.tarjeta-libro
+{
+  display: flex;
+  gap: 16px;
+  padding: 16px;
+  color: inherit;
+  text-decoration: none;
+  transition:
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
+}
+
+.tarjeta-libro:hover
+{
+  box-shadow: 0 6px 18px rgba(16, 48, 107, 0.14);
+  transform: translateY(-1px);
+}
+
+.tarjeta-libro:focus-visible
+{
+  outline: 2px solid var(--azul-principal);
+  outline-offset: 2px;
+}
+
+.tarjeta-libro-datos
+{
+  min-width: 0;
+  flex: 1;
+}
+
+.tarjeta-libro-titulo
+{
+  font-size: 16px;
+  line-height: 1.3;
+  margin-bottom: 4px;
+}
+
+@media (max-width: 720px)
+{
+  .rejilla-libros
+  {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-fondo
+  {
+    padding: 12px;
+  }
+}
+
+.codigo-copia
+{
+  font-weight: 700;
+  white-space: nowrap;
+}

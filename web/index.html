@@ -1,5 +1,32 @@
 <!doctype html>
+<!--
+  Nombre del programa: WEB-INDEX · index.html
+  Función: Página base de la versión web; carga las fuentes y monta la aplicación de React.
+  Autor(es): Equipo CCJMops
+  Fecha: 26/10/2026
+  Nomenclatura: Clases e identificadores (class e id) en kebab-case (minúsculas y separadas
+                por guiones).
+-->
+
+<!-- ============================================================== -->
+<!-- Contenido de listado:
+     Sección       Objetivo
+     Head          Define metadatos, título, ícono y enlaces a las fuentes
+     Body          Contener el punto de montaje #raiz y cargar principal.jsx -->
+<!-- ============================================================== -->
+
+<!--
+  (1) El archivo index.html es el punto de montaje de React (Vite); las pantallas se escriben
+      en JSX dentro de src/vistas.
+  (2) No agregue contenido dentro de #raiz: React lo reemplaza al montar la aplicación.
+  (3) Requiere un navegador web moderno (Chrome, Edge, Firefox, etc.).
+-->
 <html lang="es">
+  <!-- ==============================
+       Sección: Head
+       Objetivo: Definir metadatos, ícono y título, y cargar las fuentes Lato y Poppins del
+                 sistema de diseño antes de mostrar la primera pantalla.
+       ============================== -->
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -12,8 +39,13 @@
     />
     <title>Biblio · Universidad Ducky</title>
   </head>
+
+  <!-- ==============================
+       Sección: Body
+       Objetivo: Contener el punto de montaje de React y cargar el módulo principal.
+       ============================== -->
   <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
+    <div id="raiz"></div>
+    <script type="module" src="/src/principal.jsx"></script>
   </body>
 </html>
