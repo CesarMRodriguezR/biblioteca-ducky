@@ -12,35 +12,42 @@ Los tres siguen el patrón **MVC** y comparten la misma API y la misma base de d
 ```
 biblioteca-ducky/
 ├── database/
-│   ├── 01_schema.sql      24 tablas del diagrama + ajustes del prototipo, vista vw_catalogo
-│   ├── 02_seed.sql        Perfiles, funciones, usuarios, 19 libros, préstamos, órdenes…
-│   └── ejemplos/          Lista de Servicios Escolares para probar la carga de usuarios
-├── server/                API (Modelo + Controlador)
-│   ├── src/models/        SQL parametrizado, transacciones y reglas de negocio
-│   ├── src/controllers/   Reciben la petición, revisan permisos y responden
-│   ├── src/routes/        URL → autenticación → permiso → validación → controlador
-│   ├── src/middlewares/   auth (JWT + funciones), validar (zod), errorHandler
-│   ├── src/validators/    Esquemas zod con mensajes del prototipo
-│   └── test/              22 pruebas de integración (node:test)
+│   ├── 01_schema.sql        24 tablas del diagrama + ajustes del prototipo, vista vw_catalogo
+│   ├── 02_seed.sql          Perfiles, funciones, usuarios, 19 libros, préstamos, órdenes…
+│   └── ejemplos/            Lista de Servicios Escolares para probar la carga de usuarios
+├── server/                  API (Modelo + Controlador)
+│   ├── src/servidor.js      Punto de entrada: escucha el puerto
+│   ├── src/aplicacion.js    Express: CORS, JSON, rutas y manejo de errores
+│   ├── src/configuracion/   entorno.js (.env) y conexion.js (MariaDB)
+│   ├── src/modelos/         SQL parametrizado, transacciones y reglas de negocio
+│   ├── src/controladores/   Reciben la petición, revisan permisos y responden
+│   ├── src/rutas/           URL → autenticación → permiso → validación → controlador
+│   ├── src/intermediarios/  autenticacion (JWT + funciones), Validar (zod), errores
+│   ├── src/validaciones/    Esquemas zod con mensajes del prototipo
+│   ├── src/utilidades/      ErrorHttp, fechas y listado en PDF
+│   └── pruebas/             22 pruebas de integración (node:test)
 ├── web/src/
-│   ├── models/            Acceso a la API y reglas del dominio (estados, formatos)
-│   ├── controllers/       Hooks por pantalla: estado, validación y acciones
-│   ├── views/             layouts, components y pages (solo presentación)
-│   └── routes/            Rutas protegidas por sesión y por función
+│   ├── principal.jsx        Punto de entrada (monta las rutas en #raiz)
+│   ├── modelos/             Acceso a la API y reglas del dominio (estados, formatos)
+│   ├── controladores/       Hooks por pantalla: estado, validación y acciones
+│   ├── vistas/              plantillas, componentes y paginas (solo presentación)
+│   ├── rutas/               Rutas protegidas por sesión y por función
+│   └── estilos/             estilos-globales.css (tokens del sistema de diseño)
 └── mobile/src/
-    ├── models/            Igual que web; el token se guarda en SecureStore
-    ├── controllers/       Hooks por pantalla
-    ├── views/             tema, components y screens
-    └── routes/            React Navigation: Login | pestañas Buscar / Perfil
+    ├── Aplicacion.js        Componente raíz (lo registra mobile/index.js)
+    ├── modelos/             Igual que web; el token se guarda en SecureStore
+    ├── controladores/       Hooks por pantalla
+    ├── vistas/              tema.js, componentes y pantallas
+    └── rutas/               React Navigation: inicio de sesión | pestañas Buscar / Perfil
 ```
 
 ## MVC en este proyecto
 
 | Capa | Servidor | Web y móvil |
 |---|---|---|
-| **Modelo** | `server/src/models`: consultas, transacciones y reglas (copias en préstamo, ISBN inmutable, bloqueo tras 5 intentos…). | `models/`: llamadas a la API (`LibroModel.buscar`, `AuthModel.iniciarSesion`…) y reglas de presentación del dominio (`dominio.js`). |
-| **Controlador** | `server/src/controllers` + `routes`: permisos por función, validación y respuesta HTTP. | `controllers/`: un hook por pantalla (`useEditarLibroController`, `useBusquedaController`…) que maneja estado, validación previa y navegación. |
-| **Vista** | — (JSON / PDF) | `views/`: componentes que solo pintan lo que el controlador les entrega. |
+| **Modelo** | `server/src/modelos`: consultas, transacciones y reglas (copias en préstamo, ISBN inmutable, bloqueo tras 5 intentos…). | `modelos/`: llamadas a la API (`ModeloLibro.Buscar`, `ModeloAutenticacion.IniciarSesion`…) y reglas de presentación del dominio (`dominio.js`). |
+| **Controlador** | `server/src/controladores` + `rutas`: permisos por función, validación y respuesta HTTP. | `controladores/`: un hook por pantalla (`useControladorEditarLibro`, `useControladorBusqueda`…) que maneja estado, validación previa y navegación. |
+| **Vista** | — (JSON / PDF) | `vistas/`: componentes que solo pintan lo que el controlador les entrega. |
 
 ## Puesta en marcha
 
@@ -59,6 +66,7 @@ cp .env.example .env        # ajusta DB_PASSWORD y JWT_SECRET
 npm install
 npm run dev
 npm run db:reset && npm test   # reinicia la BD con la semilla y corre las 22 pruebas
+npm run lint                   # revisa el estándar de codificación (también en web/ y mobile/)
 
 # 3. Web  →  http://localhost:5173  (el proxy de Vite manda /api al puerto 3000)
 cd ../web
@@ -197,6 +205,23 @@ Todos están marcados con `[PROTOTIPO]` en `01_schema.sql`:
 
 ## Estándar de codificación
 
-El código está escrito en español (dominio, variables y mensajes), con ESM en
-web/móvil y CommonJS en el servidor. Cuando llegue el documento del estándar de
-codificación del equipo, todo el código se ajustará a él.
+Todo el código sigue el estándar de codificación del equipo (JavaScript, React +
+React Native, HTML y CSS):
+
+- **Nombres**: variables, parámetros y props en `snake_case`; funciones y métodos en
+  `CamelCase` (`IniciarSesion`, `SetTexto`); hooks `use` + `CamelCase`
+  (`useControladorCatalogo`); constantes en `SNAKE_CASE`; clases, componentes y módulos
+  en `CamelCase`. Las columnas de la BD y las APIs de las bibliotecas conservan su nombre.
+- **Carpetas y archivos** en español; cada archivo lleva el nombre de lo que exporta.
+- **Llaves** de apertura y cierre en líneas separadas y alineadas (estilo Allman), en JS y CSS.
+- **Documentación**: cada archivo empieza con su encabezado (Nombre del programa, Función,
+  Autor, Fecha, Entrada, Salida, Nomenclatura), el contenido del listado y las instrucciones
+  de reutilización; cada función, componente o clase lleva su bloque de comentarios y las
+  secciones principales un bloque `Sección / Objetivo`.
+- **CSS**: clases y propiedades personalizadas en `kebab-case` en español
+  (`boton-primario`, `--azul-principal`), una declaración por línea.
+- **Módulos ES** (`import`/`export`) en servidor, web y móvil.
+
+`npm run lint` (en `server/`, `web/` y `mobile/`) revisa con ESLint las reglas que se
+pueden comprobar automáticamente: llaves, sangría de 2 espacios, comillas simples,
+punto y coma, líneas de máximo 100 caracteres y una instrucción por línea.
