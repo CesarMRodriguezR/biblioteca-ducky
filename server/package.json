@@ -2,12 +2,13 @@
   "name": "biblioteca-ducky-api",
   "version": "1.0.0",
   "description": "API REST (MVC) de Biblioteca Ducky - Node.js + Express + MariaDB",
-  "main": "src/server.js",
+  "main": "src/servidor.js",
   "scripts": {
-    "start": "node src/server.js",
-    "dev": "nodemon src/server.js",
-    "test": "node --test test/*.test.js",
-    "db:reset": "mariadb -u root < ../database/01_schema.sql && mariadb -u root < ../database/02_seed.sql && mariadb -u root -e \"GRANT ALL ON biblioteca_ducky.* TO ducky@localhost\""
+    "start": "node src/servidor.js",
+    "dev": "nodemon src/servidor.js",
+    "test": "node --test pruebas/*.prueba.js",
+    "db:reset": "mariadb -u root < ../database/01_schema.sql && mariadb -u root < ../database/02_seed.sql && mariadb -u root -e \"GRANT ALL ON biblioteca_ducky.* TO ducky@localhost\"",
+    "lint": "eslint ."
   },
   "author": "",
   "license": "UNLICENSED",
@@ -24,6 +25,9 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@stylistic/eslint-plugin": "^5.10.0",
+    "eslint": "^9.39.5",
+    "globals": "^16.5.0",
     "nodemon": "^3.1.14"
   },
   "engines": {
