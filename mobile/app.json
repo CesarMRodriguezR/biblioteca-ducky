@@ -1,0 +1,28 @@
+{
+  "expo": {
+    "name": "Biblio Ducky",
+    "slug": "biblio-ducky",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "backgroundColor": "#10306b",
+    "splash": {
+      "image": "./assets/logo-ducky.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#10306b"
+    },
+    "ios": { "supportsTablet": false, "bundleIdentifier": "mx.edu.ducky.biblio" },
+    "android": {
+      "package": "mx.edu.ducky.biblio",
+      "adaptiveIcon": {
+        "backgroundColor": "#10306b",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      }
+    },
+    "web": { "favicon": "./assets/favicon.png" },
+    "plugins": ["expo-secure-store"]
+  }
+}
