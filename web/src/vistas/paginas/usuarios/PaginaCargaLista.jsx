@@ -137,7 +137,7 @@ export function PaginaCargaLista()
           <SelectorArchivo
             titulo="Carga la lista de Servicios Escolares"
             descripcion="Archivo .xlsx o .csv con las columnas Usuario, Matrícula / No. de nómina, Nombre y Correo institucional."
-            al_archivo={controlador.cargar_archivo}
+            al_archivo={controlador.CargarArchivo}
             procesando={controlador.procesando}
           />
         </div>
@@ -170,7 +170,7 @@ export function PaginaCargaLista()
               Cambiar archivo
             </Boton>
             <Boton
-              onClick={controlador.confirmar_registro}
+              onClick={controlador.ConfirmarRegistro}
               disabled={controlador.procesando || !controlador.revision.validos.length}
             >
               {controlador.procesando ? 'Registrando…' : 'Confirmar registro'}

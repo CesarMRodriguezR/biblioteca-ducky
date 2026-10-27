@@ -99,7 +99,7 @@ export function PaginaEditarLibro()
               onSubmit={(evento) =>
               {
                 evento.preventDefault();
-                controlador.guardar_cambios();
+                controlador.GuardarCambios();
               }}
               noValidate
             >
@@ -110,7 +110,7 @@ export function PaginaEditarLibro()
                 <FormularioFicha
                   ficha={controlador.ficha}
                   errores={controlador.errores}
-                  cambiar={controlador.cambiar}
+                  cambiar={controlador.Cambiar}
                   editoriales={controlador.editoriales}
                   ocultos={['Precio']}
                   bloqueados={['ISBN']}
@@ -121,12 +121,12 @@ export function PaginaEditarLibro()
                     Anio: 'Solo el año, 4 dígitos (p. ej. 1991).',
                   }}
                   extras={{
-                    tituloPrimero: true,
-                    despuesDeTema: (
+                    titulo_primero: true,
+                    despues_de_tema: (
                       <Entrada
                         etiqueta="Número de copias"
                         value={controlador.ficha.Numero_Copias}
-                        onChange={controlador.cambiar('Numero_Copias')}
+                        onChange={controlador.Cambiar('Numero_Copias')}
                         error={controlador.errores.Numero_Copias}
                         ayuda="Para reducir copias usa «Dar de baja»."
                         inputMode="numeric"
@@ -222,7 +222,7 @@ export function PaginaEditarLibro()
                 <Selector
                   etiqueta={`Nuevo estado para ${controlador.copia.Codigo}`}
                   value={controlador.nuevo_estado}
-                  onChange={(evento) => controlador.set_nuevo_estado(evento.target.value)}
+                  onChange={(evento) => controlador.SetNuevoEstado(evento.target.value)}
                   disabled={controlador.inactivo || copia_prestada}
                   opciones={[
                     { valor: 'Disponible', etiqueta: 'Disponible' },
@@ -251,7 +251,7 @@ export function PaginaEditarLibro()
                 )}
                 <div className="fila fin margen-arriba-16">
                   <Boton
-                    onClick={controlador.guardar_estado_copia}
+                    onClick={controlador.GuardarEstadoCopia}
                     disabled={
                       controlador.inactivo ||
                       copia_prestada ||

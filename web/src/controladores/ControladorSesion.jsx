@@ -85,8 +85,8 @@ export function ProveedorSesion({ children })
     () => ({
       usuario,
       cargando,
-      iniciar_sesion: IniciarSesion,
-      cerrar_sesion: CerrarSesion,
+      IniciarSesion,
+      CerrarSesion,
       Puede: (...funciones) => funciones.some((funcion) => usuario?.funciones?.includes(funcion)),
     }),
     [usuario, cargando, IniciarSesion, CerrarSesion],

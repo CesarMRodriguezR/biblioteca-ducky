@@ -70,7 +70,7 @@ export function PaginaConsultaUsuario()
           onSubmit={(evento) =>
           {
             evento.preventDefault();
-            controlador.buscar();
+            controlador.Buscar();
           }}
         >
           <div className="campo" style={{ flex: 1, maxWidth: 360 }}>
@@ -81,7 +81,7 @@ export function PaginaConsultaUsuario()
               id="matricula"
               className="entrada"
               value={controlador.matricula}
-              onChange={(evento) => controlador.set_matricula(evento.target.value)}
+              onChange={(evento) => controlador.SetMatricula(evento.target.value)}
               inputMode="numeric"
             />
           </div>

@@ -108,7 +108,7 @@ export function PaginaLibros()
         <h2>Libros registrados</h2>
         <Buscador
           valor={controlador.texto}
-          al_cambio={controlador.set_texto}
+          al_cambio={controlador.SetTexto}
           al_buscar={controlador.Buscar}
           placeholder="Buscar por título o ISBN…"
           className="buscador-libros"

@@ -69,7 +69,7 @@ export function PaginaUsuariosValidos()
               className="entrada"
               placeholder="Ej. 3105842"
               value={controlador.texto}
-              onChange={(evento) => controlador.set_texto(evento.target.value)}
+              onChange={(evento) => controlador.SetTexto(evento.target.value)}
               inputMode="numeric"
             />
           </div>

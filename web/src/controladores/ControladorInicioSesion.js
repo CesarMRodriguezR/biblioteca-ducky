@@ -46,7 +46,7 @@ import { RutaInicial } from '../modelos/ModeloAutenticacion.js';
  */
 export function useControladorInicioSesion()
 {
-  const { iniciar_sesion } = useSesion();
+  const { IniciarSesion } = useSesion();
   const navegar = useNavigate();
   const ubicacion = useLocation();
   const [form, SetForm] = useState({ usuario: '', contrasena: '' });
@@ -83,7 +83,7 @@ export function useControladorInicioSesion()
     SetAviso(null);
     try
     {
-      const usuario = await iniciar_sesion(form.usuario, form.contrasena);
+      const usuario = await IniciarSesion(form.usuario, form.contrasena);
       navegar(ubicacion.state?.desde || RutaInicial(usuario), { replace: true });
     }
     catch (error)
@@ -105,5 +105,5 @@ export function useControladorInicioSesion()
     }
   }
 
-  return { form, errores, aviso, enviando, cambiar: Cambiar, enviar: Enviar };
+  return { form, errores, aviso, enviando, Cambiar, Enviar };
 }

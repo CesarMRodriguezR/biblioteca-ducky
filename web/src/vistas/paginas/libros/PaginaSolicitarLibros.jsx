@@ -57,12 +57,12 @@ function TablaEditoriales({ editoriales, al_guardar, al_eliminar })
   const [form, SetForm] = useState({ Nombre_Editorial: '', Pais: '' });
   const [error, SetError] = useState(null);
 
-  const Iniciar = (evento) =>
+  const Iniciar = (editorial) =>
   {
-    SetEditando(evento ? evento.id_editorial : 'nueva');
+    SetEditando(editorial ? editorial.id_editorial : 'nueva');
     SetForm(
-      evento
-        ? { Nombre_Editorial: evento.Nombre_Editorial, Pais: evento.Pais }
+      editorial
+        ? { Nombre_Editorial: editorial.Nombre_Editorial, Pais: editorial.Pais }
         : { Nombre_Editorial: '', Pais: '' },
     );
     SetError(null);
@@ -213,14 +213,14 @@ export function PaginaSolicitarLibros()
             onSubmit={(evento) =>
             {
               evento.preventDefault();
-              controlador.enviar_solicitud();
+              controlador.EnviarSolicitud();
             }}
             noValidate
           >
             <FormularioFicha
               ficha={controlador.form}
               errores={controlador.errores}
-              cambiar={controlador.cambiar}
+              cambiar={controlador.Cambiar}
               editoriales={controlador.opciones_editorial}
               ocultos={['Precio']}
               bloqueados={
@@ -234,7 +234,7 @@ export function PaginaSolicitarLibros()
                   <Entrada
                     etiqueta={copias ? 'Copias a solicitar' : 'Número de copias'}
                     value={controlador.form.Num_Ejemplares}
-                    onChange={controlador.cambiar('Num_Ejemplares')}
+                    onChange={controlador.Cambiar('Num_Ejemplares')}
                     error={controlador.errores.Num_Ejemplares}
                     ayuda={
                       copias
@@ -301,8 +301,8 @@ export function PaginaSolicitarLibros()
           </Tarjeta>
           <TablaEditoriales
             editoriales={controlador.editoriales}
-            al_guardar={controlador.guardar_editorial}
-            al_eliminar={controlador.eliminar_editorial}
+            al_guardar={controlador.GuardarEditorial}
+            al_eliminar={controlador.EliminarEditorial}
           />
         </div>
       </div>

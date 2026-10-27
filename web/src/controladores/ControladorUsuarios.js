@@ -78,7 +78,7 @@ export function useControladorUsuariosValidos()
     por_pagina: POR_PAGINA,
     buscado,
     texto,
-    set_texto: SetTexto,
+    SetTexto,
     error,
     cargando,
     Buscar: () => set_params(texto.trim() ? { q: texto.trim() } : {}),
@@ -143,7 +143,7 @@ export function useControladorConsultaUsuario()
     }
   }
 
-  return { matricula, set_matricula: SetMatricula, usuario, error, cargando, buscar: Buscar };
+  return { matricula, SetMatricula, usuario, error, cargando, Buscar };
 }
 
 /*
@@ -198,7 +198,7 @@ export function useControladorCambioUsuario()
     }
     try
     {
-      const actualizado = await guardar.ejecutar({
+      const actualizado = await guardar.Ejecutar({
         id_perfil: Number(form.id_perfil),
         Estatus: form.Estatus,
         Contrasena_Usuario: form.Contrasena_Usuario || undefined,
@@ -231,8 +231,8 @@ export function useControladorCambioUsuario()
     errores,
     resultado,
     enviando: guardar.enviando,
-    cambiar: Cambiar,
-    confirmar: Confirmar,
+    Cambiar,
+    Confirmar,
     Cancelar: () => navegar(-1),
   };
 }
@@ -325,10 +325,10 @@ export function useControladorCargaLista()
     error,
     procesando,
     sin_rol: revision ? revision.validos.filter((valido) => !roles[valido.Fila]).length : 0,
-    cargar_archivo: CargarArchivo,
+    CargarArchivo,
     AsignarRol: (fila, id_perfil) =>
       SetRoles((roles_previo) => ({ ...roles_previo, [fila]: id_perfil })),
-    confirmar_registro: ConfirmarRegistro,
+    ConfirmarRegistro,
     Reiniciar: () =>
     {
       SetArchivo(null);
@@ -432,8 +432,8 @@ export function useControladorBajasLista()
     resultado,
     error,
     procesando,
-    cargar_archivo: CargarArchivo,
-    confirmar_bajas: ConfirmarBajas,
+    CargarArchivo,
+    ConfirmarBajas,
   };
 }
 
@@ -477,8 +477,8 @@ export function useControladorPerfiles()
   {
     try
     {
-      await guardar.ejecutar(perfil.id_perfil, [...asignadas]);
-      await perfiles.recargar();
+      await guardar.Ejecutar(perfil.id_perfil, [...asignadas]);
+      await perfiles.Recargar();
       SetAviso({
         tipo: 'exito',
         titulo: `Funciones de ${perfil.Nombre_Rol} actualizadas.`,
@@ -501,7 +501,7 @@ export function useControladorPerfiles()
     error: perfiles.error || funciones.error,
     enviando: guardar.enviando,
     hay_cambios,
-    seleccionar: SetSeleccionado,
+    Seleccionar: SetSeleccionado,
     Alternar: (id_funcion, activa) =>
       SetAsignadas((asignadas_previo) =>
       {
@@ -517,6 +517,6 @@ export function useControladorPerfiles()
         return nuevo;
       }),
     Cancelar: () => SetAsignadas(new Set(perfil?.funciones ?? [])),
-    guardar_cambios: GuardarCambios,
+    GuardarCambios,
   };
 }

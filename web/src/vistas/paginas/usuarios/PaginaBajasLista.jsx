@@ -111,7 +111,7 @@ export function PaginaBajasLista()
         <SelectorArchivo
           titulo="Carga la lista vigente de Servicios Escolares"
           descripcion="Las cuentas que ya no aparezcan en la lista (por egreso o baja de la universidad) se propondrán para darse de baja."
-          al_archivo={controlador.cargar_archivo}
+          al_archivo={controlador.CargarArchivo}
           procesando={controlador.procesando}
         />
       )}
@@ -154,7 +154,7 @@ export function PaginaBajasLista()
               </p>
               <Boton
                 className="margen-arriba-16"
-                onClick={controlador.confirmar_bajas}
+                onClick={controlador.ConfirmarBajas}
                 disabled={controlador.procesando}
               >
                 {controlador.procesando ? 'Procesando…' : 'Confirmar bajas'}

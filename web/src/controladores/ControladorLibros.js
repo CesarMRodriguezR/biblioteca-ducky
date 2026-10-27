@@ -82,12 +82,12 @@ const CAMPOS_FICHA = [
 /*
  * Función: ValidarFicha
  * Objetivo: Valida en el cliente lo mismo que la API para avisar antes de enviar.
- * Entrada: ficha, { conPrecio?, conIsbn? } (opcional)
+ * Entrada: ficha, { con_precio?, con_isbn? } (opcional)
  * Salida: Objeto { campo: mensaje } con los errores encontrados
  */
 export function ValidarFicha(
   ficha,
-  { conPrecio: con_precio = true, conIsbn: con_isbn = true } = {},
+  { con_precio = true, con_isbn = true } = {},
 )
 {
   const errores = {};
@@ -138,7 +138,7 @@ export function ValidarFicha(
  */
 export function useEditoriales()
 {
-  const { datos, recargar } = useCarga(() => ModeloEditorial.Listar(), []);
+  const { datos, Recargar } = useCarga(() => ModeloEditorial.Listar(), []);
   const opciones = useMemo(
     () =>
       (datos ?? []).map((elemento) => ({
@@ -147,7 +147,7 @@ export function useEditoriales()
       })),
     [datos],
   );
-  return { editoriales: datos ?? [], opciones, recargar };
+  return { editoriales: datos ?? [], opciones, Recargar };
 }
 
 /*
@@ -170,7 +170,7 @@ export function useControladorLibrosRegistrados()
         q: texto_busqueda,
         campo: texto_busqueda ? 'todos' : undefined,
         pagina,
-        porPagina: por_pagina,
+        por_pagina,
         inactivos: true,
       }),
     [texto_busqueda, pagina],
@@ -183,7 +183,7 @@ export function useControladorLibrosRegistrados()
     pagina,
     q: texto_busqueda,
     texto,
-    set_texto: SetTexto,
+    SetTexto,
     error,
     cargando,
     Buscar: () => set_params(texto.trim() ? { q: texto.trim() } : {}),
@@ -260,7 +260,7 @@ export function useControladorAltaLibro()
     }
     try
     {
-      const nuevo = await guardar.ejecutar({
+      const nuevo = await guardar.Ejecutar({
         ...ficha,
         id_editorial: Number(ficha.id_editorial),
         Anio: Number(ficha.Anio),
@@ -289,7 +289,7 @@ export function useControladorAltaLibro()
 
   async function AgregarEjemplares(datos)
   {
-    const actualizado = await agregar.ejecutar(libro.id_libro, datos);
+    const actualizado = await agregar.Ejecutar(libro.id_libro, datos);
     SetLibro(actualizado);
     return actualizado;
   }
@@ -304,10 +304,10 @@ export function useControladorAltaLibro()
     enviando: guardar.enviando,
     agregando: agregar.enviando,
     error_ejemplares: agregar.error,
-    cambiar: Cambiar,
-    validar_isbn: ValidarIsbn,
-    guardar_ficha: GuardarFicha,
-    agregar_ejemplares: AgregarEjemplares,
+    Cambiar,
+    ValidarIsbn,
+    GuardarFicha,
+    AgregarEjemplares,
     NuevaFicha: () =>
     {
       SetFicha(FICHA_VACIA);
@@ -376,7 +376,7 @@ export function useControladorEditarLibro()
     SetCopiaElegida((actual) => actual ?? primera?.num_copia ?? null);
   }, [libro]);
 
-  const copia = libro?.ejemplares?.find((evento) => evento.num_copia === copia_elegida) ?? null;
+  const copia = libro?.ejemplares?.find((ejemplar) => ejemplar.num_copia === copia_elegida) ?? null;
   useEffect(() =>
   {
     if (copia && ['Disponible', 'Consulta externa'].includes(copia.Estatus))
@@ -399,7 +399,7 @@ export function useControladorEditarLibro()
 
   async function GuardarCambios()
   {
-    const encontrados = ValidarFicha(ficha, { conPrecio: false, conIsbn: false });
+    const encontrados = ValidarFicha(ficha, { con_precio: false, con_isbn: false });
     if (!(Number(ficha.Numero_Copias) >= 1) || !Number.isInteger(Number(ficha.Numero_Copias)))
     {
       encontrados.Numero_Copias = 'Debe ser 1 o más; no se aceptan números negativos ni cero.';
@@ -427,7 +427,7 @@ export function useControladorEditarLibro()
     });
     try
     {
-      const actualizado = await guardar.ejecutar(cambios);
+      const actualizado = await guardar.Ejecutar(cambios);
       carga.SetDatos(actualizado);
       SetAviso({
         tipo: 'exito',
@@ -446,8 +446,8 @@ export function useControladorEditarLibro()
   {
     try
     {
-      await guardar_copia.ejecutar(copia.num_copia, nuevo_estado);
-      await carga.recargar();
+      await guardar_copia.Ejecutar(copia.num_copia, nuevo_estado);
+      await carga.Recargar();
       SetAvisoCopia({
         tipo: 'exito',
         titulo: `Estado de ${copia.Codigo} actualizado a ${nuevo_estado}.`,
@@ -476,7 +476,7 @@ export function useControladorEditarLibro()
     nuevo_estado,
     aviso_copia,
     guardando_copia: guardar_copia.enviando,
-    cambiar: Cambiar,
+    Cambiar,
     IntentarCambiarIsbn: () =>
       SetErrores((er) => ({ ...er, ISBN: 'No se puede cambiar el ISBN de un libro.' })),
     Descartar: () =>
@@ -485,14 +485,14 @@ export function useControladorEditarLibro()
       SetErrores({});
       SetAviso(null);
     },
-    guardar_cambios: GuardarCambios,
+    GuardarCambios,
     ElegirCopia: (num) =>
     {
       SetCopiaElegida(num);
       SetAvisoCopia(null);
     },
-    set_nuevo_estado: SetNuevoEstado,
-    guardar_estado_copia: GuardarEstadoCopia,
+    SetNuevoEstado,
+    GuardarEstadoCopia,
   };
 }
 
@@ -513,7 +513,7 @@ export function useControladorBajaLibro()
   const [motivo, SetMotivo] = useState(null);
   const [aviso, SetAviso] = useState(null);
   const retirar = useAccion((num, mes) => ModeloEjemplar.Retirar(id, num, mes));
-  const estatus = useAccion((evento) => ModeloLibro.CambiarEstatus(id, evento));
+  const estatus = useAccion((estatus_nuevo) => ModeloLibro.CambiarEstatus(id, estatus_nuevo));
 
   useEffect(() =>
   {
@@ -534,8 +534,8 @@ export function useControladorBajaLibro()
     }
     try
     {
-      const copia = await retirar.ejecutar(copia_elegida, motivo);
-      await carga.recargar();
+      const copia = await retirar.Ejecutar(copia_elegida, motivo);
+      await carga.Recargar();
       SetCopiaElegida(null);
       SetMotivo(null);
       SetAviso({
@@ -555,7 +555,7 @@ export function useControladorBajaLibro()
     const destino = carga.datos.Estatus === 'Activo' ? 'Inactivo' : 'Activo';
     try
     {
-      const libro = await estatus.ejecutar(destino);
+      const libro = await estatus.Ejecutar(destino);
       carga.SetDatos({ ...carga.datos, ...libro });
       SetAviso({
         tipo: 'exito',
@@ -586,15 +586,15 @@ export function useControladorBajaLibro()
     cargando: carga.cargando && !carga.datos,
     error_carga: carga.error,
     modo,
-    set_modo: SetModo,
+    SetModo,
     copia_elegida,
-    elegir_copia: SetCopiaElegida,
+    ElegirCopia: SetCopiaElegida,
     motivo,
-    set_motivo: SetMotivo,
+    SetMotivo,
     aviso,
     enviando: retirar.enviando || estatus.enviando,
-    retirar_copia: RetirarCopia,
-    cambiar_estatus_libro: CambiarEstatusLibro,
+    RetirarCopia,
+    CambiarEstatusLibro,
     Cancelar: () =>
     {
       SetCopiaElegida(null);
@@ -616,7 +616,7 @@ export function useControladorSolicitudCompra()
 {
   const { id } = useParams();
   const navegar = useNavigate();
-  const { editoriales, opciones, recargar: recargar_editoriales } = useEditoriales();
+  const { editoriales, opciones, Recargar: recargar_editoriales } = useEditoriales();
   const solicitudes = useCarga(() => ModeloCompra.Solicitudes(), []);
   const libro_base = useCarga(() => (id ? ModeloLibro.Obtener(id) : Promise.resolve(null)), [id]);
   const [form, SetForm] = useState({ ...FICHA_VACIA, Num_Ejemplares: '' });
@@ -655,7 +655,7 @@ export function useControladorSolicitudCompra()
 
   async function EnviarSolicitud()
   {
-    const encontrados = id ? {} : ValidarFicha(form, { conPrecio: false });
+    const encontrados = id ? {} : ValidarFicha(form, { con_precio: false });
     const total = Number(form.Num_Ejemplares);
     if (!form.Num_Ejemplares || !Number.isInteger(total) || total < 1)
     {
@@ -671,14 +671,14 @@ export function useControladorSolicitudCompra()
     }
     try
     {
-      await enviar.ejecutar({
+      await enviar.Ejecutar({
         ...form,
         Num_Ejemplares: total,
         id_editorial: Number(form.id_editorial),
         Anio: Number(form.Anio),
         Precio: 0,
       });
-      await solicitudes.recargar();
+      await solicitudes.Recargar();
       SetAviso({
         tipo: 'exito',
         titulo: 'Solicitud enviada.',
@@ -733,10 +733,10 @@ export function useControladorSolicitudCompra()
     opciones_editorial: opciones,
     solicitudes: solicitudes.datos ?? [],
     enviando: enviar.enviando,
-    cambiar: Cambiar,
-    enviar_solicitud: EnviarSolicitud,
-    guardar_editorial: GuardarEditorial,
-    eliminar_editorial: EliminarEditorial,
+    Cambiar,
+    EnviarSolicitud,
+    GuardarEditorial,
+    EliminarEditorial,
     Cancelar: () => navegar('/libros'),
   };
 }

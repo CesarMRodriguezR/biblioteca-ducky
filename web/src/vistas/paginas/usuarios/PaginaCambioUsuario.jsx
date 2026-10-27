@@ -69,7 +69,7 @@ export function PaginaCambioUsuario()
             onSubmit={(evento) =>
             {
               evento.preventDefault();
-              controlador.confirmar();
+              controlador.Confirmar();
             }}
             noValidate
           >
@@ -89,7 +89,7 @@ export function PaginaCambioUsuario()
               <Selector
                 etiqueta="Perfil / Tipo de usuario"
                 value={controlador.form.id_perfil}
-                onChange={controlador.cambiar('id_perfil')}
+                onChange={controlador.Cambiar('id_perfil')}
                 opciones={controlador.perfiles.map((perfil) => ({
                   valor: String(perfil.id_perfil),
                   etiqueta: perfil.Nombre_Rol,
@@ -101,14 +101,14 @@ export function PaginaCambioUsuario()
                 type="password"
                 autoComplete="new-password"
                 value={controlador.form.Contrasena_Usuario}
-                onChange={controlador.cambiar('Contrasena_Usuario')}
+                onChange={controlador.Cambiar('Contrasena_Usuario')}
                 error={controlador.errores.Contrasena_Usuario}
                 ayuda="Mínimo 8 caracteres, una mayúscula y un número. Déjala vacía para conservar la actual."
               />
               <Selector
                 etiqueta="Estatus de la cuenta"
                 value={controlador.form.Estatus}
-                onChange={controlador.cambiar('Estatus')}
+                onChange={controlador.Cambiar('Estatus')}
                 opciones={[
                   { valor: 'Activo', etiqueta: 'Activo' },
                   { valor: 'Bloqueado', etiqueta: 'Bloqueado' },

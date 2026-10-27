@@ -44,7 +44,7 @@ export const ModeloLibro = {
   /*
    * Función: Buscar
    * Objetivo: Buscar libros por campo, orden y página.
-   * Entrada: { q, campo?, orden?, desde, hasta, pagina?, porPagina?, inactivos } (opcional)
+   * Entrada: { q, campo?, orden?, desde, hasta, pagina?, por_pagina?, inactivos } (opcional)
    * Salida: Promesa con { total, datos }
    */
   Buscar({
@@ -54,7 +54,7 @@ export const ModeloLibro = {
     desde,
     hasta,
     pagina = 1,
-    porPagina: por_pagina = 6,
+    por_pagina = 6,
     inactivos,
   } = {})
   {

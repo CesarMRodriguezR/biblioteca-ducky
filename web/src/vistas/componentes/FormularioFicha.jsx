@@ -42,7 +42,7 @@ import { AreaTexto, Entrada, Selector } from './interfaz.jsx';
 export function FormularioFicha({
   ficha,
   errores,
-  cambiar,
+  Cambiar,
   editoriales,
   bloqueados = [],
   ocultos = [],
@@ -58,12 +58,12 @@ export function FormularioFicha({
   return (
     <div className="rejilla-2" style={{ gap: '14px 16px' }}>
       {extras.antes}
-      {Ver('Titulo') && extras.tituloPrimero && (
+      {Ver('Titulo') && extras.titulo_primero && (
         <Entrada
           className="columna-completa"
           etiqueta="Título"
           value={ficha.Titulo}
-          onChange={cambiar('Titulo')}
+          onChange={Cambiar('Titulo')}
           error={errores.Titulo}
           bloqueado={Lock('Titulo')}
         />
@@ -73,7 +73,7 @@ export function FormularioFicha({
           <Entrada
             etiqueta="ISBN"
             value={ficha.ISBN}
-            onChange={cambiar('ISBN')}
+            onChange={Cambiar('ISBN')}
             onBlur={al_salir_isbn}
             error={errores.ISBN}
             ayuda={ayudas.ISBN}
@@ -86,18 +86,18 @@ export function FormularioFicha({
         <Entrada
           etiqueta="Precio (MXN)"
           value={ficha.Precio}
-          onChange={cambiar('Precio')}
+          onChange={Cambiar('Precio')}
           error={errores.Precio}
           ayuda="En pesos mexicanos (MXN), p. ej. $899.00"
           inputMode="decimal"
         />
       )}
-      {Ver('Titulo') && !extras.tituloPrimero && (
+      {Ver('Titulo') && !extras.titulo_primero && (
         <Entrada
           className="columna-completa"
           etiqueta="Título"
           value={ficha.Titulo}
-          onChange={cambiar('Titulo')}
+          onChange={Cambiar('Titulo')}
           error={errores.Titulo}
           bloqueado={Lock('Titulo')}
         />
@@ -106,7 +106,7 @@ export function FormularioFicha({
         <Entrada
           etiqueta="Autor"
           value={ficha.Autor}
-          onChange={cambiar('Autor')}
+          onChange={Cambiar('Autor')}
           error={errores.Autor}
           ayuda={ayudas.Autor}
           placeholder="Apellido, Iniciales; Apellido, Iniciales"
@@ -127,7 +127,7 @@ export function FormularioFicha({
           <Selector
             etiqueta="Editorial"
             value={ficha.id_editorial}
-            onChange={cambiar('id_editorial')}
+            onChange={Cambiar('id_editorial')}
             opciones={editoriales}
             marcador="Selecciona una editorial"
             error={errores.id_editorial}
@@ -138,7 +138,7 @@ export function FormularioFicha({
         <Entrada
           etiqueta="Año"
           value={ficha.Anio}
-          onChange={cambiar('Anio')}
+          onChange={Cambiar('Anio')}
           error={errores.Anio}
           ayuda={ayudas.Anio ?? 'Número de 4 dígitos'}
           inputMode="numeric"
@@ -150,18 +150,18 @@ export function FormularioFicha({
         <Entrada
           etiqueta="Tema"
           value={ficha.Tema}
-          onChange={cambiar('Tema')}
+          onChange={Cambiar('Tema')}
           error={errores.Tema}
           bloqueado={Lock('Tema')}
         />
       )}
-      {extras.despuesDeTema}
+      {extras.despues_de_tema}
       {Ver('Sinopsis') && (
         <AreaTexto
           className="columna-completa"
           etiqueta="Sinopsis"
           value={ficha.Sinopsis}
-          onChange={cambiar('Sinopsis')}
+          onChange={Cambiar('Sinopsis')}
           error={errores.Sinopsis}
           disabled={Lock('Sinopsis')}
         />

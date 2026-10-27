@@ -63,16 +63,16 @@ export function PaginaAltaLibro()
             onSubmit={(evento) =>
             {
               evento.preventDefault();
-              controlador.guardar_ficha();
+              controlador.GuardarFicha();
             }}
             noValidate
           >
             <FormularioFicha
               ficha={controlador.ficha}
               errores={controlador.errores}
-              cambiar={controlador.cambiar}
+              cambiar={controlador.Cambiar}
               editoriales={controlador.editoriales}
-              al_salir_isbn={controlador.validar_isbn}
+              al_salir_isbn={controlador.ValidarIsbn}
               ayudas={{
                 ISBN: 'Se valida primero. Prueba 978-0-262-03384-8 para ver un libro ya registrado.',
               }}
@@ -105,7 +105,7 @@ export function PaginaAltaLibro()
           </h2>
           <PanelEjemplares
             libro={controlador.libro}
-            al_agregar={controlador.agregar_ejemplares}
+            al_agregar={controlador.AgregarEjemplares}
             agregando={controlador.agregando}
             error={controlador.error_ejemplares}
           />

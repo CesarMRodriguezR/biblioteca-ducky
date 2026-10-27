@@ -199,13 +199,13 @@ function ConstruirUrl(ruta, parametros)
 /*
  * Función: Solicitar
  * Objetivo: Hacer la petición HTTP con el token y convertir los errores en ErrorApi.
- * Entrada: metodo, ruta, { body, params, comoBlob? } (opcional)
+ * Entrada: metodo, ruta, { body, params, como_blob? } (opcional)
  * Salida: Promesa con el JSON, el archivo o null (204)
  */
 async function Solicitar(
   metodo,
   ruta,
-  { body: cuerpo, params: parametros, comoBlob: como_blob = false } = {},
+  { body: cuerpo, params: parametros, como_blob = false } = {},
 )
 {
   const token = AlmacenToken.Leer();
@@ -277,7 +277,7 @@ export const ClienteApi = {
    * Salida: Promesa con el Blob
    */
   ObtenerArchivo: (ruta, parametros) =>
-    Solicitar('GET', ruta, { params: parametros, comoBlob: true }),
+    Solicitar('GET', ruta, { params: parametros, como_blob: true }),
   /*
    * Función: Enviar
    * Objetivo: Petición POST.

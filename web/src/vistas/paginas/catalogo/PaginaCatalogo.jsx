@@ -98,7 +98,7 @@ export function PaginaCatalogo()
         <div className="fila espacio-12" style={{ flexWrap: 'wrap' }}>
           <Buscador
             valor={controlador.texto}
-            al_cambio={controlador.set_texto}
+            al_cambio={controlador.SetTexto}
             al_buscar={controlador.Buscar}
             placeholder="Busca por título, autor, editorial, ISBN, año o tema"
             className="crece"

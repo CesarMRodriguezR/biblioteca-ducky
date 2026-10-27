@@ -83,7 +83,7 @@ export function useCarga(cargar, dependencias = [])
 
   return {
     ...estado,
-    recargar: Recargar,
+    Recargar,
     SetDatos: (datos) => SetEstado((estado_previo) => ({ ...estado_previo, datos })),
   };
 }
@@ -123,7 +123,7 @@ export function useAccion(accion)
   );
 
   return {
-    ejecutar: Ejecutar,
+    Ejecutar,
     enviando,
     error,
     errores: error?.errores ?? {},

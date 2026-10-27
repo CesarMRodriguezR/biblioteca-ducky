@@ -121,13 +121,13 @@ export function PaginaBajaLibro()
                 activa={modo_copia}
                 titulo="Retirar una copia"
                 texto="Inactiva un ejemplar específico."
-                onClick={() => controlador.set_modo('copia')}
+                onClick={() => controlador.SetModo('copia')}
               />
               <Opcion
                 activa={!modo_copia}
                 titulo="Activar o inactivar libro"
                 texto="Retira o reactiva el libro completo."
-                onClick={() => controlador.set_modo('estatus')}
+                onClick={() => controlador.SetModo('estatus')}
               />
             </div>
 
@@ -153,7 +153,7 @@ export function PaginaBajaLibro()
                           modo_copia &&
                           !prestada &&
                           activo &&
-                          controlador.elegir_copia(copia.num_copia)
+                          controlador.ElegirCopia(copia.num_copia)
                         }
                       >
                         {modo_copia && (
@@ -220,7 +220,7 @@ export function PaginaBajaLibro()
                       aria-checked={controlador.motivo === elemento.valor}
                       className="fila espacio-12"
                       disabled={!activo}
-                      onClick={() => controlador.set_motivo(elemento.valor)}
+                      onClick={() => controlador.SetMotivo(elemento.valor)}
                       style={{
                         width: '100%',
                         padding: '12px 16px',
@@ -248,7 +248,7 @@ export function PaginaBajaLibro()
                   </Boton>
                   <Boton
                     variante="peligro"
-                    onClick={controlador.retirar_copia}
+                    onClick={controlador.RetirarCopia}
                     disabled={!activo || controlador.enviando}
                   >
                     {controlador.enviando ? 'Retirando…' : 'Retirar copia'}
@@ -283,7 +283,7 @@ export function PaginaBajaLibro()
                   </Boton>
                   <Boton
                     variante={activo ? 'peligro' : 'primario'}
-                    onClick={controlador.cambiar_estatus_libro}
+                    onClick={controlador.CambiarEstatusLibro}
                     disabled={controlador.enviando}
                   >
                     {activo ? 'Inactivar libro' : 'Activar libro'}

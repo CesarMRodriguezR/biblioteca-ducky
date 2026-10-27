@@ -45,7 +45,7 @@ import './pagina-inicio-sesion.css';
 export function PaginaInicioSesion()
 {
   const { usuario } = useSesion();
-  const { form, errores, aviso, enviando, cambiar, enviar } = useControladorInicioSesion();
+  const { form, errores, aviso, enviando, Cambiar, Enviar } = useControladorInicioSesion();
 
   if (usuario)
   {
@@ -80,7 +80,7 @@ export function PaginaInicioSesion()
         <a className="enlace-volver inicio-sesion-volver" href={import.meta.env.VITE_PORTAL_URL || '/'}>
           <ArrowLeft size={16} aria-hidden /> Volver al portal
         </a>
-        <form className="inicio-sesion-formulario" onSubmit={enviar} noValidate>
+        <form className="inicio-sesion-formulario" onSubmit={Enviar} noValidate>
           <img src="/logo-ducky.png" alt="Escudo de la Universidad Ducky" width="61" height="56" />
           <h1>Biblio</h1>
           <p className="texto-secundario">Inicia sesión con tus credenciales institucionales.</p>
@@ -104,7 +104,7 @@ export function PaginaInicioSesion()
               className="entrada"
               autoComplete="username"
               value={form.usuario}
-              onChange={cambiar('usuario')}
+              onChange={Cambiar('usuario')}
               aria-invalid={Boolean(errores.usuario)}
               autoFocus
             />
@@ -121,7 +121,7 @@ export function PaginaInicioSesion()
               className="entrada"
               autoComplete="current-password"
               value={form.contrasena}
-              onChange={cambiar('contrasena')}
+              onChange={Cambiar('contrasena')}
               aria-invalid={Boolean(errores.contrasena)}
             />
             {errores.contrasena?.trim() && (

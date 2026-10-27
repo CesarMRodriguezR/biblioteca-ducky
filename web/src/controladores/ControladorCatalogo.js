@@ -67,7 +67,7 @@ export function useControladorCatalogo()
 
   const filtros = { q: texto_busqueda || undefined, campo, orden };
   const { datos, error, cargando } = useCarga(
-    () => ModeloLibro.Buscar({ ...filtros, pagina, porPagina: POR_PAGINA }),
+    () => ModeloLibro.Buscar({ ...filtros, pagina, por_pagina: POR_PAGINA }),
     [texto_busqueda, campo, orden, pagina],
   );
   const total = datos?.total ?? 0;
@@ -126,7 +126,7 @@ export function useControladorCatalogo()
     campo,
     orden,
     texto,
-    set_texto: SetTexto,
+    SetTexto,
     error,
     cargando,
     puede_listar: Puede('generar_listado'),
@@ -162,7 +162,7 @@ export function useControladorListado(filtros)
 
   async function GuardarPdf()
   {
-    const blob = await pdf.ejecutar();
+    const blob = await pdf.Ejecutar();
     const direccion = URL.createObjectURL(blob);
     const enlace = document.createElement('a');
     const fecha = new Date().toISOString().slice(0, 10);

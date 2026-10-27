@@ -26,8 +26,16 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "export": "expo export --platform android --platform ios"
+    "export": "expo export --platform android --platform ios",
+    "lint": "eslint ."
   },
   "private": true,
-  "description": "App móvil (React Native + Expo) de Biblio · Universidad Ducky"
+  "description": "App móvil (React Native + Expo) de Biblio · Universidad Ducky",
+  "devDependencies": {
+    "@stylistic/eslint-plugin": "^5.10.0",
+    "eslint": "^9.39.5",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "globals": "^16.5.0"
+  }
 }

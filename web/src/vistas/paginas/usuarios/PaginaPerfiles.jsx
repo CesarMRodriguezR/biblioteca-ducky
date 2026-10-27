@@ -95,7 +95,7 @@ export function PaginaPerfiles()
                       cursor: 'pointer',
                       alignItems: 'flex-start',
                     }}
-                    onClick={() => controlador.seleccionar(perfil.id_perfil)}
+                    onClick={() => controlador.Seleccionar(perfil.id_perfil)}
                   >
                     <span style={{ marginTop: 2 }}>
                       <Radio marcado={perfil.id_perfil === controlador.perfil.id_perfil} />
@@ -152,7 +152,7 @@ export function PaginaPerfiles()
               Cancelar
             </Boton>
             <Boton
-              onClick={controlador.guardar_cambios}
+              onClick={controlador.GuardarCambios}
               disabled={protegido || !controlador.hay_cambios || controlador.enviando}
             >
               {controlador.enviando ? 'Guardando…' : 'Guardar cambios'}
