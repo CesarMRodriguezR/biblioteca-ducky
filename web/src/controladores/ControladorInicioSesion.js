@@ -35,7 +35,7 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useSesion } from './ControladorSesion.jsx';
-import { RutaInicial } from '../modelos/ModeloAutenticacion.js';
+import { RutaTrasIniciarSesion } from '../modelos/ModeloAutenticacion.js';
 
 /*
  * Hook: useControladorInicioSesion
@@ -84,7 +84,7 @@ export function useControladorInicioSesion()
     try
     {
       const usuario = await IniciarSesion(form.usuario, form.contrasena);
-      navegar(ubicacion.state?.desde || RutaInicial(usuario), { replace: true });
+      navegar(RutaTrasIniciarSesion(usuario, ubicacion.state?.desde), { replace: true });
     }
     catch (error)
     {

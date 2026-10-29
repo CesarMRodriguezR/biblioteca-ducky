@@ -63,7 +63,7 @@ import { PaginaFichaLibro } from '../vistas/paginas/catalogo/PaginaFichaLibro.js
  */
 function ConSesion({ children })
 {
-  const { usuario, cargando } = useSesion();
+  const { usuario, cargando, salida_voluntaria } = useSesion();
   const ubicacion = useLocation();
   if (cargando)
   {
@@ -72,7 +72,11 @@ function ConSesion({ children })
   if (!usuario)
   {
     return (
-      <Navigate to="/login" replace state={{ desde: ubicacion.pathname + ubicacion.search }} />
+      <Navigate
+        to="/login"
+        replace
+        state={salida_voluntaria ? null : { desde: ubicacion.pathname + ubicacion.search }}
+      />
     );
   }
   return children;

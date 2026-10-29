@@ -225,7 +225,7 @@ las copias y para impedir la baja de cuentas con pendientes.
 
 - **Usuario**: `Activo` (se muestra como *Válido*) · `Inactivo` (no puede iniciar sesión).
 - **Libro**: `Activo` · `Inactivo`. Un libro inactivo no aparece en el catálogo ni se puede editar; solo se inactiva si ninguna copia está en préstamo.
-- **Copia** (valores del diagrama): `Disponible` (consulta en sala) · `Consulta Externa` (se presta a domicilio) · `En préstamo` (lo asigna el sistema) · `Inactivo` (dada de baja; en pantalla se muestra *Baja*). La baja pide un motivo (`Perdido`, `Robado`, `Dañado`, `Obsoleto`) que se informa pero no se guarda, porque el diagrama no tiene esa columna. Una copia prestada no cambia de estado ni se retira hasta devolverse.
+- **Copia** (valores del diagrama): `Disponible` (consulta en sala) · `Consulta Externa` (se presta a domicilio) · `En préstamo` (lo asigna el sistema) · `Inactivo` (dada de baja; en *Baja de libro* sigue en la lista de copias con ese estado). La baja de una copia guarda su motivo (`Perdido`, `Robado`, `Dañado`, `Obsoleto`) en `Motivo_Baja`. Al inactivar un libro (no se permite si alguna copia está en préstamo) sus copias activas quedan `Inactivo` sin motivo; al reactivarlo solo esas vuelven a `Disponible`, y las que tienen motivo siguen inactivas. Una copia prestada no cambia de estado ni se retira hasta devolverse.
 - **Ubicación de la copia**: se guarda en una sola columna (`Ejemplares.Ubicacion`) como el código `P{pasillo}-E{estante}-N{nivel}-S{sección}`. Por ejemplo, pasillo 2, estante Q, nivel 3 y sección Computación → `P2-EQ-N3-SComputación`. El sistema lo genera al agregar o mover copias y lo interpreta para mostrar «Pasillo 2 · Estante Q · Nivel 3 · Sección Computación» (`server/src/utilidades/CodigoUbicacion.js`). Ningún componente puede llevar «-».
 - **Código de copia** (`EJ-00101`): no se guarda; se calcula con `id_libro × 100 + num_copia`, por eso cada libro admite hasta 99 copias.
 - **Solicitud de compra**: `Pendiente` (aún no llega a Tesorería) `→ En revision` (Tesorería la recibió) `→ Aprobada` o `Rechazada` (lo decide Tesorería, con motivo) `→ Recibida` (llegaron los libros; se agregan las copias).
@@ -262,9 +262,11 @@ Todos están marcados con `[PROTOTIPO]` en `01_schema.sql`:
 - **Usuarios**: `Nombre_Completo` y `Correo` (`Nombre_Usuario` es el login del prototipo).
 - **LibrosNuevos**: `Anio`, `Tema` y `Sinopsis`, porque la solicitud de compra los pide.
 - **OrdenesCompra**: estado `En revision` (la recibió Tesorería).
+- **Ejemplares**: `Motivo_Baja`, que distingue las copias retiradas por un motivo de las que se
+  inactivaron junto con su libro (estas vuelven a `Disponible` al reactivarlo).
 
-`Ejemplares` ya sigue el diagrama (id_libro, num_copia, Estatus, Ubicacion) y no hay tabla de
-bitácora ni contador de intentos fallidos.
+Fuera de eso, `Ejemplares` sigue el diagrama (id_libro, num_copia, Estatus, Ubicacion); no hay
+tabla de bitácora ni contador de intentos fallidos.
 
 Las llaves primarias y foráneas son `VARCHAR(13)`, como en el diccionario de datos. No usan
 AUTO_INCREMENT: la API asigna texto numérico (`'1'`, `'2'`…), el mayor + 1, con

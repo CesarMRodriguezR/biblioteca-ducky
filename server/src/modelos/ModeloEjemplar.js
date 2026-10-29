@@ -33,7 +33,8 @@
  *     configuracion/conexion.js.
  * (4) Las operaciones que modifican varias tablas usan EjecutarEnTransaccion.
  * (5) Columnas del diagrama: id_libro, num_copia, Estatus y Ubicacion (un solo código, ver
- *     utilidades/CodigoUbicacion.js). Una copia retirada queda en Estatus 'Inactivo'.
+ *     utilidades/CodigoUbicacion.js). Una copia retirada queda en Estatus 'Inactivo' con su
+ *     Motivo_Baja; las que se inactivan junto con su libro quedan sin motivo.
  * ******************************************************************
  */
 
@@ -286,11 +287,11 @@ const ModeloEjemplar = {
 
   /*
    * Función: Retirar
-   * Objetivo: Retira una copia (Estatus 'Inactivo'). Las copias en préstamo no se retiran. El
-   *           motivo se pide como en el prototipo, pero el diagrama no tiene dónde guardarlo:
-   *           solo se devuelve en la respuesta.
+   * Objetivo: Retira una copia: Estatus 'Inactivo' con su motivo (Perdido, Robado, Danado u
+   *           Obsoleto). Las copias en préstamo no se retiran. Por tener motivo, la copia no
+   *           vuelve a Disponible si su libro se inactiva y se reactiva.
    * Entrada: id_libro, num_copia, motivo
-   * Salida: Promesa con la copia dada de baja y su Motivo_Baja
+   * Salida: Promesa con la copia dada de baja
    */
   Retirar(id_libro, num_copia, motivo)
   {
@@ -319,14 +320,12 @@ const ModeloEjemplar = {
         throw ErrorHttp.Conflicto('La copia ya estaba dada de baja.');
       }
       await Consultar(
-        'UPDATE Ejemplares SET Estatus = \'Inactivo\' WHERE id_libro = ? AND num_copia = ?',
-        [id_libro, num_copia],
+        `UPDATE Ejemplares SET Estatus = 'Inactivo', Motivo_Baja = ?
+          WHERE id_libro = ? AND num_copia = ?`,
+        [motivo, id_libro, num_copia],
         conexion,
       );
-      return {
-        ...(await ModeloEjemplar.BuscarUno(id_libro, num_copia, conexion)),
-        Motivo_Baja: motivo,
-      };
+      return ModeloEjemplar.BuscarUno(id_libro, num_copia, conexion);
     });
   },
 };

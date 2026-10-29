@@ -525,9 +525,12 @@ const ModeloLibro = {
 
   /*
    * Función: CambiarEstatus
-   * Objetivo: Activa o inactiva el libro completo. Para inactivar, ninguna copia puede estar en
-   *           préstamo o apartada. Un libro inactivo deja de aparecer en el catálogo y sus
-   *           copias no se pueden prestar.
+   * Objetivo: Activa o inactiva el libro completo (en una transacción).
+   *           - Inactivar: ninguna copia puede estar en préstamo. Las copias activas quedan
+   *             Inactivas sin motivo; las que ya estaban dadas de baja conservan su motivo.
+   *           - Reactivar: vuelven a Disponible solo las copias Inactivas sin motivo (las que se
+   *             apagaron con el libro); las perdidas, robadas, dañadas u obsoletas no.
+   *           Un libro inactivo deja de aparecer en el catálogo.
    * Entrada: id, estatus
    * Salida: Promesa con la ficha actualizada
    */
@@ -563,6 +566,21 @@ const ModeloLibro = {
             { codigo: 'COPIAS_EN_PRESTAMO', copias: codigos },
           );
         }
+        await Consultar(
+          `UPDATE Ejemplares SET Estatus = 'Inactivo'
+            WHERE id_libro = ? AND Estatus <> 'Inactivo'`,
+          [id],
+          conexion,
+        );
+      }
+      else
+      {
+        await Consultar(
+          `UPDATE Ejemplares SET Estatus = 'Disponible'
+            WHERE id_libro = ? AND Estatus = 'Inactivo' AND Motivo_Baja IS NULL`,
+          [id],
+          conexion,
+        );
       }
       await Consultar('UPDATE Libros SET Estatus = ? WHERE id_libro = ?', [estatus, id], conexion);
       return ModeloLibro.BuscarPorId(id, {}, conexion);

@@ -57,7 +57,7 @@ const MENU = [
  */
 export function PlantillaAplicacion()
 {
-  const { usuario, Puede, CerrarSesion } = useSesion();
+  const { usuario, Puede, Salir } = useSesion();
   const es_admin = usuario.Nombre_Rol === 'Administrador';
 
   return (
@@ -98,7 +98,7 @@ export function PlantillaAplicacion()
           <button
             type="button"
             className="barra-lateral-salir"
-            onClick={CerrarSesion}
+            onClick={Salir}
             aria-label="Cerrar sesión"
             title="Cerrar sesión"
           >

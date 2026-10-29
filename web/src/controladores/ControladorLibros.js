@@ -572,8 +572,9 @@ export function useControladorBajaLibro()
         titulo: destino === 'Inactivo' ? 'Libro inactivado.' : 'Libro reactivado.',
         texto:
           destino === 'Inactivo'
-            ? 'Dejó de aparecer en el catálogo y en las búsquedas.'
-            : 'Vuelve a aparecer en el catálogo y se puede editar.',
+            ? 'Sus copias quedaron inactivas y dejó de aparecer en el catálogo y en las búsquedas.'
+            : 'Vuelve a aparecer en el catálogo; sus copias volvieron a Disponible, salvo las '
+              + 'dadas de baja por un motivo.',
       });
     }
     catch (error)

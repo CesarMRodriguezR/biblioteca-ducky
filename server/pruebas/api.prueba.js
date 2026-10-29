@@ -443,13 +443,25 @@ test('GL03: retiro de copia e inactivación de libro', async () =>
   assert.equal(inactivar.status, 409);
   assert.equal(inactivar.data.detalles.codigo, 'COPIAS_EN_PRESTAMO');
   assert.deepEqual(inactivar.data.detalles.copias, ['EJ-00202']);
+  // Con una copia prestada no se toca nada: solo sigue inactiva la copia retirada arriba
+  const sin_cambios = await Consultar(
+    'SELECT COUNT(*) AS n FROM Ejemplares WHERE id_libro = \'2\' AND Estatus = \'Inactivo\'',
+  );
+  assert.equal(sin_cambios[0].n, 1);
 
-  // Compiladores no tiene préstamos
+  // Compiladores no tiene préstamos. Antes se retira una copia por robo.
+  await Solicitar('POST', '/libros/15/ejemplares/2/baja', {
+    token: tokens.admin,
+    body: { Motivo_Baja: 'Robado' },
+  });
   const ok = await Solicitar('PATCH', '/libros/15/estatus', {
     token: tokens.admin,
     body: { Estatus: 'Inactivo' },
   });
   assert.equal(ok.status, 200);
+  // Al inactivar el libro, todas sus copias quedan inactivas
+  assert.ok(ok.data.ejemplares.length > 0);
+  assert.ok(ok.data.ejemplares.every((copia) => copia.Estatus === 'Inactivo'));
   const editar = await Solicitar('PUT', '/libros/15', {
     token: tokens.admin,
     body: { Titulo: 'X' },
@@ -463,6 +475,12 @@ test('GL03: retiro de copia e inactivación de libro', async () =>
     body: { Estatus: 'Activo' },
   });
   assert.equal(reactivar.data.Estatus, 'Activo');
+  // Al reactivar, solo vuelven las copias que se apagaron con el libro; la robada sigue inactiva
+  const [copia_1, copia_2] = reactivar.data.ejemplares;
+  assert.equal(copia_1.Estatus, 'Disponible');
+  assert.equal(copia_1.Motivo_Baja, null);
+  assert.equal(copia_2.Estatus, 'Inactivo');
+  assert.equal(copia_2.Motivo_Baja, 'Robado');
 });
 
 /*------------------------------------------------------------------

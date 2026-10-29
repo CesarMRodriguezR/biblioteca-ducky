@@ -60,7 +60,7 @@ export const ESTADOS_COPIA = {
     tono: 'advertencia',
     descripcion: 'Regresa a la biblioteca al devolverse',
   },
-  Inactivo: { etiqueta: 'Baja', tono: 'error', descripcion: 'Retirado del acervo' },
+  Inactivo: { etiqueta: 'Inactivo', tono: 'neutro', descripcion: 'Dada de baja del acervo' },
 };
 
 /** Filtros de búsqueda del prototipo móvil (los mismos campos que la API); el filtro también

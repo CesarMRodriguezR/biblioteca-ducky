@@ -87,7 +87,8 @@ export function PaginaBajaLibro()
   const controlador = useControladorBajaLibro();
   const libro = controlador.libro;
   const activo = libro?.Estatus === 'Activo';
-  const copias = libro?.ejemplares?.filter((evento) => evento.Estatus !== 'Inactivo') ?? [];
+  // Se muestran todas las copias; las dadas de baja aparecen como «Inactivo» y no se eligen.
+  const copias = libro?.ejemplares ?? [];
   const modo_copia = controlador.modo === 'copia';
 
   return (
@@ -145,13 +146,14 @@ export function PaginaBajaLibro()
                   {copias.map((copia) =>
                   {
                     const prestada = copia.Estatus === 'En préstamo';
+                    const no_elegible = prestada || copia.Estatus === 'Inactivo';
                     return (
                       <tr
                         key={copia.num_copia}
-                        className={prestada ? 'fila-deshabilitada' : ''}
+                        className={no_elegible ? 'fila-deshabilitada' : ''}
                         onClick={() =>
                           modo_copia &&
-                          !prestada &&
+                          !no_elegible &&
                           activo &&
                           controlador.ElegirCopia(copia.num_copia)
                         }
@@ -160,7 +162,7 @@ export function PaginaBajaLibro()
                           <td>
                             <Radio
                               marcado={controlador.copia_elegida === copia.num_copia}
-                              deshabilitado={prestada || !activo}
+                              deshabilitado={no_elegible || !activo}
                             />
                           </td>
                         )}
@@ -168,6 +170,12 @@ export function PaginaBajaLibro()
                         <td>{UbicacionTexto(copia)}</td>
                         <td>
                           <InsigniaCopia estatus={copia.Estatus} />
+                          {copia.Motivo_Baja && (
+                            <div className="texto-nota margen-arriba-8">
+                              {MOTIVOS_BAJA.find((motivo) => motivo.valor === copia.Motivo_Baja)
+                                ?.etiqueta ?? copia.Motivo_Baja}
+                            </div>
+                          )}
                         </td>
                       </tr>
                     );
@@ -175,7 +183,7 @@ export function PaginaBajaLibro()
                   {!copias.length && (
                     <tr>
                       <td colSpan={4} className="tabla-vacia">
-                        El libro no tiene copias activas.
+                        El libro no tiene copias registradas.
                       </td>
                     </tr>
                   )}
@@ -183,7 +191,8 @@ export function PaginaBajaLibro()
               </table>
             </Tarjeta>
             <p className="texto-nota margen-arriba-8">
-              Las copias en préstamo no se pueden retirar hasta que se devuelvan.
+              Las copias en préstamo no se pueden retirar hasta que se devuelvan. Las copias
+              inactivas ya fueron dadas de baja.
             </p>
           </div>
 
@@ -271,10 +280,14 @@ export function PaginaBajaLibro()
                       El sistema revisa que ninguna copia esté en préstamo. Si todas están libres,
                       inactiva el libro junto con sus copias y su ficha bibliográfica por{' '}
                       <strong>obsolescencia</strong>, y deja de aparecer en el catálogo y en las
-                      búsquedas.
+                      búsquedas. Las copias que ya estaban dadas de baja conservan su motivo.
                     </>
                   ) : (
-                    'El libro volverá a aparecer en el catálogo y en las búsquedas, y se podrá editar de nuevo.'
+                    <>
+                      El libro volverá a aparecer en el catálogo y en las búsquedas, y se podrá
+                      editar de nuevo. Sus copias vuelven a <strong>Disponible</strong>, salvo las
+                      que se dieron de baja por un motivo (perdida, robada, dañada u obsoleta).
+                    </>
                   )}
                 </p>
                 <div className="fila fin espacio-12 margen-arriba-24">

@@ -18,6 +18,9 @@
  *     Módulo                Objetivo
  *     ModeloAutenticacion   Sesión del usuario: inicio, cierre y datos del perfil
  *     RutaInicial           Ruta de inicio según las funciones del perfil
+ *     FUNCIONES_POR_SECCION Funciones que pide cada sección de la aplicación
+ *     PuedeVisitar          Indicar si el perfil puede entrar a una ruta
+ *     RutaTrasIniciarSesion A dónde llevar al usuario después de iniciar sesión
  * ******************************************************************
  */
 
@@ -106,4 +109,41 @@ export function RutaInicial(usuario)
     return '/libros';
   }
   return '/catalogo';
+}
+
+/*
+ * Constante: FUNCIONES_POR_SECCION
+ * Objetivo: Funciones que pide cada sección de la aplicación (las mismas que exige
+ *           rutas/RutasAplicacion.jsx). Basta con tener una de ellas.
+ */
+export const FUNCIONES_POR_SECCION = {
+  panel: ['gestionar_usuarios'],
+  usuarios: ['gestionar_usuarios'],
+  libros: ['gestionar_libros'],
+  catalogo: ['buscar_libros', 'gestionar_libros'],
+};
+
+/*
+ * Función: PuedeVisitar
+ * Objetivo: Indicar si el perfil del usuario puede entrar a una ruta según su sección.
+ * Entrada: ruta (p. ej. /usuarios/2/editar), usuario
+ * Salida: true o false (false si la sección no existe)
+ */
+export function PuedeVisitar(ruta, usuario)
+{
+  const seccion = String(ruta).split(/[/?#]/)[1];
+  const requeridas = FUNCIONES_POR_SECCION[seccion];
+  return Boolean(requeridas?.some((funcion) => usuario?.funciones?.includes(funcion)));
+}
+
+/*
+ * Función: RutaTrasIniciarSesion
+ * Objetivo: A dónde llevar al usuario después de iniciar sesión: a la pantalla que intentaba
+ *           abrir (desde) solo si su perfil puede verla; si no, a su ruta de inicio.
+ * Entrada: usuario, desde (opcional)
+ * Salida: Ruta
+ */
+export function RutaTrasIniciarSesion(usuario, desde)
+{
+  return desde && PuedeVisitar(desde, usuario) ? desde : RutaInicial(usuario);
 }

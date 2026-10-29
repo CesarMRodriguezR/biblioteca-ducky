@@ -416,8 +416,13 @@ export function useControladorPerfiles()
   useEffect(() =>
   {
     SetAsignadas(new Set(perfil?.funciones ?? []));
-    SetAviso(null);
   }, [perfil]);
+
+  // El aviso se limpia al cambiar de rol, no cuando se actualizan los datos del mismo rol.
+  useEffect(() =>
+  {
+    SetAviso(null);
+  }, [seleccionado]);
 
   const original = new Set(perfil?.funciones ?? []);
   const hay_cambios =
@@ -427,8 +432,15 @@ export function useControladorPerfiles()
   {
     try
     {
-      await guardar.Ejecutar(perfil.id_perfil, [...asignadas]);
-      await perfiles.Recargar();
+      const ids = [...asignadas];
+      await guardar.Ejecutar(perfil.id_perfil, ids);
+      // Se actualiza la lista local en lugar de recargarla: así la pantalla no pasa por
+      // «Cargando…» y el aviso de éxito se queda visible.
+      perfiles.SetDatos(
+        perfiles.datos.map((elemento) =>
+          elemento.id_perfil === perfil.id_perfil ? { ...elemento, funciones: ids } : elemento,
+        ),
+      );
       SetAviso({
         tipo: 'exito',
         titulo: `Funciones de ${perfil.Nombre_Rol} actualizadas.`,
@@ -453,6 +465,8 @@ export function useControladorPerfiles()
     hay_cambios,
     Seleccionar: SetSeleccionado,
     Alternar: (id_funcion, activa) =>
+    {
+      SetAviso(null);
       SetAsignadas((asignadas_previo) =>
       {
         const nuevo = new Set(asignadas_previo);
@@ -465,7 +479,8 @@ export function useControladorPerfiles()
           nuevo.delete(id_funcion);
         }
         return nuevo;
-      }),
+      });
+    },
     Cancelar: () => SetAsignadas(new Set(perfil?.funciones ?? [])),
     GuardarCambios,
   };

@@ -54,12 +54,21 @@ export function ProveedorSesion({ children })
 {
   const [usuario, SetUsuario] = useState(null);
   const [cargando, SetCargando] = useState(ModeloAutenticacion.TieneSesion());
+  // true cuando el usuario cerró sesión con el botón: el login ya no regresa a la pantalla
+  // anterior (solo se recuerda si la sesión expiró o se abrió un enlace sin sesión).
+  const [salida_voluntaria, SetSalidaVoluntaria] = useState(false);
 
   const CerrarSesion = useCallback(() =>
   {
     ModeloAutenticacion.CerrarSesion();
     SetUsuario(null);
   }, []);
+
+  const Salir = useCallback(() =>
+  {
+    SetSalidaVoluntaria(true);
+    CerrarSesion();
+  }, [CerrarSesion]);
 
   useEffect(() =>
   {
@@ -77,6 +86,7 @@ export function ProveedorSesion({ children })
   const IniciarSesion = useCallback(async (nombre_usuario, contrasena) =>
   {
     const sesion = await ModeloAutenticacion.IniciarSesion(nombre_usuario, contrasena);
+    SetSalidaVoluntaria(false);
     SetUsuario(sesion);
     return sesion;
   }, []);
@@ -85,11 +95,13 @@ export function ProveedorSesion({ children })
     () => ({
       usuario,
       cargando,
+      salida_voluntaria,
       IniciarSesion,
       CerrarSesion,
+      Salir,
       Puede: (...funciones) => funciones.some((funcion) => usuario?.funciones?.includes(funcion)),
     }),
-    [usuario, cargando, IniciarSesion, CerrarSesion],
+    [usuario, cargando, salida_voluntaria, IniciarSesion, CerrarSesion, Salir],
   );
 
   return <ContextoSesion.Provider value={valor}>{children}</ContextoSesion.Provider>;
@@ -99,7 +111,8 @@ export function ProveedorSesion({ children })
  * Hook: useSesion
  * Objetivo: Obtener la sesión actual: usuario, carga, inicio y cierre de sesión y permisos.
  * Entrada: Ninguna
- * Salida: Objeto { usuario, cargando, IniciarSesion, CerrarSesion, Puede }
+ * Salida: Objeto { usuario, cargando, salida_voluntaria, IniciarSesion, CerrarSesion, Salir,
+ *         Puede }
  */
 export function useSesion()
 {

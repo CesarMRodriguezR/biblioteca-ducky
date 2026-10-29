@@ -14,7 +14,8 @@
 --   * Ejemplares, Renovaciones y las tablas puente usan llave compuesta,
 --     tal como están marcadas PK,FK en el diagrama.
 --
---   * Ejemplares sigue el diagrama: id_libro, num_copia, Estatus y Ubicacion.
+--   * Ejemplares sigue el diagrama: id_libro, num_copia, Estatus y Ubicacion
+--     (más Motivo_Baja, ver [PROTOTIPO]).
 --     Ubicacion es un código P{pasillo}-E{estante}-N{nivel}-S{sección}
 --     (p. ej. P4-EB-N2-SComputación) que el sistema genera e interpreta
 --     (server/src/utilidades/CodigoUbicacion.js). El código visible de la copia
@@ -22,6 +23,9 @@
 --     dada de baja queda 'Inactivo'.
 --
 -- Agregados que exige el prototipo de Figma (marcados con [PROTOTIPO]):
+--   * Ejemplares: Motivo_Baja (Perdido, Robado, Danado u Obsoleto) en las copias
+--     retiradas una por una. Al inactivar un libro sus copias quedan 'Inactivo'
+--     sin motivo; al reactivarlo solo esas vuelven a 'Disponible'.
 --   * Usuarios: Nombre_Completo y Correo. Nombre_Usuario es el usuario de
 --     inicio de sesión (p. ej. ana.ramirez).
 --   * LibrosNuevos: Anio, Tema y Sinopsis (los pide la solicitud de compra).
@@ -159,6 +163,8 @@ CREATE TABLE Ejemplares (
   Estatus      ENUM('Disponible','En préstamo','Consulta Externa','Inactivo')
                NOT NULL DEFAULT 'Disponible',
   Ubicacion    VARCHAR(150) NOT NULL COMMENT 'Código P{pasillo}-E{estante}-N{nivel}-S{sección}',
+  Motivo_Baja  ENUM('Perdido','Robado','Danado','Obsoleto') NULL
+               COMMENT '[PROTOTIPO] Solo en copias retiradas una por una',
   PRIMARY KEY (id_libro, num_copia),
   CONSTRAINT fk_ejemplares_libro FOREIGN KEY (id_libro)
     REFERENCES Libros (id_libro) ON UPDATE CASCADE ON DELETE CASCADE
