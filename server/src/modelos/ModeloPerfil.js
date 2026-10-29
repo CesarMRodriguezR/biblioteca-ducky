@@ -61,7 +61,6 @@ class ClaseModeloPerfil extends ModeloBase
       llave_primaria: 'id_perfil',
       columnas: ['Nombre_Rol', 'Estatus', 'Descripcion_Perfil'],
       buscables: ['Nombre_Rol', 'Descripcion_Perfil'],
-      ordenar_por: 'id_perfil',
     });
   }
 
@@ -91,7 +90,7 @@ class ClaseModeloPerfil extends ModeloBase
    */
   async BuscarTodosConFunciones()
   {
-    const perfiles = await Consultar('SELECT * FROM Perfiles ORDER BY id_perfil');
+    const perfiles = await Consultar('SELECT * FROM Perfiles ORDER BY CAST(id_perfil AS UNSIGNED)');
     const asignaciones = await Consultar('SELECT id_perfil, id_funcion FROM PerfilFuncion');
     return perfiles.map((perfil) => ({
       ...perfil,
@@ -115,7 +114,7 @@ class ClaseModeloPerfil extends ModeloBase
          FROM PerfilFuncion pf
          JOIN Funciones f ON f.id_funcion = pf.id_funcion
         WHERE pf.id_perfil = ?
-        ORDER BY f.id_funcion`,
+        ORDER BY CAST(f.id_funcion AS UNSIGNED)`,
       [id_perfil],
       conexion,
     );

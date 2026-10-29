@@ -1,7 +1,8 @@
 /*
  * ******************************************************************
  * Nombre del programa: BD-SP01-GU02 · ControladorUsuarios.js
- * Función: Consulta, cambio, alta y baja por lista de usuarios, y funciones de los perfiles.
+ * Función: Consulta y cambio de usuarios, alta y baja según CIAA y Empleados, y funciones de
+ *          los perfiles.
  * Autor: Equipo CCJMops
  * Fecha: 26/10/2026
  * Entrada: Peticiones HTTP enrutadas desde rutas/rutas.js
@@ -36,8 +37,8 @@
 
 import { ErrorHttp } from '../utilidades/ErrorHttp.js';
 import { ModeloUsuario } from '../modelos/ModeloUsuario.js';
+import { ModeloListaUsuarios } from '../modelos/ModeloListaUsuarios.js';
 import { ModeloPerfil } from '../modelos/ModeloPerfil.js';
-import { ModeloBitacora } from '../modelos/ModeloBitacora.js';
 import { CrearControladorCrud } from './CrearControladorCrud.js';
 
 /*
@@ -107,11 +108,6 @@ const ControladorUsuarios = {
   async Crear(req, res)
   {
     const usuario = await ModeloUsuario.Crear(req.body);
-    await ModeloBitacora.Registrar(
-      req.usuario.id_usuario,
-      'ALTA_CUENTA',
-      `Alta de cuenta: ${usuario.Nombre_Usuario}`,
-    );
     res.status(201).json(usuario);
   },
 
@@ -129,7 +125,7 @@ const ControladorUsuarios = {
     {
       throw ErrorHttp.NoEncontrado('Usuario no encontrado');
     }
-    const es_propio = Number(req.params.id) === req.usuario.id_usuario;
+    const es_propio = req.params.id === req.usuario.id_usuario;
     if (es_propio && req.body.Estatus && req.body.Estatus !== 'Activo')
     {
       throw ErrorHttp.SolicitudInvalida('No puedes desactivar tu propia cuenta.');
@@ -139,74 +135,44 @@ const ControladorUsuarios = {
       throw ErrorHttp.SolicitudInvalida('No puedes cambiar el perfil de tu propia cuenta.');
     }
     const usuario = await ModeloUsuario.Actualizar(req.params.id, req.body);
-    await ModeloBitacora.Registrar(
-      req.usuario.id_usuario,
-      'CAMBIO_USUARIO',
-      `Cambio de datos de ${usuario.Nombre_Usuario}`,
-    );
     res.json(usuario);
   },
 
   /*
-   * Función: ValidarLista
-   * Objetivo: POST /usuarios/carga/validar — revisión previa de la lista cargada.
-   * Entrada: req: petición HTTP (ya autenticada y validada); res: respuesta HTTP
+   * Función: GenerarLista
+   * Objetivo: GET /usuarios/lista — consulta CIAA y Empleados y devuelve la lista de altas
+   *           (válidas y con error) y la de bajas.
+   * Entrada: req: petición HTTP (ya autenticada); res: respuesta HTTP
    * Salida: Respuesta HTTP en formato JSON
    */
-  async ValidarLista(req, res)
+  async GenerarLista(_req, res)
   {
-    res.json(await ModeloUsuario.ValidarLista(req.body.filas));
+    res.json(await ModeloListaUsuarios.Generar());
   },
 
   /*
    * Función: CrearDesdeLista
-   * Objetivo: POST /usuarios/carga — crea las cuentas con el rol asignado a cada fila.
+   * Objetivo: POST /usuarios/carga — crea las cuentas nuevas con el rol asignado a cada una.
    * Entrada: req: petición HTTP (ya autenticada y validada); res: respuesta HTTP
    * Salida: Respuesta HTTP en formato JSON
    */
   async CrearDesdeLista(req, res)
   {
-    const resultado = await ModeloUsuario.CrearDesdeLista(req.body.cuentas);
-    if (resultado.creados.length)
-    {
-      await ModeloBitacora.Registrar(
-        req.usuario.id_usuario,
-        'ALTA_CUENTAS',
-        `Alta de cuentas por lista: ${resultado.creados.length} ${resultado.creados.length === 1 ? 'cuenta creada' : 'cuentas creadas'}`,
-      );
-    }
+    const resultado = await ModeloListaUsuarios.CrearCuentas(req.body.cuentas);
     res.status(resultado.creados.length ? 201 : 200).json(resultado);
   },
 
   /*
-   * Función: RevisarBajas
-   * Objetivo: POST /usuarios/bajas/revisar — quienes ya no aparecen en la nueva lista.
-   * Entrada: req: petición HTTP (ya autenticada y validada); res: respuesta HTTP
-   * Salida: Respuesta HTTP en formato JSON
-   */
-  async RevisarBajas(req, res)
-  {
-    res.json(await ModeloUsuario.RevisarBajas(req.body.matriculas));
-  },
-
-  /*
    * Función: DarDeBaja
-   * Objetivo: POST /usuarios/bajas — baja de cuentas sin préstamos ni multas pendientes.
+   * Objetivo: POST /usuarios/bajas — baja de las cuentas que ya no aparecen en CIAA ni en
+   *           Empleados y no tienen préstamos ni multas pendientes.
    * Entrada: req: petición HTTP (ya autenticada y validada); res: respuesta HTTP
    * Salida: Respuesta HTTP en formato JSON
    */
   async DarDeBaja(req, res)
   {
     const ids = req.body.ids.filter((id) => id !== req.usuario.id_usuario);
-    const resultado = await ModeloUsuario.DarDeBaja(ids);
-    if (resultado.dados_de_baja.length)
-    {
-      await ModeloBitacora.Registrar(
-        req.usuario.id_usuario,
-        'BAJA_CUENTAS',
-        `Baja de cuentas: ${resultado.dados_de_baja.map((elemento) => elemento.Nombre_Usuario).join(', ')}`,
-      );
-    }
+    const resultado = await ModeloListaUsuarios.DarDeBaja(ids);
     res.json(resultado);
   },
 };
@@ -238,11 +204,6 @@ const ControladorPerfiles = {
   async AsignarFunciones(req, res)
   {
     const perfil = await ModeloPerfil.AsignarFunciones(req.params.id, req.body.funciones);
-    await ModeloBitacora.Registrar(
-      req.usuario.id_usuario,
-      'CAMBIO_PERFIL',
-      `Funciones actualizadas del perfil ${perfil.Nombre_Rol}`,
-    );
     res.json(perfil);
   },
 };

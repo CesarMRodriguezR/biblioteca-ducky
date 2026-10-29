@@ -31,7 +31,7 @@
  * ******************************************************************
  */
 
-import { Consultar } from '../configuracion/conexion.js';
+import { Consultar, SiguienteId } from '../configuracion/conexion.js';
 
 /*
  * Clase: ModeloBase
@@ -53,7 +53,8 @@ class ModeloBase
     this.llave_primaria = llave_primaria;
     this.columnas = columnas;
     this.buscables = buscables;
-    this.ordenar_por = ordenar_por || llave_primaria;
+    // Las llaves son texto numérico: sin otra columna, se ordena por su valor numérico.
+    this.orden_sql = ordenar_por ? `\`${ordenar_por}\`` : `CAST(\`${llave_primaria}\` AS UNSIGNED)`;
   }
 
   /*
@@ -88,7 +89,7 @@ class ModeloBase
     }
     parametros.push(Number(limit), Number(offset));
     return Consultar(
-      `SELECT * FROM \`${this.tabla}\` ${condicion} ORDER BY \`${this.ordenar_por}\` LIMIT ? OFFSET ?`,
+      `SELECT * FROM \`${this.tabla}\` ${condicion} ORDER BY ${this.orden_sql} LIMIT ? OFFSET ?`,
       parametros,
       conexion,
     );
@@ -112,21 +113,22 @@ class ModeloBase
 
   /*
    * Función: Crear
-   * Objetivo: Insertar un registro con las columnas permitidas.
+   * Objetivo: Insertar un registro con las columnas permitidas y el siguiente identificador.
    * Entrada: datos, conexion
    * Salida: Promesa con el registro creado
    */
   async Crear(datos, conexion)
   {
-    const valores = this.FiltrarColumnas(datos);
+    const id = await SiguienteId(this.tabla, this.llave_primaria, conexion);
+    const valores = { [this.llave_primaria]: id, ...this.FiltrarColumnas(datos) };
     const claves = Object.keys(valores);
-    const resultado = await Consultar(
+    await Consultar(
       `INSERT INTO \`${this.tabla}\` (${claves.map((clave) => `\`${clave}\``).join(', ')})
        VALUES (${claves.map(() => '?').join(', ')})`,
       Object.values(valores),
       conexion,
     );
-    return this.BuscarPorId(resultado.insertId, conexion);
+    return this.BuscarPorId(id, conexion);
   }
 
   /*

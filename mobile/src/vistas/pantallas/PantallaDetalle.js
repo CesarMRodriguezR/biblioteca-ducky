@@ -141,7 +141,7 @@ export function PantallaDetalle({ route })
                 <InsigniaCopia estatus={copia.Estatus} />
               </Fila>
             ))
-            : ['Disponible', 'Consulta externa', 'En prestamo'].map((estado, indice) => (
+            : ['Disponible', 'Consulta Externa', 'En préstamo'].map((estado, indice) => (
               <Fila key={estado} primera={indice === 0}>
                 <View style={{ gap: 6, flex: 1 }}>
                   <InsigniaCopia estatus={estado} />

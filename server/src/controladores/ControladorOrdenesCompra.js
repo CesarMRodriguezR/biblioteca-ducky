@@ -35,7 +35,7 @@
 
 import { ErrorHttp } from '../utilidades/ErrorHttp.js';
 import { ModeloOrdenCompra } from '../modelos/ModeloOrdenCompra.js';
-import { ModeloBitacora } from '../modelos/ModeloBitacora.js';
+import { ModeloTesoreria } from '../modelos/ModeloTesoreria.js';
 import { TieneFuncion } from '../intermediarios/autenticacion.js';
 
 /*
@@ -52,19 +52,29 @@ const ControladorOrdenesCompra = {
   async Listar(req, res)
   {
     const { estatus, limit, offset } = req.consulta_valida;
-    const id_usuario = TieneFuncion(req, 'gestionar_compras') ? undefined : req.usuario.id_usuario;
+    const id_usuario = TieneFuncion(req, 'gestionar_libros') ? undefined : req.usuario.id_usuario;
     res.json(await ModeloOrdenCompra.Listar({ id_usuario, estatus, limit, offset }));
   },
 
   /*
    * Función: Solicitudes
    * Objetivo: GET /ordenes-compra/solicitudes — renglones abiertos ("Solicitudes pendientes").
+   *           Antes de responder envía a Tesorería lo pendiente, trae sus respuestas y agrega
+   *           a cada renglón el folio y el motivo que tiene Tesorería (si responde).
    * Entrada: req: petición HTTP (ya autenticada y validada); res: respuesta HTTP
    * Salida: Respuesta HTTP en formato JSON
    */
   async Solicitudes(_req, res)
   {
-    res.json(await ModeloOrdenCompra.SolicitudesAbiertas());
+    const ids = (await ModeloOrdenCompra.SolicitudesAbiertas()).map((fila) => fila.id_orden);
+    const { solicitudes } = await ModeloTesoreria.Sincronizar([...new Set(ids)]);
+    const renglones = await ModeloOrdenCompra.SolicitudesAbiertas();
+    res.json(
+      renglones.map((fila) => ({
+        ...fila,
+        ...ModeloTesoreria.DatosTesoreria(solicitudes.get(fila.id_orden)),
+      })),
+    );
   },
 
   /*
@@ -80,7 +90,7 @@ const ControladorOrdenesCompra = {
     {
       throw ErrorHttp.NoEncontrado('Orden no encontrada');
     }
-    if (!TieneFuncion(req, 'gestionar_compras') && orden.id_usuario !== req.usuario.id_usuario)
+    if (!TieneFuncion(req, 'gestionar_libros') && orden.id_usuario !== req.usuario.id_usuario)
     {
       throw ErrorHttp.Prohibido();
     }
@@ -89,41 +99,55 @@ const ControladorOrdenesCompra = {
 
   /*
    * Función: Crear
-   * Objetivo: Atender POST /api/ordenes-compra.
+   * Objetivo: POST /ordenes-compra — registra la orden y la envía a Tesorería. Si Tesorería
+   *           no responde, la orden queda Pendiente y se reenvía después (envio_tesoreria).
    * Entrada: req: petición HTTP (ya autenticada y validada); res: respuesta HTTP
    * Salida: Respuesta HTTP en formato JSON
    */
   async Crear(req, res)
   {
     const orden = await ModeloOrdenCompra.Crear(req.body, req.usuario.id_usuario);
-    const renglones = [...orden.libros_existentes, ...orden.libros_nuevos];
-    const descripcion = renglones
-      .map(
-        (renglon) => `${renglon.Titulo} · ${renglon.Num_Ejemplares} ${renglon.Num_Ejemplares === 1 ? 'copia' : 'copias'}`,
-      )
-      .join('; ');
-    await ModeloBitacora.Registrar(
-      req.usuario.id_usuario,
-      'SOLICITUD_COMPRA',
-      `Solicitud de compra: ${descripcion}`,
-    );
-    res.status(201).json(orden);
+    try
+    {
+      const enviada = await ModeloTesoreria.EnviarOrden(orden.id_orden);
+      res.status(201).json({ ...enviada, envio_tesoreria: { enviada: true } });
+    }
+    catch (error)
+    {
+      if (error.details?.codigo !== 'SISTEMA_EXTERNO')
+      {
+        throw error;
+      }
+      res.status(201).json({
+        ...orden,
+        envio_tesoreria: { enviada: false, mensaje: error.message },
+      });
+    }
+  },
+
+  /*
+   * Función: RecibirRespuestaTesoreria
+   * Objetivo: POST /tesoreria/notificaciones — aviso de Tesorería: aceptó o rechazó una
+   *           solicitud. Lo llama el sistema externo, no un usuario.
+   * Entrada: req: petición HTTP (con clave de integración y validada); res: respuesta HTTP
+   * Salida: Respuesta HTTP en formato JSON
+   */
+  async RecibirRespuestaTesoreria(req, res)
+  {
+    const { orden, cambio } = await ModeloTesoreria.AplicarRespuesta(req.body);
+    res.json({ id_orden: orden.id_orden, Estatus: orden.Estatus, cambio });
   },
 
   /*
    * Función: CambiarEstatus
-   * Objetivo: Atender PATCH /api/ordenes-compra/:id/estatus.
+   * Objetivo: PATCH /ordenes-compra/:id/estatus — marcar como Recibida una orden que
+   *           Tesorería aprobó (llegaron los libros); agrega las copias al inventario.
    * Entrada: req: petición HTTP (ya autenticada y validada); res: respuesta HTTP
    * Salida: Respuesta HTTP en formato JSON
    */
   async CambiarEstatus(req, res)
   {
     const orden = await ModeloOrdenCompra.CambiarEstatus(req.params.id, req.body.Estatus);
-    await ModeloBitacora.Registrar(
-      req.usuario.id_usuario,
-      'ESTATUS_COMPRA',
-      `Solicitud de compra #${orden.id_orden} → ${orden.Estatus}`,
-    );
     res.json(orden);
   },
 };

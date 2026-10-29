@@ -1,7 +1,7 @@
 /*
  * ******************************************************************
  * Nombre del programa: WEB-PANEL · PaginaPanel.jsx
- * Función: Panel del administrador con indicadores, accesos rápidos y actividad reciente.
+ * Función: Panel del administrador con indicadores y accesos rápidos.
  * Autor: Equipo CCJMops
  * Fecha: 26/10/2026
  * Entrada: Props y estado del controlador de la pantalla
@@ -33,23 +33,26 @@
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowRight,
-  ChevronRight,
-  Clock,
+  BookOpen,
   Library,
   ListChecks,
   PenLine,
+  Search,
+  ShieldCheck,
   ShoppingCart,
   UserRound,
+  UserRoundMinus,
+  UserRoundSearch,
   Users,
 } from 'lucide-react';
 import { useControladorPanel } from '../../controladores/ControladorPanel.js';
-import { TiempoRelativo } from '../../modelos/dominio.js';
 import { Pagina } from '../plantillas/PlantillaAplicacion.jsx';
 import { AlertaError, Cargando, Insignia, Tarjeta } from '../componentes/interfaz.jsx';
 
 /*
  * Constante: ACCESOS
- * Objetivo: Accesos rápidos del panel.
+ * Objetivo: Accesos rápidos del panel: los tres del prototipo y los demás procesos de esta
+ *           entrega (gestión de usuarios, gestión de libros y búsqueda).
  */
 const ACCESOS = [
   {
@@ -73,11 +76,53 @@ const ACCESOS = [
     fondo: 'fondo-brillante',
     ruta: '/catalogo?listado=1',
   },
+  {
+    titulo: 'Baja de usuarios',
+    texto: 'Revisa quién ya no aparece en CIAA ni en Empleados y da de baja su cuenta.',
+    icono: UserRoundMinus,
+    fondo: 'fondo-azul',
+    ruta: '/usuarios/bajas',
+  },
+  {
+    titulo: 'Consulta de usuarios',
+    texto: 'Busca una cuenta por matrícula o nómina y cambia sus datos.',
+    icono: UserRoundSearch,
+    fondo: 'fondo-dorado',
+    ruta: '/usuarios/consulta',
+  },
+  {
+    titulo: 'Perfiles y funciones',
+    texto: 'Define qué funciones tiene cada rol del sistema.',
+    icono: ShieldCheck,
+    fondo: 'fondo-brillante',
+    ruta: '/usuarios/perfiles',
+  },
+  {
+    titulo: 'Cambio y baja de libros',
+    texto: 'Edita fichas, cambia el estado de las copias o retira ejemplares.',
+    icono: BookOpen,
+    fondo: 'fondo-azul',
+    ruta: '/libros',
+  },
+  {
+    titulo: 'Solicitud de compra',
+    texto: 'Pide libros nuevos o más copias; Tesorería acepta o rechaza.',
+    icono: ShoppingCart,
+    fondo: 'fondo-dorado',
+    ruta: '/libros/solicitar',
+  },
+  {
+    titulo: 'Buscar libros',
+    texto: 'Consulta el catálogo con filtros por título, autor, tema y más.',
+    icono: Search,
+    fondo: 'fondo-brillante',
+    ruta: '/catalogo',
+  },
 ];
 
 /*
  * Componente: PaginaPanel
- * Objetivo: Panel del administrador con indicadores, accesos rápidos y actividad reciente.
+ * Objetivo: Panel del administrador con indicadores y accesos rápidos.
  * Uso: <PaginaPanel />
  */
 export function PaginaPanel()
@@ -168,43 +213,6 @@ export function PaginaPanel()
             ))}
           </div>
 
-          <h2 className="margen-arriba-32 margen-abajo-16">Actividad reciente</h2>
-          <Tarjeta relleno={false}>
-            {resumen.actividad.length === 0 && (
-              <p className="tabla-vacia">Aún no hay actividad registrada.</p>
-            )}
-            {resumen.actividad.map((elemento, indice) => (
-              <div
-                key={elemento.id_bitacora}
-                className="fila espacio-16"
-                style={{
-                  padding: '16px 20px',
-                  borderTop: indice ? '1px solid var(--linea-divisoria)' : 0,
-                }}
-              >
-                <div
-                  style={{
-                    width: 36,
-                    height: 36,
-                    borderRadius: 10,
-                    background: 'var(--informacion-fondo)',
-                    color: 'var(--azul-principal)',
-                    display: 'grid',
-                    placeItems: 'center',
-                    flexShrink: 0,
-                  }}
-                >
-                  <Clock size={18} aria-hidden />
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 700, fontSize: 14.5 }}>{elemento.Descripcion}</div>
-                  <div className="texto-nota">{elemento.Nombre_Completo ?? 'Sistema'}</div>
-                </div>
-                <span className="texto-nota">{TiempoRelativo(elemento.Fecha)}</span>
-                <ChevronRight size={18} aria-hidden />
-              </div>
-            ))}
-          </Tarjeta>
         </>
       )}
     </Pagina>

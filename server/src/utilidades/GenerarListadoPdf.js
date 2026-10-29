@@ -192,11 +192,13 @@ function GenerarListadoPdf(libros, { generado_por, filtro, fecha = new Date() })
       posicion_y + 8,
     );
 
-  // Pie de página en todas las hojas
+  // Pie de página en todas las hojas. El pie queda dentro del margen inferior: se quita el
+  // margen mientras se escribe para que pdfkit no lo mande a una hoja nueva.
   const rango = documento.bufferedPageRange();
   for (let indice = 0; indice < rango.count; indice += 1)
   {
     documento.switchToPage(indice);
+    documento.page.margins.bottom = 0;
     documento
       .font('Helvetica')
       .fontSize(8)
@@ -204,7 +206,7 @@ function GenerarListadoPdf(libros, { generado_por, filtro, fecha = new Date() })
       .text(
         `Página ${indice + 1} de ${rango.count} · Biblioteca Universidad Ducky`,
         izquierda,
-        documento.page.height - documento.page.margins.bottom - 4,
+        documento.page.height - 44, // 40 de margen + 4
         { width: derecha - izquierda, align: 'center', lineBreak: false },
       );
   }

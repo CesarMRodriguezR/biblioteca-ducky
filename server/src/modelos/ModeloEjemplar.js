@@ -16,8 +16,11 @@
  * ******************************************************************
  * Contenido de listado:
  *     Módulo           Objetivo
- *     GenerarCodigo    Código visible: EJ- + id_libro*100 + copia (EJ-00101) o…
- *     ModeloEjemplar   Acceso a las copias físicas de los libros
+ *     ESTADOS_EDITABLES   Estados que el personal puede asignar a una copia
+ *     ESTADOS_PRESTADA    Estados de una copia que está fuera de la biblioteca
+ *     MAXIMO_COPIAS       Copias que puede tener un libro
+ *     CopiaVisible        Agregar a una copia su código visible y su ubicación interpretada
+ *     ModeloEjemplar      Acceso a las copias físicas de los libros
  * ******************************************************************
  */
 
@@ -29,41 +32,52 @@
  * (3) Requiere la base de datos creada con database/01_schema.sql y la conexión de
  *     configuracion/conexion.js.
  * (4) Las operaciones que modifican varias tablas usan EjecutarEnTransaccion.
+ * (5) Columnas del diagrama: id_libro, num_copia, Estatus y Ubicacion (un solo código, ver
+ *     utilidades/CodigoUbicacion.js). Una copia retirada queda en Estatus 'Inactivo'.
  * ******************************************************************
  */
 
 import { Consultar, EjecutarEnTransaccion } from '../configuracion/conexion.js';
 import { ErrorHttp } from '../utilidades/ErrorHttp.js';
-
-const ESTADOS_EDITABLES = ['Disponible', 'Consulta externa'];
+import {
+  CodigoEjemplar,
+  GenerarCodigoUbicacion,
+  InterpretarCodigoUbicacion,
+} from '../utilidades/CodigoUbicacion.js';
 
 /*
- * Función: GenerarCodigo
- * Objetivo: Código visible: EJ- + id_libro*100 + copia (EJ-00101) o el siguiente libre.
- * Entrada: conexion, id_libro, num_copia
- * Salida: Promesa con el código, p. ej. EJ-00101
+ * Constante: ESTADOS_EDITABLES
+ * Objetivo: Estados que el personal puede asignar a una copia («En préstamo» lo asigna el
+ *           sistema y «Inactivo» es la baja).
  */
-async function GenerarCodigo(conexion, id_libro, num_copia)
+const ESTADOS_EDITABLES = ['Disponible', 'Consulta Externa'];
+
+/*
+ * Constante: ESTADOS_PRESTADA
+ * Objetivo: Estados de una copia que está fuera de la biblioteca y no se puede modificar.
+ */
+const ESTADOS_PRESTADA = ['En préstamo'];
+
+/*
+ * Constante: MAXIMO_COPIAS
+ * Objetivo: Copias que puede tener un libro; mantiene único el código visible EJ-…
+ */
+const MAXIMO_COPIAS = 99;
+
+/*
+ * Función: CopiaVisible
+ * Objetivo: Agregar a una copia su código visible (EJ-00101) y los componentes de su ubicación,
+ *           interpretados del código guardado.
+ * Entrada: copia (fila de Ejemplares)
+ * Salida: Copia con Codigo, Pasillo, Estante, Nivel y Seccion
+ */
+function CopiaVisible(copia)
 {
-  if (num_copia < 100)
-  {
-    const candidato = `EJ-${String(id_libro * 100 + num_copia).padStart(5, '0')}`;
-    const [ocupado] = await Consultar(
-      'SELECT 1 FROM Ejemplares WHERE Codigo = ?',
-      [candidato],
-      conexion,
-    );
-    if (!ocupado)
-    {
-      return candidato;
-    }
-  }
-  const [{ maximo }] = await Consultar(
-    'SELECT COALESCE(MAX(CAST(SUBSTRING(Codigo, 4) AS UNSIGNED)), 0) AS maximo FROM Ejemplares',
-    [],
-    conexion,
-  );
-  return `EJ-${String(maximo + 1).padStart(5, '0')}`;
+  return {
+    ...copia,
+    Codigo: CodigoEjemplar(copia.id_libro, copia.num_copia),
+    ...InterpretarCodigoUbicacion(copia.Ubicacion),
+  };
 }
 
 /*
@@ -72,6 +86,8 @@ async function GenerarCodigo(conexion, id_libro, num_copia)
  */
 const ModeloEjemplar = {
   ESTADOS_EDITABLES,
+  ESTADOS_PRESTADA,
+  CopiaVisible,
 
   /*
    * Función: BuscarPorLibro
@@ -79,13 +95,14 @@ const ModeloEjemplar = {
    * Entrada: id_libro, conexion
    * Salida: Promesa con las copias
    */
-  BuscarPorLibro(id_libro, conexion)
+  async BuscarPorLibro(id_libro, conexion)
   {
-    return Consultar(
+    const copias = await Consultar(
       'SELECT * FROM Ejemplares WHERE id_libro = ? ORDER BY num_copia',
       [id_libro],
       conexion,
     );
+    return copias.map(CopiaVisible);
   },
 
   /*
@@ -101,38 +118,22 @@ const ModeloEjemplar = {
       [id_libro, num_copia],
       conexion,
     );
-    return filas[0] || null;
-  },
-
-  /*
-   * Función: BuscarPrestable
-   * Objetivo: Primera copia prestable (Consulta externa), bloqueada para la transacción.
-   * Entrada: id_libro, conexion
-   * Salida: Promesa con la copia o null
-   */
-  async BuscarPrestable(id_libro, conexion)
-  {
-    const filas = await Consultar(
-      `SELECT * FROM Ejemplares
-        WHERE id_libro = ? AND Estatus = 'Consulta externa'
-        ORDER BY num_copia LIMIT 1 FOR UPDATE`,
-      [id_libro],
-      conexion,
-    );
-    return filas[0] || null;
+    return filas[0] ? CopiaVisible(filas[0]) : null;
   },
 
   /*
    * Función: Agregar
-   * Objetivo: Agrega `cantidad` copias con el siguiente num_copia y su código. Si no se indica
-   *           ubicación, se usa la de las demás copias del libro.
-   * Entrada: id_libro, cantidad, { Pasillo, Estante, Nivel, Estatus? } (opcional), conn_externa
-   * Salida: Promesa con los códigos de las copias creadas
+   * Objetivo: Agrega `cantidad` copias con el siguiente num_copia. La ubicación se guarda como
+   *           un código; los componentes que no se indiquen se toman de las demás copias del
+   *           libro y la sección, de su primer tema.
+   * Entrada: id_libro, cantidad, { Pasillo, Estante, Nivel, Seccion, Estatus? } (opcional),
+   *          conn_externa
+   * Salida: Promesa con los códigos visibles de las copias creadas
    */
   async Agregar(
     id_libro,
     cantidad,
-    { Pasillo, Estante, Nivel, Estatus = 'Disponible' } = {},
+    { Pasillo, Estante, Nivel, Seccion, Estatus = 'Disponible' } = {},
     conn_externa,
   )
   {
@@ -152,34 +153,50 @@ const ModeloEjemplar = {
         throw ErrorHttp.Conflicto('No se pueden agregar copias a un libro inactivo');
       }
 
-      const [referencia] = await Consultar(
-        `SELECT Pasillo, Estante, Nivel FROM Ejemplares WHERE id_libro = ? AND Estatus <> 'Baja'
-          ORDER BY num_copia LIMIT 1`,
-        [id_libro],
-        conexion,
-      );
-      const ubicacion = {
-        Pasillo: Pasillo ?? referencia?.Pasillo ?? null,
-        Estante: Estante ?? referencia?.Estante ?? null,
-        Nivel: Nivel ?? referencia?.Nivel ?? null,
-      };
+      const [[referencia], [tema]] = await Promise.all([
+        Consultar(
+          `SELECT Ubicacion FROM Ejemplares WHERE id_libro = ? AND Estatus <> 'Inactivo'
+            ORDER BY num_copia LIMIT 1`,
+          [id_libro],
+          conexion,
+        ),
+        Consultar(
+          `SELECT t.Nombre_Tema FROM TemasLibros tl JOIN Temas t ON t.id_tema = tl.id_tema
+            WHERE tl.id_libro = ? ORDER BY t.Nombre_Tema LIMIT 1`,
+          [id_libro],
+          conexion,
+        ),
+      ]);
+      const anterior = InterpretarCodigoUbicacion(referencia?.Ubicacion);
+      const ubicacion = GenerarCodigoUbicacion({
+        Pasillo: Pasillo ?? anterior.Pasillo,
+        Estante: Estante ?? anterior.Estante,
+        Nivel: Nivel ?? anterior.Nivel,
+        Seccion: Seccion ?? anterior.Seccion ?? tema?.Nombre_Tema,
+      });
+      if (!ubicacion)
+      {
+        throw ErrorHttp.SolicitudInvalida('Indica la ubicación de las copias.');
+      }
       const [{ ultimo }] = await Consultar(
         'SELECT COALESCE(MAX(num_copia), 0) AS ultimo FROM Ejemplares WHERE id_libro = ? FOR UPDATE',
         [id_libro],
         conexion,
       );
+      if (ultimo + cantidad > MAXIMO_COPIAS)
+      {
+        throw ErrorHttp.Conflicto(`Un libro puede tener como máximo ${MAXIMO_COPIAS} copias.`);
+      }
       const nuevos = [];
       for (let indice = 1; indice <= cantidad; indice += 1)
       {
         const num = ultimo + indice;
-        const codigo = await GenerarCodigo(conexion, id_libro, num);
         await Consultar(
-          `INSERT INTO Ejemplares (id_libro, num_copia, Estatus, Codigo, Pasillo, Estante, Nivel)
-           VALUES (?, ?, ?, ?, ?, ?, ?)`,
-          [id_libro, num, Estatus, codigo, ubicacion.Pasillo, ubicacion.Estante, ubicacion.Nivel],
+          'INSERT INTO Ejemplares (id_libro, num_copia, Estatus, Ubicacion) VALUES (?, ?, ?, ?)',
+          [id_libro, num, Estatus, ubicacion],
           conexion,
         );
-        nuevos.push(codigo);
+        nuevos.push(CodigoEjemplar(id_libro, num));
       }
       return nuevos;
     };
@@ -187,28 +204,13 @@ const ModeloEjemplar = {
   },
 
   /*
-   * Función: AsignarEstatus
-   * Objetivo: Actualización interna (préstamos, devoluciones, lista de espera).
-   * Entrada: id_libro, num_copia, estatus, conexion
-   * Salida: Promesa con el resultado de la actualización
-   */
-  async AsignarEstatus(id_libro, num_copia, estatus, conexion)
-  {
-    await Consultar(
-      'UPDATE Ejemplares SET Estatus = ? WHERE id_libro = ? AND num_copia = ?',
-      [estatus, id_libro, num_copia],
-      conexion,
-    );
-  },
-
-  /*
    * Función: CambiarEstado
-   * Objetivo: Cambio de estado hecho por el personal: solo entre Disponible y Consulta externa.
-   *           "En préstamo" lo asigna el sistema.
-   * Entrada: id_libro, num_copia, { Estatus, Pasillo, Estante, Nivel }
+   * Objetivo: Cambio hecho por el personal: estado (solo entre Disponible y Consulta Externa)
+   *           o ubicación. Al cambiar un componente de la ubicación se genera un código nuevo.
+   * Entrada: id_libro, num_copia, { Estatus, Pasillo, Estante, Nivel, Seccion }
    * Salida: Promesa con la copia actualizada
    */
-  CambiarEstado(id_libro, num_copia, { Estatus, Pasillo, Estante, Nivel })
+  CambiarEstado(id_libro, num_copia, { Estatus, Pasillo, Estante, Nivel, Seccion })
   {
     return EjecutarEnTransaccion(async (conexion) =>
     {
@@ -231,7 +233,7 @@ const ModeloEjemplar = {
       }
       if (Estatus !== undefined)
       {
-        if (['En prestamo', 'Apartado'].includes(copia.Estatus))
+        if (ESTADOS_PRESTADA.includes(copia.Estatus))
         {
           throw ErrorHttp.Conflicto(
             'Copia en préstamo: debe devolverse antes de reasignar su estado.',
@@ -240,30 +242,36 @@ const ModeloEjemplar = {
             },
           );
         }
-        if (copia.Estatus === 'Baja')
+        if (copia.Estatus === 'Inactivo')
         {
           throw ErrorHttp.Conflicto('La copia está dada de baja.');
         }
         if (!ESTADOS_EDITABLES.includes(Estatus))
         {
-          throw ErrorHttp.SolicitudInvalida('Solo se puede asignar Disponible o Consulta externa.');
+          throw ErrorHttp.SolicitudInvalida('Solo se puede asignar Disponible o Consulta Externa.');
         }
       }
       const sets = [];
       const parametros = [];
-      [
-        ['Estatus', Estatus],
-        ['Pasillo', Pasillo],
-        ['Estante', Estante],
-        ['Nivel', Nivel],
-      ].forEach(([clave, valor]) =>
+      if (Estatus !== undefined)
       {
-        if (valor !== undefined)
+        sets.push('Estatus = ?');
+        parametros.push(Estatus);
+      }
+      const cambios = { Pasillo, Estante, Nivel, Seccion };
+      if (Object.values(cambios).some((valor) => valor !== undefined))
+      {
+        const actual = InterpretarCodigoUbicacion(copia.Ubicacion);
+        Object.entries(cambios).forEach(([campo, valor]) =>
         {
-          sets.push(`${clave} = ?`);
-          parametros.push(valor);
-        }
-      });
+          if (valor !== undefined)
+          {
+            actual[campo] = valor;
+          }
+        });
+        sets.push('Ubicacion = ?');
+        parametros.push(GenerarCodigoUbicacion(actual));
+      }
       if (sets.length)
       {
         await Consultar(
@@ -278,9 +286,11 @@ const ModeloEjemplar = {
 
   /*
    * Función: Retirar
-   * Objetivo: Retira una copia con motivo. Las copias en préstamo no se retiran.
+   * Objetivo: Retira una copia (Estatus 'Inactivo'). Las copias en préstamo no se retiran. El
+   *           motivo se pide como en el prototipo, pero el diagrama no tiene dónde guardarlo:
+   *           solo se devuelve en la respuesta.
    * Entrada: id_libro, num_copia, motivo
-   * Salida: Promesa con la copia dada de baja
+   * Salida: Promesa con la copia dada de baja y su Motivo_Baja
    */
   Retirar(id_libro, num_copia, motivo)
   {
@@ -295,7 +305,7 @@ const ModeloEjemplar = {
       {
         throw ErrorHttp.NoEncontrado('Ejemplar no encontrado');
       }
-      if (['En prestamo', 'Apartado'].includes(copia.Estatus))
+      if (ESTADOS_PRESTADA.includes(copia.Estatus))
       {
         throw ErrorHttp.Conflicto(
           'Las copias en préstamo no se pueden retirar hasta que se devuelvan.',
@@ -304,16 +314,19 @@ const ModeloEjemplar = {
           },
         );
       }
-      if (copia.Estatus === 'Baja')
+      if (copia.Estatus === 'Inactivo')
       {
         throw ErrorHttp.Conflicto('La copia ya estaba dada de baja.');
       }
       await Consultar(
-        'UPDATE Ejemplares SET Estatus = \'Baja\', Motivo_Baja = ? WHERE id_libro = ? AND num_copia = ?',
-        [motivo, id_libro, num_copia],
+        'UPDATE Ejemplares SET Estatus = \'Inactivo\' WHERE id_libro = ? AND num_copia = ?',
+        [id_libro, num_copia],
         conexion,
       );
-      return ModeloEjemplar.BuscarUno(id_libro, num_copia, conexion);
+      return {
+        ...(await ModeloEjemplar.BuscarUno(id_libro, num_copia, conexion)),
+        Motivo_Baja: motivo,
+      };
     });
   },
 };

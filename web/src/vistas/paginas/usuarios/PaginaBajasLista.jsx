@@ -1,7 +1,7 @@
 /*
  * ******************************************************************
  * Nombre del programa: BD-SP01-GU02 · PaginaBajasLista.jsx
- * Función: Baja de cuentas que ya no aparecen en la lista de Servicios Escolares.
+ * Función: Baja de cuentas que ya no aparecen en CIAA (alumnos) ni en Empleados.
  * Autor: Equipo CCJMops
  * Fecha: 26/10/2026
  * Entrada: Props y estado del controlador de la pantalla
@@ -34,7 +34,6 @@ import { UserX } from 'lucide-react';
 import { useControladorBajasLista } from '../../../controladores/ControladorUsuarios.js';
 import { TONOS_PERFIL, FormatoMoneda } from '../../../modelos/dominio.js';
 import { Pagina } from '../../plantillas/PlantillaAplicacion.jsx';
-import { SelectorArchivo } from '../../componentes/SelectorArchivo.jsx';
 import {
   Alerta,
   AlertaError,
@@ -107,16 +106,8 @@ export function PaginaBajasLista()
       <EnlaceVolver to="/usuarios">Volver a Usuarios</EnlaceVolver>
       <AlertaError error={controlador.error} />
 
-      {!controlador.candidatos && !controlador.procesando && (
-        <SelectorArchivo
-          titulo="Carga la lista vigente de Servicios Escolares"
-          descripcion="Las cuentas que ya no aparezcan en la lista (por egreso o baja de la universidad) se propondrán para darse de baja."
-          al_archivo={controlador.CargarArchivo}
-          procesando={controlador.procesando}
-        />
-      )}
       {controlador.procesando && !controlador.candidatos && (
-        <Cargando texto="Comparando la lista…" />
+        <Cargando texto="Consultando CIAA y Empleados…" />
       )}
 
       {controlador.candidatos && !controlador.resultado && (
@@ -141,8 +132,8 @@ export function PaginaBajasLista()
                 nueva lista
               </strong>
               <p className="texto-nota">
-                {controlador.nombre_archivo ? `${controlador.nombre_archivo} · ` : ''}por egreso o
-                baja de la universidad
+                Ya no están inscritos en el CIAA ni activos en Empleados · por egreso o baja de la
+                universidad
               </p>
             </div>
           </Tarjeta>
@@ -161,7 +152,10 @@ export function PaginaBajasLista()
               </Boton>
             </>
           ) : (
-            <Alerta tipo="exito" titulo="Todas las cuentas activas aparecen en la lista." />
+            <Alerta
+              tipo="exito"
+              titulo="Todas las cuentas activas aparecen en CIAA o en Empleados."
+            />
           )}
         </>
       )}

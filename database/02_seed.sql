@@ -8,70 +8,28 @@ USE biblioteca_ducky;
 -- Perfiles -----------------------------------------------------------
 INSERT INTO Perfiles (id_perfil, Nombre_Rol, Descripcion_Perfil) VALUES
   (1, 'Administrador', 'Acceso completo al sistema.'),
-  (2, 'Bibliotecario', 'Préstamos, devoluciones y catálogo.'),
-  (3, 'Profesor', 'Consulta y préstamo de libros.'),
-  (4, 'Alumno', 'Consulta y préstamo de libros.'),
-  (5, 'Colaborador', 'Consulta y préstamo de libros.');
+  (2, 'Bibliotecario', 'Búsqueda de libros en el catálogo.'),
+  (3, 'Profesor', 'Búsqueda de libros en el catálogo.'),
+  (4, 'Alumno', 'Búsqueda de libros en el catálogo.'),
+  (5, 'Colaborador', 'Búsqueda de libros en el catálogo.');
 
 -- Funciones. Nombre_Funcion es el código que revisa la API; la etiqueta
 -- visible va en Descripcion_Funcion con el formato 'Etiqueta: descripción'.
+-- Solo las tres funciones del prototipo.
 INSERT INTO Funciones (id_funcion, Nombre_Funcion, Descripcion_Funcion) VALUES
-  (1, 'gestionar_usuarios', 'Gestión de usuarios: Alta, baja, consulta y cambio de datos de cuentas.'),
-  (2, 'gestionar_libros', 'Gestión de libros: Alta, edición y baja de fichas y ejemplares.'),
-  (3, 'buscar_libros', 'Búsqueda de libros: Buscar en el catálogo y ver el detalle de los libros.'),
-  (4, 'generar_listado', 'Generación de listado: Imprimir o guardar en PDF el listado del catálogo.'),
-  (5, 'solicitar_compra', 'Solicitud de compra: Pedir títulos nuevos o más ejemplares.'),
-  (6, 'gestionar_compras', 'Gestión de compras: Aprobar, rechazar y recibir solicitudes de compra.'),
-  (7, 'solicitar_prestamo', 'Solicitar préstamo: Pedir préstamos propios.'),
-  (8, 'gestionar_prestamos', 'Gestión de préstamos: Registrar préstamos a cualquier usuario.'),
-  (9, 'registrar_devolucion', 'Devoluciones: Registrar devoluciones de ejemplares.'),
-  (10, 'renovar_prestamo', 'Renovación: Renovar préstamos propios.'),
-  (11, 'gestionar_multas', 'Multas: Consultar deudores y registrar pagos de multas.'),
-  (12, 'lista_espera', 'Lista de espera: Apartar libros sin copias para llevar.'),
-  (13, 'gestionar_politicas', 'Políticas: Editar las políticas de la biblioteca.'),
-  (14, 'usar_chatbot', 'Chatbot: Hacer preguntas al asistente.'),
-  (15, 'gestionar_chatbot', 'Contenido del chatbot: Editar preguntas, respuestas y fuentes.');
+  (1, 'gestionar_usuarios', 'Gestión de usuarios: Alta, baja, cambio y consulta de usuarios, y gestión de perfiles.'),
+  (2, 'gestionar_libros', 'Gestión de libros: Alta, baja, cambio y consulta de libros, solicitud de compra y listado.'),
+  (3, 'buscar_libros', 'Búsqueda de libros: Buscar en el catálogo con filtros y ver el detalle de los libros.');
 
+-- El Administrador tiene las tres; los demás perfiles (incluido Bibliotecario) solo buscan.
 INSERT INTO PerfilFuncion (id_funcion, id_perfil) VALUES
   (1, 1),
   (2, 1),
   (3, 1),
-  (4, 1),
-  (5, 1),
-  (6, 1),
-  (7, 1),
-  (8, 1),
-  (9, 1),
-  (10, 1),
-  (11, 1),
-  (12, 1),
-  (13, 1),
-  (14, 1),
-  (15, 1),
-  (2, 2),
   (3, 2),
-  (7, 2),
-  (8, 2),
-  (9, 2),
-  (10, 2),
-  (11, 2),
-  (12, 2),
-  (14, 2),
   (3, 3),
-  (7, 3),
-  (10, 3),
-  (12, 3),
-  (14, 3),
   (3, 4),
-  (7, 4),
-  (10, 4),
-  (12, 4),
-  (14, 4),
-  (3, 5),
-  (7, 5),
-  (10, 5),
-  (12, 5),
-  (14, 5);
+  (3, 5);
 
 -- Usuarios -----------------------------------------------------------
 SET @hash = '$2b$10$63TcTHQUM5MCxcb1X6BqGeYK3IEWv.Sb0af27V3uvvaBW1ugkPg56';
@@ -189,72 +147,73 @@ INSERT INTO TemasLibros (id_libro, id_tema) VALUES
   (18, 4),
   (19, 3);
 
-INSERT INTO Ejemplares (id_libro, num_copia, Estatus, Codigo, Pasillo, Estante, Nivel, Motivo_Baja, Fecha_Alta) VALUES
-  (1, 1, 'Disponible', 'EJ-00101', '4', 'B · QA76.758', '2', NULL, '2026-08-12'),
-  (1, 2, 'Disponible', 'EJ-00102', '4', 'B · QA76.758', '2', NULL, '2026-08-12'),
-  (1, 3, 'Consulta externa', 'EJ-00103', '4', 'B · QA76.758', '2', NULL, '2026-08-12'),
-  (1, 4, 'En prestamo', 'EJ-00104', '4', 'B · QA76.758', '2', NULL, '2026-08-12'),
-  (1, 5, 'En prestamo', 'EJ-00105', '4', 'B · QA76.758', '2', NULL, '2026-08-12'),
-  (2, 1, 'Disponible', 'EJ-00201', '4', 'B', '2', NULL, '2026-08-12'),
-  (2, 2, 'En prestamo', 'EJ-00202', '4', 'B', '2', NULL, '2026-08-12'),
-  (2, 3, 'Disponible', 'EJ-00203', '4', 'B', '2', NULL, '2026-08-12'),
-  (2, 4, 'Consulta externa', 'EJ-00204', '4', 'B', '2', NULL, '2026-08-12'),
-  (3, 1, 'Disponible', 'EJ-00301', '4', 'QA76.73', '3', NULL, '2026-08-12'),
-  (3, 2, 'En prestamo', 'EJ-00302', '4', 'QA76.73', '3', NULL, '2026-08-12'),
-  (3, 3, 'Consulta externa', 'EJ-00303', '4', 'QA76.73', '3', NULL, '2026-08-12'),
-  (4, 1, 'En prestamo', 'EJ-00401', '5', 'QA76.76', '1', NULL, '2026-08-12'),
-  (4, 2, 'En prestamo', 'EJ-00402', '5', 'QA76.76', '1', NULL, '2026-08-12'),
-  (4, 3, 'En prestamo', 'EJ-00403', '5', 'QA76.76', '1', NULL, '2026-08-12'),
-  (4, 4, 'Consulta externa', 'EJ-00404', '5', 'QA76.76', '1', NULL, '2026-08-12'),
-  (5, 1, 'Disponible', 'EJ-00501', '4', 'TK5105', '2', NULL, '2026-08-12'),
-  (5, 2, 'Disponible', 'EJ-00502', '4', 'TK5105', '2', NULL, '2026-08-12'),
-  (5, 3, 'Consulta externa', 'EJ-00503', '4', 'TK5105', '2', NULL, '2026-08-12'),
-  (5, 4, 'Consulta externa', 'EJ-00504', '4', 'TK5105', '2', NULL, '2026-08-12'),
-  (5, 5, 'En prestamo', 'EJ-00505', '4', 'TK5105', '2', NULL, '2026-08-12'),
-  (5, 6, 'Consulta externa', 'EJ-00506', '4', 'TK5105', '2', NULL, '2026-08-12'),
-  (6, 1, 'Disponible', 'EJ-00601', '3', 'QA303', '3', NULL, '2026-08-12'),
-  (6, 2, 'Disponible', 'EJ-00602', '3', 'QA303', '3', NULL, '2026-08-12'),
-  (6, 3, 'Disponible', 'EJ-00603', '3', 'QA303', '3', NULL, '2026-08-12'),
-  (6, 4, 'Consulta externa', 'EJ-00604', '3', 'QA303', '3', NULL, '2026-08-12'),
-  (6, 5, 'Consulta externa', 'EJ-00605', '3', 'QA303', '3', NULL, '2026-08-12'),
-  (6, 6, 'En prestamo', 'EJ-00606', '3', 'QA303', '3', NULL, '2026-08-12'),
-  (6, 7, 'En prestamo', 'EJ-00607', '3', 'QA303', '3', NULL, '2026-08-12'),
-  (6, 8, 'Consulta externa', 'EJ-00608', '3', 'QA303', '3', NULL, '2026-08-12'),
-  (7, 1, 'Disponible', 'EJ-00701', '4', 'QA76.76', '2', NULL, '2026-08-12'),
-  (7, 2, 'Consulta externa', 'EJ-00702', '4', 'QA76.76', '2', NULL, '2026-08-12'),
-  (7, 3, 'En prestamo', 'EJ-00703', '4', 'QA76.76', '2', NULL, '2026-08-12'),
-  (8, 1, 'Disponible', 'EJ-00801', '4', 'QA76.73', '1', NULL, '2026-08-12'),
-  (8, 2, 'Consulta externa', 'EJ-00802', '4', 'QA76.73', '1', NULL, '2026-08-12'),
-  (8, 3, 'Consulta externa', 'EJ-00803', '4', 'QA76.73', '1', NULL, '2026-08-12'),
-  (9, 1, 'Disponible', 'EJ-00901', '3', 'QA184', '2', NULL, '2026-08-12'),
-  (9, 2, 'Consulta externa', 'EJ-00902', '3', 'QA184', '2', NULL, '2026-08-12'),
-  (9, 3, 'Consulta externa', 'EJ-00903', '3', 'QA184', '2', NULL, '2026-08-12'),
-  (10, 1, 'Disponible', 'EJ-01001', '2', 'QC21', '1', NULL, '2026-08-12'),
-  (10, 2, 'Disponible', 'EJ-01002', '2', 'QC21', '1', NULL, '2026-08-12'),
-  (10, 3, 'Consulta externa', 'EJ-01003', '2', 'QC21', '1', NULL, '2026-08-12'),
-  (10, 4, 'Consulta externa', 'EJ-01004', '2', 'QC21', '1', NULL, '2026-08-12'),
-  (11, 1, 'Disponible', 'EJ-01101', '5', 'QA76.9', '2', NULL, '2026-08-12'),
-  (11, 2, 'Consulta externa', 'EJ-01102', '5', 'QA76.9', '2', NULL, '2026-08-12'),
-  (11, 3, 'En prestamo', 'EJ-01103', '5', 'QA76.9', '2', NULL, '2026-08-12'),
-  (12, 1, 'Disponible', 'EJ-01201', '4', 'QA76.758', '3', NULL, '2026-08-12'),
-  (12, 2, 'Consulta externa', 'EJ-01202', '4', 'QA76.758', '3', NULL, '2026-08-12'),
-  (12, 3, 'Consulta externa', 'EJ-01203', '4', 'QA76.758', '3', NULL, '2026-08-12'),
-  (13, 1, 'Disponible', 'EJ-01301', '5', 'Q335', '1', NULL, '2026-08-12'),
-  (13, 2, 'Consulta externa', 'EJ-01302', '5', 'Q335', '1', NULL, '2026-08-12'),
-  (13, 3, 'En prestamo', 'EJ-01303', '5', 'Q335', '1', NULL, '2026-08-12'),
-  (14, 1, 'Disponible', 'EJ-01401', '3', 'QA273', '2', NULL, '2026-08-12'),
-  (14, 2, 'Consulta externa', 'EJ-01402', '3', 'QA273', '2', NULL, '2026-08-12'),
-  (15, 1, 'Disponible', 'EJ-01501', '5', 'QA76.76', '3', NULL, '2026-08-12'),
-  (15, 2, 'Consulta externa', 'EJ-01502', '5', 'QA76.76', '3', NULL, '2026-08-12'),
-  (16, 1, 'Consulta externa', 'EJ-01601', '4', 'QA76.9', '2', NULL, '2026-08-12'),
-  (16, 2, 'En prestamo', 'EJ-01602', '4', 'QA76.9', '2', NULL, '2026-08-12'),
-  (17, 1, 'En prestamo', 'EJ-01701', '4', 'QA76.9', '3', NULL, '2026-08-12'),
-  (17, 2, 'En prestamo', 'EJ-01702', '4', 'QA76.9', '3', NULL, '2026-08-12'),
-  (18, 1, 'Disponible', 'EJ-01801', '2', 'QC23', '2', NULL, '2026-08-12'),
-  (18, 2, 'Consulta externa', 'EJ-01802', '2', 'QC23', '2', NULL, '2026-08-12'),
-  (19, 1, 'Baja', 'EJ-01901', '3', 'QA303', '1', 'Obsoleto', '2026-08-12');
+-- Ubicacion: código P{pasillo}-E{estante}-N{nivel}-S{sección} (lo genera el sistema).
+INSERT INTO Ejemplares (id_libro, num_copia, Estatus, Ubicacion) VALUES
+  (1, 1, 'Disponible', 'P4-EB-N2-SComputación'),
+  (1, 2, 'Disponible', 'P4-EB-N2-SComputación'),
+  (1, 3, 'Consulta Externa', 'P4-EB-N2-SComputación'),
+  (1, 4, 'En préstamo', 'P4-EB-N2-SComputación'),
+  (1, 5, 'En préstamo', 'P4-EB-N2-SComputación'),
+  (2, 1, 'Disponible', 'P4-EB-N2-SComputación'),
+  (2, 2, 'En préstamo', 'P4-EB-N2-SComputación'),
+  (2, 3, 'Disponible', 'P4-EB-N2-SComputación'),
+  (2, 4, 'Consulta Externa', 'P4-EB-N2-SComputación'),
+  (3, 1, 'Disponible', 'P4-EQA76.73-N3-SComputación'),
+  (3, 2, 'En préstamo', 'P4-EQA76.73-N3-SComputación'),
+  (3, 3, 'Consulta Externa', 'P4-EQA76.73-N3-SComputación'),
+  (4, 1, 'En préstamo', 'P5-EQA76.76-N1-SComputación'),
+  (4, 2, 'En préstamo', 'P5-EQA76.76-N1-SComputación'),
+  (4, 3, 'En préstamo', 'P5-EQA76.76-N1-SComputación'),
+  (4, 4, 'Consulta Externa', 'P5-EQA76.76-N1-SComputación'),
+  (5, 1, 'Disponible', 'P4-ETK5105-N2-SRedes'),
+  (5, 2, 'Disponible', 'P4-ETK5105-N2-SRedes'),
+  (5, 3, 'Consulta Externa', 'P4-ETK5105-N2-SRedes'),
+  (5, 4, 'Consulta Externa', 'P4-ETK5105-N2-SRedes'),
+  (5, 5, 'En préstamo', 'P4-ETK5105-N2-SRedes'),
+  (5, 6, 'Consulta Externa', 'P4-ETK5105-N2-SRedes'),
+  (6, 1, 'Disponible', 'P3-EQA303-N3-SMatemáticas'),
+  (6, 2, 'Disponible', 'P3-EQA303-N3-SMatemáticas'),
+  (6, 3, 'Disponible', 'P3-EQA303-N3-SMatemáticas'),
+  (6, 4, 'Consulta Externa', 'P3-EQA303-N3-SMatemáticas'),
+  (6, 5, 'Consulta Externa', 'P3-EQA303-N3-SMatemáticas'),
+  (6, 6, 'En préstamo', 'P3-EQA303-N3-SMatemáticas'),
+  (6, 7, 'En préstamo', 'P3-EQA303-N3-SMatemáticas'),
+  (6, 8, 'Consulta Externa', 'P3-EQA303-N3-SMatemáticas'),
+  (7, 1, 'Disponible', 'P4-EQA76.76-N2-SComputación'),
+  (7, 2, 'Consulta Externa', 'P4-EQA76.76-N2-SComputación'),
+  (7, 3, 'En préstamo', 'P4-EQA76.76-N2-SComputación'),
+  (8, 1, 'Disponible', 'P4-EQA76.73-N1-SComputación'),
+  (8, 2, 'Consulta Externa', 'P4-EQA76.73-N1-SComputación'),
+  (8, 3, 'Consulta Externa', 'P4-EQA76.73-N1-SComputación'),
+  (9, 1, 'Disponible', 'P3-EQA184-N2-SMatemáticas'),
+  (9, 2, 'Consulta Externa', 'P3-EQA184-N2-SMatemáticas'),
+  (9, 3, 'Consulta Externa', 'P3-EQA184-N2-SMatemáticas'),
+  (10, 1, 'Disponible', 'P2-EQC21-N1-SFísica'),
+  (10, 2, 'Disponible', 'P2-EQC21-N1-SFísica'),
+  (10, 3, 'Consulta Externa', 'P2-EQC21-N1-SFísica'),
+  (10, 4, 'Consulta Externa', 'P2-EQC21-N1-SFísica'),
+  (11, 1, 'Disponible', 'P5-EQA76.9-N2-SComputación'),
+  (11, 2, 'Consulta Externa', 'P5-EQA76.9-N2-SComputación'),
+  (11, 3, 'En préstamo', 'P5-EQA76.9-N2-SComputación'),
+  (12, 1, 'Disponible', 'P4-EQA76.758-N3-SComputación'),
+  (12, 2, 'Consulta Externa', 'P4-EQA76.758-N3-SComputación'),
+  (12, 3, 'Consulta Externa', 'P4-EQA76.758-N3-SComputación'),
+  (13, 1, 'Disponible', 'P5-EQ335-N1-SComputación'),
+  (13, 2, 'Consulta Externa', 'P5-EQ335-N1-SComputación'),
+  (13, 3, 'En préstamo', 'P5-EQ335-N1-SComputación'),
+  (14, 1, 'Disponible', 'P3-EQA273-N2-SMatemáticas'),
+  (14, 2, 'Consulta Externa', 'P3-EQA273-N2-SMatemáticas'),
+  (15, 1, 'Disponible', 'P5-EQA76.76-N3-SComputación'),
+  (15, 2, 'Consulta Externa', 'P5-EQA76.76-N3-SComputación'),
+  (16, 1, 'Consulta Externa', 'P4-EQA76.9-N2-SComputación'),
+  (16, 2, 'En préstamo', 'P4-EQA76.9-N2-SComputación'),
+  (17, 1, 'En préstamo', 'P4-EQA76.9-N3-SComputación'),
+  (17, 2, 'En préstamo', 'P4-EQA76.9-N3-SComputación'),
+  (18, 1, 'Disponible', 'P2-EQC23-N2-SFísica'),
+  (18, 2, 'Consulta Externa', 'P2-EQC23-N2-SFísica'),
+  (19, 1, 'Inactivo', 'P3-EQA303-N1-SMatemáticas');
 
--- Préstamos activos de las copias marcadas 'En prestamo'
+-- Préstamos activos de las copias marcadas 'En préstamo'
 INSERT INTO Prestamos (id_prestamo, Fecha_Prestamo, Fecha_Entrega_Programada, Estado, id_usuario, id_libro, num_copia) VALUES
   (1, '2026-10-20', '2026-10-27', 'Activo', 8, 1, 4),
   (2, '2026-10-19', '2026-10-26', 'Activo', 7, 1, 5),
@@ -276,12 +235,14 @@ INSERT INTO Prestamos (id_prestamo, Fecha_Prestamo, Fecha_Entrega_Programada, Es
 -- Historial: préstamo devuelto con retraso y multa pendiente de luis.moreno
 INSERT INTO Prestamos (id_prestamo, Fecha_Prestamo, Fecha_Entrega_Programada, Estado, id_usuario, id_libro, num_copia) VALUES
   (17, '2026-09-01', '2026-09-08', 'Devuelto', 8, 12, 1);
-INSERT INTO Devoluciones (id_prestamo, Fecha_Devolucion) VALUES (17, '2026-09-12');
-INSERT INTO Multas (Cantidad_a_Pagar, id_usuario, id_prestamo, Justificacion) VALUES (45.00, 8, 17, 'Devolución con 4 día(s) de retraso y daño menor en la portada');
+INSERT INTO Devoluciones (id_devolucion, id_prestamo, Fecha_Devolucion) VALUES (1, 17, '2026-09-12');
+INSERT INTO Multas (id_multa, Cantidad_a_Pagar, id_usuario, id_prestamo, Justificacion) VALUES (1, 45.00, 8, 17, 'Devolución con 4 día(s) de retraso y daño menor en la portada');
 
 -- Solicitudes de compra ---------------------------------------------
-INSERT INTO NuevosLibros (id_libro_nuevo, ISBN, Titulo, Autor, Editorial, Precio, Anio, Tema, Sinopsis) VALUES
+INSERT INTO LibrosNuevos (id_libro_nuevo, ISBN, Titulo, Autor, Editorial, Precio, Anio, Tema, Sinopsis) VALUES
   (1, '978-0-201-10088-4', 'Compilers: Principles, Techniques, and Tools', 'Aho, A. V.', 'Addison-Wesley', 1500.00, 1986, 'Computación', 'El libro del dragón sobre construcción de compiladores.');
+-- Las órdenes 2 y 3 ya están en Tesorería (externos/database/03_tesoreria.sql);
+-- la 1 y la 4 siguen pendientes de envío y se envían al abrir "Solicitar libros".
 INSERT INTO OrdenesCompra (id_orden, id_usuario, Fecha_Orden, Estatus, CantidadTotal) VALUES
   (1, 1, '2026-10-22', 'Pendiente', 2697.00),
   (2, 1, '2026-10-15', 'En revision', 3900.00),
@@ -293,36 +254,29 @@ INSERT INTO OrdenLibrosExistentes (id_orden, id_libro, Justificacion, Num_Ejempl
   (3, 4, 'Reposición por desgaste', 4),
   (4, 1, 'Lista de peticiones del periodo', 5);
 
--- Bitácora (actividad reciente del panel) ---------------------------
-INSERT INTO Bitacora (id_usuario, Accion, Descripcion, Fecha) VALUES
-  (1, 'SOLICITUD_COMPRA', 'Solicitud de compra: Clean Code · 3 copias', '2026-10-22 09:15:00'),
-  (1, 'BAJA_COPIA', 'Baja de copia EJ-01901 (Obsoleto)', '2026-10-22 17:40:00'),
-  (1, 'CAMBIO_ESTADO_COPIA', 'Cambio de estado: EJ-00303 de «El lenguaje de programación C» a Consulta externa', '2026-10-23 11:00:00');
-
 -- Políticas -------------------------------------------------------------
-INSERT INTO Politicas (Informacion) VALUES
-  ('Las copias «Disponible» se consultan dentro de la biblioteca; solo las de «Consulta externa» se prestan a domicilio.'),
-  ('El préstamo de un libro dura 7 días naturales.'),
-  ('Cada préstamo puede renovarse hasta 2 veces, siempre que no esté vencido y nadie esté en lista de espera.'),
-  ('Un usuario puede tener como máximo 3 préstamos activos.'),
-  ('La multa por retraso es de $10.00 MXN por día. Con multas pendientes no se pueden solicitar préstamos.'),
-  ('Tras 5 intentos fallidos de inicio de sesión la cuenta se bloquea; acude al mostrador para desbloquearla.');
+INSERT INTO Politicas (id_politica, Informacion) VALUES
+  (1, 'Las copias «Disponible» se consultan dentro de la biblioteca; solo las de «Consulta externa» se prestan a domicilio.'),
+  (2, 'El préstamo de un libro dura 7 días naturales.'),
+  (3, 'Cada préstamo puede renovarse hasta 2 veces, siempre que no esté vencido y nadie esté en lista de espera.'),
+  (4, 'Un usuario puede tener como máximo 3 préstamos activos.'),
+  (5, 'La multa por retraso es de $10.00 MXN por día. Con multas pendientes no se pueden solicitar préstamos.');
 
 -- Chatbot ---------------------------------------------------------------
-INSERT INTO fuentesChatbot (id_fuentes, Fuente) VALUES
+INSERT INTO FuentesChatbot (id_fuente, Fuente) VALUES
   (1, 'Reglamento de la Biblioteca Ducky'),
   (2, 'Manual de usuario del sistema Biblio');
 
-INSERT INTO preguntasChatbot (id_preguntas, Pregunta) VALUES
+INSERT INTO PreguntasChatbot (id_pregunta, Pregunta) VALUES
   (1, '¿Cuántos días dura un préstamo?'),
   (2, '¿Cuántas veces puedo renovar un préstamo?'),
   (3, '¿Cuánto cuesta la multa por retraso?'),
   (4, '¿Cómo me inscribo en la lista de espera de un libro?'),
   (5, '¿Qué diferencia hay entre Disponible y Consulta externa?');
 
-INSERT INTO contenidosChatbot (Respuesta, id_preguntas, id_fuentes) VALUES
-  ('Un préstamo dura 7 días naturales a partir de la fecha en que recoges el libro.', 1, 1),
-  ('Puedes renovar cada préstamo hasta 2 veces, si no está vencido y nadie lo tiene apartado.', 2, 1),
-  ('La multa es de $10.00 MXN por cada día de retraso.', 3, 1),
-  ('Busca el libro en el catálogo; si no hay copias para llevar, pulsa «Apartar» y te avisaremos cuando se libere una.', 4, 2),
-  ('«Disponible» se consulta dentro de la biblioteca; «Consulta externa» se puede llevar a casa en préstamo.', 5, 1);
+INSERT INTO ContenidosChatbot (id_contenido, Respuesta, id_pregunta, id_fuente) VALUES
+  (1, 'Un préstamo dura 7 días naturales a partir de la fecha en que recoges el libro.', 1, 1),
+  (2, 'Puedes renovar cada préstamo hasta 2 veces, si no está vencido y nadie lo tiene apartado.', 2, 1),
+  (3, 'La multa es de $10.00 MXN por cada día de retraso.', 3, 1),
+  (4, 'Busca el libro en el catálogo; si no hay copias para llevar, pulsa «Apartar» y te avisaremos cuando se libere una.', 4, 2),
+  (5, '«Disponible» se consulta dentro de la biblioteca; «Consulta externa» se puede llevar a casa en préstamo.', 5, 1);

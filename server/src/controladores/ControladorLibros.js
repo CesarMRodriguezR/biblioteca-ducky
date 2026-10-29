@@ -41,7 +41,6 @@
 import { ErrorHttp } from '../utilidades/ErrorHttp.js';
 import { ModeloLibro } from '../modelos/ModeloLibro.js';
 import { ModeloEjemplar } from '../modelos/ModeloEjemplar.js';
-import { ModeloBitacora } from '../modelos/ModeloBitacora.js';
 import { TieneFuncion } from '../intermediarios/autenticacion.js';
 import { GenerarListadoPdf } from '../utilidades/GenerarListadoPdf.js';
 
@@ -225,11 +224,6 @@ const ControladorLibros = {
   async Crear(req, res)
   {
     const libro = await ModeloLibro.Crear(req.body, req.usuario.id_usuario);
-    await ModeloBitacora.Registrar(
-      req.usuario.id_usuario,
-      'ALTA_LIBRO',
-      `Alta de libro: «${libro.Titulo}»`,
-    );
     res.status(201).json(libro);
   },
 
@@ -243,11 +237,6 @@ const ControladorLibros = {
   {
     await LibroEditable(req.params.id);
     const libro = await ModeloLibro.Actualizar(req.params.id, req.body);
-    await ModeloBitacora.Registrar(
-      req.usuario.id_usuario,
-      'EDICION_LIBRO',
-      `Edición de ficha: «${libro.Titulo}»`,
-    );
     res.json(libro);
   },
 
@@ -260,12 +249,6 @@ const ControladorLibros = {
   async CambiarEstatus(req, res)
   {
     const libro = await ModeloLibro.CambiarEstatus(req.params.id, req.body.Estatus);
-    const accion = req.body.Estatus === 'Activo' ? 'Reactivación' : 'Inactivación';
-    await ModeloBitacora.Registrar(
-      req.usuario.id_usuario,
-      'ESTATUS_LIBRO',
-      `${accion} de libro: «${libro.Titulo}»`,
-    );
     res.json(libro);
   },
 
@@ -288,14 +271,9 @@ const ControladorLibros = {
    */
   async AgregarEjemplares(req, res)
   {
-    const libro = await LibroEditable(req.params.id);
+    await LibroEditable(req.params.id);
     const { cantidad, ...ubicacion } = req.body;
-    const codigos = await ModeloEjemplar.Agregar(req.params.id, cantidad, ubicacion);
-    await ModeloBitacora.Registrar(
-      req.usuario.id_usuario,
-      'ALTA_EJEMPLARES',
-      `Alta de ${codigos.length} ejemplar(es) de «${libro.Titulo}»: ${codigos.join(', ')}`,
-    );
+    await ModeloEjemplar.Agregar(req.params.id, cantidad, ubicacion);
     res.status(201).json(await ModeloLibro.BuscarPorId(req.params.id));
   },
 
@@ -309,22 +287,15 @@ const ControladorLibros = {
   async ActualizarEjemplar(req, res)
   {
     const { id, num_copia } = req.params;
-    const libro = await LibroEditable(id);
+    await LibroEditable(id);
     const copia = await ModeloEjemplar.CambiarEstado(id, num_copia, req.body);
-    if (req.body.Estatus)
-    {
-      await ModeloBitacora.Registrar(
-        req.usuario.id_usuario,
-        'CAMBIO_ESTADO_COPIA',
-        `Cambio de estado: ${copia.Codigo} de «${libro.Titulo}» a ${copia.Estatus}`,
-      );
-    }
     res.json(copia);
   },
 
   /*
    * Función: RetirarEjemplar
-   * Objetivo: POST /libros/:id/ejemplares/:num_copia/baja — retiro de una copia con motivo.
+   * Objetivo: POST /libros/:id/ejemplares/:num_copia/baja — retiro de una copia con motivo. La
+   *           copia queda Inactiva; el motivo solo se informa en el mensaje (no se guarda).
    * Entrada: req: petición HTTP (ya autenticada y validada); res: respuesta HTTP
    * Salida: Respuesta HTTP en formato JSON
    */
@@ -333,12 +304,10 @@ const ControladorLibros = {
     const { id, num_copia } = req.params;
     await LibroEditable(id);
     const copia = await ModeloEjemplar.Retirar(id, num_copia, req.body.Motivo_Baja);
-    await ModeloBitacora.Registrar(
-      req.usuario.id_usuario,
-      'BAJA_COPIA',
-      `Baja de copia ${copia.Codigo} (${ETIQUETAS_MOTIVO[copia.Motivo_Baja]})`,
-    );
-    res.json(copia);
+    res.json({
+      ...copia,
+      mensaje: `Copia ${copia.Codigo} dada de baja (${ETIQUETAS_MOTIVO[copia.Motivo_Baja]}).`,
+    });
   },
 };
 

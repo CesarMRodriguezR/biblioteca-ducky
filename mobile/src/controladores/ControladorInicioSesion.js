@@ -37,7 +37,7 @@ import { useSesion } from './ControladorSesion';
 /*
  * Hook: useControladorInicioSesion
  * Objetivo: Inicio de sesión móvil. Estados del prototipo: falta usuario, falta contraseña,
- *           campos vacíos, datos incorrectos y cuenta bloqueada.
+ *           campos vacíos, datos incorrectos y cuenta inactiva.
  * Entrada: Ninguna
  * Salida: Objeto con el estado y las acciones de la pantalla
  */
@@ -83,14 +83,13 @@ export function useControladorInicioSesion()
     }
     catch (error)
     {
-      const restantes = error.detalles?.intentos_restantes;
       SetErrores({ usuario: ' ', contrasena: ' ' });
       SetAviso({
         tipo: 'error',
         titulo: error.status === 401 ? 'Usuario o contraseña incorrectos.' : error.message,
         texto:
           error.status === 401
-            ? `Revisa tus datos e inténtalo de nuevo.${restantes !== undefined ? ` Te ${restantes === 1 ? 'queda 1 intento' : `quedan ${restantes} intentos`}.` : ''}`
+            ? 'Revisa tus datos e inténtalo de nuevo.'
             : null,
       });
     }

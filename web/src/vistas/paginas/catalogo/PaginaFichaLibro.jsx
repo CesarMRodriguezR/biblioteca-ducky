@@ -15,9 +15,14 @@
 /*
  * ******************************************************************
  * Contenido de listado:
- *     Componente         Objetivo
- *     ResumenCopias      Número de copias por estado para los perfiles que no…
- *     PaginaFichaLibro   BD-SP02-GL05 Consultar ficha bibliográfica (vista…
+ *     Componente            Objetivo
+ *     ESTADOS_RESUMEN       Estados de copia que se cuentan en la vista resumida
+ *     InsigniaDisponibles   Etiqueta «3 de 5 disponibles»
+ *     DatosLibro            ISBN, año, tema y número de copias
+ *     Ubicacion             Pasillo, estante, nivel y sección
+ *     FichaCompleta         Vista para quien gestiona libros (con ejemplares)
+ *     FichaResumida         Vista para quien solo busca (copias por estado)
+ *     PaginaFichaLibro      BD-SP02-GL05 Consultar un libro
  * ******************************************************************
  */
 
@@ -30,9 +35,9 @@
  * ******************************************************************
  */
 
-import { PenLine } from 'lucide-react';
+import { ArrowLeft, MapPin, PenLine } from 'lucide-react';
 import { useControladorFicha } from '../../../controladores/ControladorCatalogo.js';
-import { ESTADOS_COPIA, UbicacionTexto } from '../../../modelos/dominio.js';
+import { ESTADOS_COPIA } from '../../../modelos/dominio.js';
 import { Pagina } from '../../plantillas/PlantillaAplicacion.jsx';
 import {
   Alerta,
@@ -48,50 +53,200 @@ import {
 } from '../../componentes/interfaz.jsx';
 
 /*
- * Componente: ResumenCopias
- * Objetivo: Número de copias por estado para los perfiles que no gestionan libros.
- * Uso: <ResumenCopias resumen={…} />
+ * Constante: ESTADOS_RESUMEN
+ * Objetivo: Estados de copia que se cuentan en la vista resumida, en el orden del prototipo.
  */
-function ResumenCopias({ resumen })
+const ESTADOS_RESUMEN = ['Disponible', 'Consulta Externa', 'En préstamo'];
+
+/*
+ * Componente: InsigniaDisponibles
+ * Objetivo: Etiqueta «3 de 5 disponibles» (verde si hay copias, ámbar si no).
+ * Uso: <InsigniaDisponibles libro={…} />
+ */
+function InsigniaDisponibles({ libro })
+{
+  const disponibles = libro.Ejemplares_Disponibles ?? 0;
+  return (
+    <Insignia tono={disponibles ? 'exito' : 'advertencia'}>
+      {disponibles} de {libro.Ejemplares_Totales ?? 0} disponibles
+    </Insignia>
+  );
+}
+
+/*
+ * Componente: DatosLibro
+ * Objetivo: ISBN, año, tema y número de copias en cuatro columnas.
+ * Uso: <DatosLibro libro={…} />
+ */
+function DatosLibro({ libro })
 {
   return (
-    <Tarjeta relleno={false}>
-      {['Disponible', 'Consulta externa', 'En prestamo'].map((estado, indice) => (
-        <div
-          key={estado}
-          className="fila entre"
-          style={{
-            padding: '14px 18px',
-            borderTop: indice ? '1px solid var(--linea-divisoria)' : 0,
-          }}
-        >
-          <div>
-            <InsigniaCopia estatus={estado} />
-            <p className="texto-nota margen-arriba-8">{ESTADOS_COPIA[estado].descripcion}.</p>
+    <div className="ficha-datos">
+      <DatoEtiquetado etiqueta="ISBN" valor={libro.ISBN} />
+      <DatoEtiquetado etiqueta="Año" valor={libro.Anio} />
+      <DatoEtiquetado etiqueta="Tema" valor={libro.Tema} />
+      <DatoEtiquetado etiqueta="Número de copias" valor={libro.Ejemplares_Totales} />
+    </div>
+  );
+}
+
+/*
+ * Componente: Ubicacion
+ * Objetivo: Pasillo, estante, nivel y sección del libro con su título.
+ * Uso: <Ubicacion libro={…} titulo={…} className={…} />
+ */
+function Ubicacion({ libro, titulo, className = '' })
+{
+  return (
+    <div className={`ficha-ubicacion ${className}`}>
+      <div className="ficha-ubicacion-titulo">
+        <MapPin size={16} aria-hidden />
+        {titulo}
+      </div>
+      <div className="ficha-datos">
+        <DatoEtiquetado etiqueta="Pasillo" valor={libro.Pasillo} />
+        <DatoEtiquetado etiqueta="Estante" valor={libro.Estante} />
+        <DatoEtiquetado etiqueta="Nivel" valor={libro.Nivel} />
+        <DatoEtiquetado etiqueta="Sección" valor={libro.Seccion} />
+      </div>
+    </div>
+  );
+}
+
+/*
+ * Componente: FichaCompleta
+ * Objetivo: BD-SP02-GL05 Consulta exitosa (quien gestiona libros): portada con «Editar ficha»
+ *           y la tabla de ejemplares con su estado.
+ * Uso: <FichaCompleta libro={…} al_editar={…} />
+ */
+function FichaCompleta({ libro, al_editar })
+{
+  const activos = libro.ejemplares?.filter((ejemplar) => ejemplar.Estatus !== 'Inactivo') ?? [];
+  return (
+    <div className="ficha-completa">
+      <div className="ficha-portada">
+        <Portada libro={libro} ancho={160} alto={230} />
+        <Boton variante="secundario" icono={PenLine} onClick={al_editar}>
+          Editar ficha
+        </Boton>
+      </div>
+
+      <div className="ficha-informacion">
+        <div>
+          <div className="fila entre" style={{ alignItems: 'flex-start', gap: 12 }}>
+            <h1>{libro.Titulo}</h1>
+            {libro.Estatus !== 'Activo' && <Insignia tono="neutro">Inactivo</Insignia>}
           </div>
-          <strong style={{ fontSize: 20 }}>{resumen[estado]}</strong>
+          <p className="ficha-subtitulo">
+            {[libro.Autor, libro.Nombre_Editorial, libro.Anio].filter(Boolean).join(' · ')}
+          </p>
         </div>
-      ))}
-    </Tarjeta>
+        <DatosLibro libro={libro} />
+        <p className="ficha-texto">{libro.Sinopsis || 'Sin sinopsis registrada.'}</p>
+        <Ubicacion libro={libro} titulo="Ubicación" />
+        <div>
+          <div className="ficha-copias-encabezado">
+            <h2>Copias</h2>
+            <InsigniaDisponibles libro={libro} />
+          </div>
+          <Tarjeta relleno={false} className="tabla-envoltura">
+            <table className="tabla">
+              <thead>
+                <tr>
+                  <th style={{ width: 240 }}>Ejemplar</th>
+                  <th>Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                {activos.map((activo) => (
+                  <tr key={activo.num_copia}>
+                    <td style={{ fontWeight: 700 }}>{activo.Codigo}</td>
+                    <td>
+                      <InsigniaCopia estatus={activo.Estatus} />
+                    </td>
+                  </tr>
+                ))}
+                {!activos.length && (
+                  <tr>
+                    <td colSpan={2} className="tabla-vacia">
+                      Sin copias activas.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </Tarjeta>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/*
+ * Componente: FichaResumida
+ * Objetivo: Detalle del libro para quien solo busca: datos, sinopsis, ubicación y número de
+ *           copias por estado; aviso si no hay copias disponibles.
+ * Uso: <FichaResumida libro={…} />
+ */
+function FichaResumida({ libro })
+{
+  const resumen = libro.resumen_copias ?? {};
+  return (
+    <div className="ficha-resumida">
+      <div className="ficha-portada">
+        <Portada libro={libro} ancho={200} alto={288} />
+        <InsigniaDisponibles libro={libro} />
+      </div>
+
+      <div className="ficha-informacion">
+        {!libro.Ejemplares_Disponibles && (
+          <Alerta tipo="advertencia" titulo="No hay copias disponibles por ahora">
+            Todas las copias están en préstamo. Consulta de nuevo más tarde o pregunta en el
+            mostrador.
+          </Alerta>
+        )}
+        <div className="ficha-caja">
+          <DatosLibro libro={libro} />
+        </div>
+        <div className="ficha-sinopsis">
+          <h3>Sinopsis</h3>
+          <p className="ficha-texto">{libro.Sinopsis || 'Sin sinopsis registrada.'}</p>
+        </div>
+        <Ubicacion libro={libro} titulo="Ubicación en la biblioteca" className="ficha-caja" />
+        <div>
+          <div className="ficha-copias-encabezado">
+            <h3>Copias</h3>
+            <InsigniaDisponibles libro={libro} />
+          </div>
+          <div className="ficha-caja ficha-lista-estados">
+            {ESTADOS_RESUMEN.map((estado) => (
+              <div key={estado} className="ficha-estado">
+                <InsigniaCopia estatus={estado} />
+                <span className="ficha-estado-texto">{ESTADOS_COPIA[estado].descripcion}</span>
+                <span className="ficha-estado-cantidad">
+                  {resumen[estado] ?? 0} {resumen[estado] === 1 ? 'copia' : 'copias'}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
 /*
  * Componente: PaginaFichaLibro
- * Objetivo: BD-SP02-GL05 Consultar ficha bibliográfica (vista completa o resumida según el
- *           rol).
+ * Objetivo: BD-SP02-GL05 Consultar un libro: vista completa para quien gestiona libros y vista
+ *           resumida para los demás perfiles.
  * Uso: <PaginaFichaLibro />
  */
 export function PaginaFichaLibro()
 {
   const controlador = useControladorFicha();
   const libro = controlador.libro;
-  const activos = libro?.ejemplares?.filter((evento) => evento.Estatus !== 'Baja') ?? [];
-  const sin_disponibles = libro && !libro.Ejemplares_Disponibles;
-
-  return (
-    <Pagina miga="Catálogo · Ficha" titulo="Ficha bibliográfica">
-      <EnlaceVolver to="/catalogo">Regresar al catálogo</EnlaceVolver>
+  const estado = (
+    <>
       {controlador.cargando && <Cargando />}
       {controlador.no_encontrado ? (
         <Tarjeta style={{ textAlign: 'center', padding: 40 }}>
@@ -100,101 +255,36 @@ export function PaginaFichaLibro()
       ) : (
         <AlertaError error={controlador.error} />
       )}
+    </>
+  );
 
+  if (controlador.gestiona)
+  {
+    return (
+      <Pagina miga="Catálogo · Detalle" titulo="Ficha del libro">
+        <EnlaceVolver to="/catalogo">Regresar al catálogo</EnlaceVolver>
+        {estado}
+        {libro && <FichaCompleta libro={libro} al_editar={controlador.Editar} />}
+      </Pagina>
+    );
+  }
+
+  return (
+    <div className="contenido">
+      <button type="button" className="ficha-regresar" onClick={controlador.RegresarCatalogo}>
+        <ArrowLeft size={18} aria-hidden /> Regresar al catálogo
+      </button>
       {libro && (
-        <div
-          className="columnas"
-          style={{ gridTemplateColumns: 'minmax(0, 1.4fr) minmax(0, 1fr)' }}
-        >
-          <Tarjeta>
-            <div className="fila espacio-24" style={{ alignItems: 'flex-start' }}>
-              <Portada libro={libro} ancho={120} alto={170} />
-              <div className="crece">
-                <div className="fila entre" style={{ alignItems: 'flex-start', gap: 12 }}>
-                  <h2>{libro.Titulo}</h2>
-                  {controlador.gestiona && libro.Estatus !== 'Activo' && (
-                    <Insignia tono="neutro">Inactivo</Insignia>
-                  )}
-                </div>
-                <p className="texto-secundario margen-arriba-8">{libro.Autor}</p>
-                <p className="texto-nota">
-                  {libro.Nombre_Editorial} · {libro.Pais}
-                </p>
-                <div className="rejilla-4 margen-arriba-16" style={{ gap: 16 }}>
-                  <DatoEtiquetado etiqueta="ISBN" valor={libro.ISBN} />
-                  <DatoEtiquetado etiqueta="Año" valor={libro.Anio} />
-                  <DatoEtiquetado etiqueta="Tema" valor={libro.Tema} />
-                  <DatoEtiquetado etiqueta="Número de copias" valor={libro.Ejemplares_Totales} />
-                </div>
-              </div>
-            </div>
-            <h3 className="margen-arriba-24">Sinopsis</h3>
-            <p className="margen-arriba-8" style={{ lineHeight: 1.6 }}>
-              {libro.Sinopsis || 'Sin sinopsis registrada.'}
-            </p>
-            <h3 className="margen-arriba-24">Ubicación</h3>
-            <div className="rejilla-4 margen-arriba-8" style={{ gap: 16 }}>
-              <DatoEtiquetado etiqueta="Pasillo" valor={libro.Pasillo} />
-              <DatoEtiquetado etiqueta="Estante" valor={libro.Estante} />
-              <DatoEtiquetado etiqueta="Nivel" valor={libro.Nivel} />
-              <DatoEtiquetado etiqueta="Sección" valor={libro.Seccion} />
-            </div>
-            {controlador.gestiona && (
-              <div className="fila fin margen-arriba-24">
-                <Boton variante="secundario" icono={PenLine} onClick={controlador.Editar}>
-                  Editar ficha
-                </Boton>
-              </div>
-            )}
-          </Tarjeta>
-
-          <div>
-            <h2 className="margen-abajo-16">Copias</h2>
-            {controlador.gestiona ? (
-              <Tarjeta relleno={false} className="tabla-envoltura">
-                <table className="tabla">
-                  <thead>
-                    <tr>
-                      <th>Copia</th>
-                      <th>Ubicación</th>
-                      <th>Estado</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {activos.map((activo) => (
-                      <tr key={activo.num_copia}>
-                        <td className="codigo-copia">{activo.Codigo}</td>
-                        <td className="texto-nota">{UbicacionTexto(activo)}</td>
-                        <td>
-                          <InsigniaCopia estatus={activo.Estatus} />
-                        </td>
-                      </tr>
-                    ))}
-                    {!activos.length && (
-                      <tr>
-                        <td colSpan={3} className="tabla-vacia">
-                          Sin copias activas.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </Tarjeta>
-            ) : (
-              <>
-                {sin_disponibles && (
-                  <div className="margen-abajo-16">
-                    <Alerta tipo="advertencia" titulo="No hay copias disponibles por ahora">
-                      Puedes unirte a la lista de espera desde el mostrador de préstamos.
-                    </Alerta>
-                  </div>
-                )}
-                <ResumenCopias resumen={libro.resumen_copias} />
-              </>
-            )}
-          </div>
+        <div className="ficha-encabezado">
+          <p className="ficha-miga">Catálogo · Detalle</p>
+          <h1>{libro.Titulo}</h1>
+          <p className="ficha-subtitulo">
+            {[libro.Autor, libro.Nombre_Editorial, libro.Anio].filter(Boolean).join(' · ')}
+          </p>
         </div>
       )}
-    </Pagina>
+      {estado}
+      {libro && <FichaResumida libro={libro} />}
+    </div>
   );
 }

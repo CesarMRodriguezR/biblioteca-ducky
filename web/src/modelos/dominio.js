@@ -22,8 +22,7 @@
  *     TONOS_PERFIL          Color de insignia de cada perfil
  *     ESTADOS_SOLICITUD     Etiqueta y tono de cada estatus de solicitud de compra
  *     ESTADOS_USUARIO       Etiqueta y tono de cada estatus de usuario
- *     CAMPOS_BUSQUEDA       Campos «Buscar por» del catálogo
- *     ORDENES_CATALOGO      Opciones de orden del catálogo
+ *     CAMPOS_BUSQUEDA       Filtros del catálogo: campo de búsqueda y de orden
  *     DescribirFuncion      Funciones con su etiqueta visible ("Etiqueta:…
  *     Iniciales             Obtener las iniciales de un nombre para el avatar
  *     EtiquetaRol           "Ana Sofía" con rol femenino si aplica en la etiqueta del…
@@ -50,7 +49,8 @@
 
 /*
  * Constante: ESTADOS_COPIA
- * Objetivo: Etiqueta, tono y descripción de cada estado de copia.
+ * Objetivo: Etiqueta, tono y descripción de cada estado de copia (las llaves son los valores
+ *           de Ejemplares.Estatus del diagrama; «Inactivo» es una copia dada de baja).
  */
 export const ESTADOS_COPIA = {
   Disponible: {
@@ -58,22 +58,17 @@ export const ESTADOS_COPIA = {
     tono: 'exito',
     descripcion: 'Se consulta dentro de la biblioteca',
   },
-  'Consulta externa': {
+  'Consulta Externa': {
     etiqueta: 'Consulta externa',
     tono: 'informacion',
     descripcion: 'Se puede llevar a casa',
   },
-  'En prestamo': {
+  'En préstamo': {
     etiqueta: 'En préstamo',
     tono: 'advertencia',
     descripcion: 'Regresa a la biblioteca al devolverse',
   },
-  Apartado: {
-    etiqueta: 'Apartado',
-    tono: 'morado',
-    descripcion: 'Reservado para la lista de espera',
-  },
-  Baja: { etiqueta: 'Baja', tono: 'error', descripcion: 'Retirado del acervo' },
+  Inactivo: { etiqueta: 'Baja', tono: 'error', descripcion: 'Retirado del acervo' },
 };
 
 /*
@@ -118,12 +113,12 @@ export const ESTADOS_SOLICITUD = {
 export const ESTADOS_USUARIO = {
   Activo: { etiqueta: 'Válido', tono: 'exito' },
   Inactivo: { etiqueta: 'Inactivo', tono: 'neutro' },
-  Bloqueado: { etiqueta: 'Bloqueado', tono: 'error' },
 };
 
 /*
  * Constante: CAMPOS_BUSQUEDA
- * Objetivo: Campos «Buscar por» del catálogo.
+ * Objetivo: Filtros del catálogo. El filtro elegido es el campo donde se busca y también el
+ *           orden de los resultados («Todos» ordena por título).
  */
 export const CAMPOS_BUSQUEDA = [
   { valor: 'todos', etiqueta: 'Todos' },
@@ -133,18 +128,6 @@ export const CAMPOS_BUSQUEDA = [
   { valor: 'isbn', etiqueta: 'ISBN' },
   { valor: 'anio', etiqueta: 'Año' },
   { valor: 'tema', etiqueta: 'Tema' },
-];
-
-/*
- * Constante: ORDENES_CATALOGO
- * Objetivo: Opciones de orden del catálogo.
- */
-export const ORDENES_CATALOGO = [
-  { valor: 'titulo', etiqueta: 'Título (A–Z)' },
-  { valor: 'autor', etiqueta: 'Autor (A–Z)' },
-  { valor: 'anio_desc', etiqueta: 'Más recientes' },
-  { valor: 'anio_asc', etiqueta: 'Más antiguos' },
-  { valor: 'disponibles', etiqueta: 'Más disponibles' },
 ];
 
 /*
@@ -191,10 +174,11 @@ export function EtiquetaRol(usuario)
 /*
  * Función: UbicacionTexto
  * Objetivo: Describir la ubicación de una copia (pasillo, estante, nivel y sección).
- * Entrada: { Pasillo, Estante, Nivel }, seccion
+ *           La API entrega los componentes ya interpretados del código de ubicación.
+ * Entrada: { Pasillo, Estante, Nivel, Seccion }, seccion (opcional, si no viene en el objeto)
  * Salida: Texto de la ubicación
  */
-export function UbicacionTexto({ Pasillo, Estante, Nivel }, seccion)
+export function UbicacionTexto({ Pasillo, Estante, Nivel, Seccion }, seccion = Seccion)
 {
   const partes = [];
   if (Pasillo)

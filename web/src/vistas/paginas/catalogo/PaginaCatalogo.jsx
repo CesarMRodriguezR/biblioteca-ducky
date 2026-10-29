@@ -33,7 +33,7 @@
 import { Link } from 'react-router-dom';
 import { FileText, MapPin } from 'lucide-react';
 import { useControladorCatalogo } from '../../../controladores/ControladorCatalogo.js';
-import { CAMPOS_BUSQUEDA, ORDENES_CATALOGO, UbicacionTexto } from '../../../modelos/dominio.js';
+import { CAMPOS_BUSQUEDA, UbicacionTexto } from '../../../modelos/dominio.js';
 import { Pagina } from '../../plantillas/PlantillaAplicacion.jsx';
 import {
   AlertaError,
@@ -110,35 +110,18 @@ export function PaginaCatalogo()
             </Boton>
           )}
         </div>
-        <div className="fila entre margen-arriba-16" style={{ flexWrap: 'wrap', gap: 12 }}>
-          <div className="filtros" role="group" aria-label="Buscar en">
-            {CAMPOS_BUSQUEDA.map((campo) => (
-              <button
-                key={campo.valor}
-                type="button"
-                className={`filtro ${controlador.campo === campo.valor ? 'filtro-activo' : ''}`}
-                aria-pressed={controlador.campo === campo.valor}
-                onClick={() => controlador.ElegirCampo(campo.valor)}
-              >
-                {campo.etiqueta.toUpperCase()}
-              </button>
-            ))}
-          </div>
-          <label className="fila espacio-8 texto-nota">
-            Ordenar por
-            <select
-              className="selector"
-              style={{ width: 'auto' }}
-              value={controlador.orden}
-              onChange={(evento) => controlador.ElegirOrden(evento.target.value)}
+        <div className="filtros margen-arriba-16" role="group" aria-label="Buscar y ordenar por">
+          {CAMPOS_BUSQUEDA.map((campo) => (
+            <button
+              key={campo.valor}
+              type="button"
+              className={`filtro ${controlador.campo === campo.valor ? 'filtro-activo' : ''}`}
+              aria-pressed={controlador.campo === campo.valor}
+              onClick={() => controlador.ElegirCampo(campo.valor)}
             >
-              {ORDENES_CATALOGO.map((elemento) => (
-                <option key={elemento.valor} value={elemento.valor}>
-                  {elemento.etiqueta}
-                </option>
-              ))}
-            </select>
-          </label>
+              {campo.etiqueta.toUpperCase()}
+            </button>
+          ))}
         </div>
       </Tarjeta>
 

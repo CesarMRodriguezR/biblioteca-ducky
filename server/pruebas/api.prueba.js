@@ -27,6 +27,8 @@
  * Instrucciones de reutilización:
  * (1) Ejecutar con npm test después de npm run db:reset; las pruebas modifican los datos
  *     semilla.
+ * (2) CIAA, Empleados y Tesorería se simulan con SimuladorExternos.js; no hace falta encender
+ *     el servicio externos/.
  * ******************************************************************
  */
 
@@ -36,9 +38,12 @@ import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { aplicacion } from '../src/aplicacion.js';
 import { pool, Consultar } from '../src/configuracion/conexion.js';
+import { ENTORNO } from '../src/configuracion/entorno.js';
+import { IniciarSimulador } from './SimuladorExternos.js';
 
 let servidor;
 let base;
+let simulador;
 /*
  * Módulo: tokens
  * Objetivo: Guardar el token de sesión de cada usuario de prueba.
@@ -88,72 +93,55 @@ async function IniciarSesionPrueba(usuario, contrasena = CONTRASENA)
 
 before(async () =>
 {
+  simulador = await IniciarSimulador();
+  ENTORNO.EXTERNOS.CIAA.URL = `${simulador.url}/ciaa/api`;
+  ENTORNO.EXTERNOS.EMPLEADOS.URL = `${simulador.url}/empleados/api`;
+  ENTORNO.EXTERNOS.TESORERIA.URL = `${simulador.url}/tesoreria/api`;
   servidor = aplicacion.listen(0);
   base = `http://127.0.0.1:${servidor.address().port}/api`;
   tokens.admin = await IniciarSesionPrueba('felipe.rodriguez');
   tokens.biblio = await IniciarSesionPrueba('catherine.ramirez');
   tokens.alumna = await IniciarSesionPrueba('marcela.guerra');
   tokens.profesor = await IniciarSesionPrueba('javier.saavedra');
-
-  // Usuarios de prueba sin préstamos para los flujos de circulación
-  for (const [usuario, matricula, perfil] of [
-    ['ana.prueba', '9000001', 4],
-    ['beto.prueba', '9000002', 3],
-  ])
-  {
-    const resultado = await Solicitar('POST', '/usuarios', {
-      token: tokens.admin,
-      body: {
-        Nombre_Usuario: usuario,
-        Nombre_Completo: usuario,
-        Matricula_Nomina: matricula,
-        Contrasena_Usuario: CONTRASENA,
-        id_perfil: perfil,
-      },
-    });
-    assert.equal(resultado.status, 201, JSON.stringify(resultado.data));
-  }
-  tokens.ana = await IniciarSesionPrueba('ana.prueba');
-  tokens.beto = await IniciarSesionPrueba('beto.prueba');
 });
 
 after(async () =>
 {
   servidor.close();
+  await simulador.Cerrar();
   await pool.end();
 });
 
 /*------------------------------------------------------------------
  * Sección: GU01 Autenticación
- * Objetivo: Probar el inicio de sesión, los intentos fallidos y el bloqueo.
+ * Objetivo: Probar el inicio de sesión y las cuentas inactivadas por el administrador.
  *------------------------------------------------------------------*/
-test('GU01: inicio de sesión fallido cuenta intentos y bloquea al quinto', async () =>
+test('GU01: datos incorrectos no cuentan intentos; una cuenta inactiva no entra', async () =>
 {
-  const Intento = () =>
-    Solicitar('POST', '/auth/login', {
+  for (let indice = 0; indice < 6; indice += 1)
+  {
+    const fallido = await Solicitar('POST', '/auth/login', {
       body: { Nombre_Usuario: 'maria.ortiz', Contrasena_Usuario: 'incorrecta' },
     });
-  const r1 = await Intento();
-  assert.equal(r1.status, 401);
-  assert.equal(r1.data.error, 'Usuario o contraseña incorrectos.');
-  assert.equal(r1.data.detalles.intentos_restantes, 4);
-  for (let indice = 0; indice < 3; indice += 1)
-  {
-    await Intento();
+    assert.equal(fallido.status, 401);
+    assert.equal(fallido.data.error, 'Usuario o contraseña incorrectos.');
   }
-  const r5 = await Intento();
-  assert.equal(r5.status, 403);
-  assert.equal(r5.data.detalles.codigo, 'CUENTA_BLOQUEADA');
+  await IniciarSesionPrueba('maria.ortiz'); // seis fallos no la bloquean
 
-  const con_buena = await Solicitar('POST', '/auth/login', {
-    body: { Nombre_Usuario: 'maria.ortiz', Contrasena_Usuario: CONTRASENA },
-  });
-  assert.equal(con_buena.status, 403);
-
-  // El administrador la reactiva
   const [{ id_usuario: id }] = await Consultar(
     'SELECT id_usuario FROM Usuarios WHERE Nombre_Usuario = \'maria.ortiz\'',
   );
+  const bloqueo = await Solicitar('PUT', `/usuarios/${id}`, {
+    token: tokens.admin,
+    body: { Estatus: 'Bloqueado' },
+  });
+  assert.equal(bloqueo.status, 400); // solo existen Activo e Inactivo
+  await Solicitar('PUT', `/usuarios/${id}`, { token: tokens.admin, body: { Estatus: 'Inactivo' } });
+  const inactiva = await Solicitar('POST', '/auth/login', {
+    body: { Nombre_Usuario: 'maria.ortiz', Contrasena_Usuario: CONTRASENA },
+  });
+  assert.equal(inactiva.status, 403);
+  assert.equal(inactiva.data.detalles.codigo, 'CUENTA_INACTIVA');
   await Solicitar('PUT', `/usuarios/${id}`, { token: tokens.admin, body: { Estatus: 'Activo' } });
   await IniciarSesionPrueba('maria.ortiz');
 });
@@ -189,14 +177,19 @@ test('validación de perfil: el alumno recibe 403 en funciones restringidas', as
     403,
   );
   assert.equal((await Solicitar('GET', '/panel', { token: tokens.alumna })).status, 403);
-  // La bibliotecaria gestiona libros, pero la solicitud de compra es exclusiva del administrador
+  // La bibliotecaria solo busca libros: no gestiona fichas ni solicitudes de compra
   assert.equal(
     (await Solicitar('GET', '/libros/isbn/978-0-13-235088-4', { token: tokens.biblio })).status,
-    200,
+    403,
   );
   assert.equal(
     (await Solicitar('POST', '/ordenes-compra', { token: tokens.biblio, body: {} })).status,
     403,
+  );
+  const funciones = await Solicitar('GET', '/funciones', { token: tokens.admin });
+  assert.deepEqual(
+    funciones.data.map((funcion) => funcion.Nombre_Funcion).sort(),
+    ['buscar_libros', 'gestionar_libros', 'gestionar_usuarios'],
   );
 });
 
@@ -227,6 +220,22 @@ test('BL01: búsqueda por campo (Autor «Tanenbaum», Título, ISBN sin resultad
   assert.equal(isbn.data.total, 0);
 });
 
+test('BL01: el filtro también ordena (autor, editorial, año)', async () =>
+{
+  const Valores = async (campo, columna) =>
+    (await Solicitar('GET', `/libros?campo=${campo}&limit=50`, { token: tokens.alumna })).data.datos
+      .map((libro) => libro[columna]);
+  const Ordenado = (lista) =>
+    lista.every((valor, indice) => indice === 0 || String(lista[indice - 1]).localeCompare(
+      String(valor), 'es', { sensitivity: 'base' }) <= 0);
+  assert.ok(Ordenado(await Valores('autor', 'Autores_Apellidos')));
+  assert.ok(Ordenado(await Valores('editorial', 'Nombre_Editorial')));
+  const anios = await Valores('anio', 'Anio');
+  assert.deepEqual(anios, [...anios].sort((a, b) => a - b));
+  const aparte = await Solicitar('GET', '/libros?orden=anio_desc', { token: tokens.alumna });
+  assert.equal(aparte.status, 400);
+});
+
 test('GL05: la ficha completa (con códigos de copia) solo la ve quien gestiona libros', async () =>
 {
   const alumna = await Solicitar('GET', '/libros/1', { token: tokens.alumna });
@@ -234,8 +243,8 @@ test('GL05: la ficha completa (con códigos de copia) solo la ve quien gestiona 
   assert.equal(alumna.data.ejemplares, undefined);
   assert.deepEqual(alumna.data.resumen_copias, {
     Disponible: 2,
-    'Consulta externa': 1,
-    'En prestamo': 2,
+    'Consulta Externa': 1,
+    'En préstamo': 2,
   });
   assert.equal(alumna.data.Ejemplares_Disponibles, 3);
 
@@ -267,6 +276,14 @@ test('GL06: listado con filtro y PDF', async () =>
   assert.equal(pdf.status, 200);
   assert.equal(pdf.tipo, 'application/pdf');
   assert.equal(pdf.bytes.subarray(0, 4).toString(), '%PDF');
+
+  // El pie de página no debe crear hojas de más: 18 libros caben en 2 hojas y 2 libros en 1
+  const ContarHojas = (bytes) => (bytes.toString('latin1').match(/\/Type \/Page\b/g) ?? []).length;
+  assert.equal(ContarHojas(pdf.bytes), 2);
+  const filtrado = await Solicitar('GET', '/libros/listado.pdf?campo=autor&q=Tanenbaum', {
+    token: tokens.admin,
+  });
+  assert.equal(ContarHojas(filtrado.bytes), 1);
 });
 
 /*------------------------------------------------------------------
@@ -311,6 +328,7 @@ test('GL02: ISBN duplicado devuelve la ficha existente y luego alta completa con
   assert.equal(alta.status, 201, JSON.stringify(alta.data));
   assert.equal(alta.data.Ejemplares_Totales, 0);
   assert.equal(alta.data.Autor, 'Cormen, T. H.; Leiserson, C. E.');
+  assert.equal(alta.data.id_libro, '20'); // VARCHAR(13): el siguiente después de los 19 de la semilla
 
   const dup = await Solicitar('POST', '/libros', { token: tokens.admin, body: libro });
   assert.equal(dup.status, 409);
@@ -318,12 +336,23 @@ test('GL02: ISBN duplicado devuelve la ficha existente y luego alta completa con
 
   const copias = await Solicitar('POST', `/libros/${alta.data.id_libro}/ejemplares`, {
     token: tokens.admin,
-    body: { cantidad: 2, Pasillo: '4', Estante: 'B', Nivel: '2' },
+    body: { cantidad: 2, Pasillo: '2', Estante: 'Q', Nivel: '3' },
   });
   assert.equal(copias.status, 201);
   assert.equal(copias.data.ejemplares.length, 2);
-  assert.match(copias.data.ejemplares[0].Codigo, /^EJ-\d{5}$/);
-  assert.equal(copias.data.Pasillo, '4');
+  const codigo = `EJ-${String(alta.data.id_libro * 100 + 1).padStart(5, '0')}`;
+  assert.equal(copias.data.ejemplares[0].Codigo, codigo);
+  // La ubicación se guarda como un código (la sección sale del tema) y se interpreta al leerla
+  assert.equal(copias.data.ejemplares[0].Ubicacion, 'P2-EQ-N3-SComputación');
+  assert.deepEqual(
+    [copias.data.Pasillo, copias.data.Estante, copias.data.Nivel, copias.data.Seccion],
+    ['2', 'Q', '3', 'Computación'],
+  );
+  const con_guion = await Solicitar('POST', `/libros/${alta.data.id_libro}/ejemplares`, {
+    token: tokens.admin,
+    body: { cantidad: 1, Estante: 'QA-76' },
+  });
+  assert.equal(con_guion.status, 400);
 });
 
 /*------------------------------------------------------------------
@@ -362,7 +391,7 @@ test('GL04: el ISBN no se cambia y las copias solo aumentan', async () =>
 test('GL04: cambio de estado de copia bloqueado si está en préstamo', async () =>
 {
   const libro = await Solicitar('GET', '/libros/3', { token: tokens.admin });
-  const prestada = libro.data.ejemplares.find((ejemplar) => ejemplar.Estatus === 'En prestamo');
+  const prestada = libro.data.ejemplares.find((ejemplar) => ejemplar.Estatus === 'En préstamo');
   const libre = libro.data.ejemplares.find((ejemplar) => ejemplar.Estatus === 'Disponible');
 
   const bloqueo = await Solicitar('PUT', `/libros/3/ejemplares/${prestada.num_copia}`, {
@@ -374,14 +403,14 @@ test('GL04: cambio de estado de copia bloqueado si está en préstamo', async ()
 
   const cambio = await Solicitar('PUT', `/libros/3/ejemplares/${libre.num_copia}`, {
     token: tokens.admin,
-    body: { Estatus: 'Consulta externa' },
+    body: { Estatus: 'Consulta Externa' },
   });
   assert.equal(cambio.status, 200);
-  assert.equal(cambio.data.Estatus, 'Consulta externa');
+  assert.equal(cambio.data.Estatus, 'Consulta Externa');
 
   const sistema = await Solicitar('PUT', `/libros/3/ejemplares/${libre.num_copia}`, {
     token: tokens.admin,
-    body: { Estatus: 'En prestamo' },
+    body: { Estatus: 'En préstamo' },
   });
   assert.equal(sistema.status, 400);
 });
@@ -404,8 +433,8 @@ test('GL03: retiro de copia e inactivación de libro', async () =>
     body: { Motivo_Baja: 'Danado' },
   });
   assert.equal(retiro.status, 200);
-  assert.equal(retiro.data.Estatus, 'Baja');
-  assert.equal(retiro.data.Motivo_Baja, 'Danado');
+  assert.equal(retiro.data.Estatus, 'Inactivo');
+  assert.match(retiro.data.mensaje, /dada de baja \(Dañado\)/);
 
   const inactivar = await Solicitar('PATCH', '/libros/2/estatus', {
     token: tokens.admin,
@@ -466,114 +495,96 @@ test('GU02: consulta por matrícula y cambio de datos con contraseña segura', a
 
   const lista = await Solicitar('GET', '/usuarios?limit=7', { token: tokens.admin });
   assert.equal(lista.data.datos.length, 7);
-  assert.ok(lista.data.total >= 11);
+  assert.ok(lista.data.total >= 9);
 });
 
-test('GU02: alta de cuentas por lista con errores, rol obligatorio y contraseña inicial', async () =>
+test('GU02: la lista de altas sale de CIAA y Empleados con usuario nombre.apellido', async () =>
 {
-  const filas = [
-    {
-      Fila: 2,
-      Nombre_Usuario: 'ana.ramirez',
-      Matricula_Nomina: 3105842,
-      Nombre_Completo: 'Ana Ramírez Torres',
-      Correo: 'ana.ramirez@ducky.edu.mx',
-    },
-    {
-      Fila: 3,
-      Nombre_Usuario: 'paola.trevino',
-      Matricula_Nomina: '31O5877',
-      Nombre_Completo: 'Paola Treviño Garza',
-    },
-    {
-      Fila: 4,
-      Nombre_Usuario: 'jorge.salas',
-      Matricula_Nomina: '1002745',
-      Nombre_Completo: 'Jorge Salas Medina',
-    },
-    { Fila: 5, Nombre_Usuario: 'hector.garza', Matricula_Nomina: '1004981', Nombre_Completo: '' },
-    {
-      Fila: 6,
-      Nombre_Usuario: 'diego.flores',
-      Matricula_Nomina: '3108890',
-      Nombre_Completo: 'Diego Flores Garza',
-    },
-  ];
-  const revision = await Solicitar('POST', '/usuarios/carga/validar', {
-    token: tokens.admin,
-    body: { filas },
-  });
-  assert.equal(revision.status, 200);
-  assert.equal(revision.data.validos.length, 3);
+  const lista = await Solicitar('GET', '/usuarios/lista', { token: tokens.admin });
+  assert.equal(lista.status, 200, JSON.stringify(lista.data));
+  assert.deepEqual(lista.data.fuentes, { CIAA: 6, Empleados: 6 });
+  const validos = Object.fromEntries(
+    lista.data.altas.validos.map((valido) => [valido.Matricula_Nomina, valido]),
+  );
+  assert.deepEqual(Object.keys(validos).sort(), ['1002745', '3105842', '3108890', '3150221']);
+  assert.equal(validos['3105842'].Nombre_Usuario, 'ana.ramirez');
+  assert.equal(validos['3105842'].Rol_Sugerido, 'Alumno');
+  // cesar.rodriguez ya existe: se agrega la inicial del segundo nombre
+  assert.equal(validos['3150221'].Nombre_Usuario, 'cesarm.rodriguez');
+  assert.equal(validos['1002745'].Rol_Sugerido, 'Profesor');
+  assert.equal(validos['1002745'].id_perfil_sugerido, '3'); // llaves VARCHAR(13)
   assert.deepEqual(
-    revision.data.errores.map((error) => [error.Fila, error.Error]),
+    lista.data.altas.errores.map((error) => [error.Origen, error.Matricula_Nomina, error.Error]),
     [
-      [3, 'Formato inválido: solo se permiten números'],
-      [5, 'Dato incompleto: el nombre está vacío'],
+      ['CIAA', '31O5877', 'Formato inválido: solo se permiten números'],
+      ['Empleados', '1004981', 'Dato incompleto: el nombre está vacío'],
     ],
   );
+  assert.deepEqual(
+    lista.data.bajas.map((baja) => baja.Nombre_Usuario),
+    ['diego.fuentes', 'hector.villarreal', 'luis.moreno'],
+  );
+});
 
-  const cuentas = revision.data.validos.map((valido) => ({
-    ...valido,
-    id_perfil: valido.Nombre_Usuario === 'diego.flores' ? null : 4,
-  }));
-  cuentas.find((cuenta) => cuenta.Nombre_Usuario === 'jorge.salas').id_perfil = 3;
+test('GU02: alta de cuentas con rol obligatorio y contraseña inicial 000 + matrícula', async () =>
+{
   const alta = await Solicitar('POST', '/usuarios/carga', {
     token: tokens.admin,
-    body: { cuentas },
+    body: {
+      cuentas: [
+        { Matricula_Nomina: '3105842', id_perfil: 4 },
+        { Matricula_Nomina: '1002745', id_perfil: 3 },
+        { Matricula_Nomina: '3108890', id_perfil: null },
+        { Matricula_Nomina: '9999999', id_perfil: 4 },
+      ],
+    },
   });
-  assert.equal(alta.status, 201);
-  assert.equal(alta.data.creados.length, 2);
-  assert.equal(alta.data.creados[0].Contrasena_Inicial, '0003105842');
-  assert.deepEqual(alta.data.creados[0].funciones.includes('buscar_libros'), true);
-  assert.equal(alta.data.errores[0].Error, 'Sin rol asignado');
+  assert.equal(alta.status, 201, JSON.stringify(alta.data));
+  assert.deepEqual(
+    alta.data.creados.map((creado) => [creado.Nombre_Usuario, creado.Contrasena_Inicial]),
+    [
+      ['ana.ramirez', '0003105842'],
+      ['jorge.salas', '0001002745'],
+    ],
+  );
+  assert.equal(alta.data.creados[0].funciones.includes('buscar_libros'), true);
+  assert.deepEqual(
+    alta.data.errores.map((error) => error.Error),
+    ['Sin rol asignado', 'Ya no aparece como nueva en CIAA ni en Empleados'],
+  );
 
   await IniciarSesionPrueba('ana.ramirez', '0003105842');
 
-  const repetida = await Solicitar('POST', '/usuarios/carga/validar', {
-    token: tokens.admin,
-    body: { filas: [filas[0]] },
-  });
-  assert.equal(repetida.data.errores[0].Error, 'Ya existe una cuenta con esta matrícula');
+  const despues = await Solicitar('GET', '/usuarios/lista', { token: tokens.admin });
+  assert.equal(
+    despues.data.altas.validos.some((valido) => valido.Matricula_Nomina === '3105842'),
+    false,
+  );
 });
 
-test('GU02: baja por lista rechaza cuentas con préstamos o multas', async () =>
+test('GU02: baja de quienes ya no aparecen, salvo con préstamos o multas', async () =>
 {
-  const [{ total }] = await Consultar(
-    'SELECT COUNT(*) AS total FROM Usuarios WHERE Estatus <> \'Inactivo\'',
-  );
-  const todas = await Consultar(
-    'SELECT Matricula_Nomina FROM Usuarios WHERE Estatus <> \'Inactivo\'',
-  );
-  const lista = todas
-    .map((toda) => toda.Matricula_Nomina)
-    .filter((toda) => !['3098117', '3120558'].includes(toda));
-  assert.equal(lista.length, total - 2);
-
-  const revision = await Solicitar('POST', '/usuarios/bajas/revisar', {
-    token: tokens.admin,
-    body: { matriculas: lista },
-  });
-  assert.deepEqual(
-    revision.data.map((elemento) => elemento.Nombre_Usuario),
-    ['diego.fuentes', 'luis.moreno'],
-  );
-  const luis = revision.data.find((elemento) => elemento.Nombre_Usuario === 'luis.moreno');
+  const { data: lista } = await Solicitar('GET', '/usuarios/lista', { token: tokens.admin });
+  const luis = lista.bajas.find((elemento) => elemento.Nombre_Usuario === 'luis.moreno');
   assert.equal(luis.Multas_Pendientes, 45);
 
+  const [marcela] = await Consultar(
+    'SELECT id_usuario FROM Usuarios WHERE Nombre_Usuario = \'marcela.guerra\'',
+  );
   const baja = await Solicitar('POST', '/usuarios/bajas', {
     token: tokens.admin,
-    body: { ids: revision.data.map((elemento) => elemento.id_usuario) },
+    body: { ids: [...lista.bajas.map((elemento) => elemento.id_usuario), marcela.id_usuario] },
   });
   assert.equal(baja.status, 200);
   assert.deepEqual(
     baja.data.dados_de_baja.map((elemento) => elemento.Nombre_Usuario),
-    ['diego.fuentes'],
+    ['diego.fuentes', 'hector.villarreal'],
   );
   assert.match(
     baja.data.rechazados[0].Motivo,
     /1 libro\(s\) prestado\(s\) y multas pendientes por \$45\.00/,
   );
+  assert.equal(baja.data.rechazados[1].Motivo, 'Sigue apareciendo en CIAA o en Empleados');
 });
 
 test('GU02: gestión de perfiles (Administrador protegido)', async () =>
@@ -590,121 +601,14 @@ test('GU02: gestión de perfiles (Administrador protegido)', async () =>
 
   const colaborador = await Solicitar('PUT', '/perfiles/5/funciones', {
     token: tokens.admin,
-    body: { funciones: [3, 7, 10, 12, 14, 4] },
+    body: { funciones: [3, 2] },
   });
   assert.equal(colaborador.status, 200);
-  assert.equal(colaborador.data.funciones.length, 6);
+  assert.equal(colaborador.data.funciones.length, 2);
   await Solicitar('PUT', '/perfiles/5/funciones', {
     token: tokens.admin,
-    body: { funciones: [3, 7, 10, 12, 14] },
+    body: { funciones: [3] },
   });
-});
-
-/*------------------------------------------------------------------
- * Sección: Circulación (API, sin pantallas en el prototipo)
- * Objetivo: Probar préstamos, renovaciones, devoluciones, multas y lista de espera.
- *------------------------------------------------------------------*/
-test('préstamo solo de copias de Consulta externa; lista de espera y apartado', async () =>
-{
-  // The Algorithm Design Manual (17): todas las copias en préstamo
-  const sin_copias = await Solicitar('POST', '/prestamos', {
-    token: tokens.ana,
-    body: { id_libro: 17 },
-  });
-  assert.equal(sin_copias.status, 409);
-  assert.equal(sin_copias.data.detalles.codigo, 'SIN_EJEMPLARES');
-
-  // Probabilidad (14): 1 Disponible (sala) + 1 Consulta externa
-  const p1 = await Solicitar('POST', '/prestamos', { token: tokens.ana, body: { id_libro: 14 } });
-  assert.equal(p1.status, 201, JSON.stringify(p1.data));
-  const libro = await Solicitar('GET', '/libros/14', { token: tokens.admin });
-  assert.equal(
-    libro.data.ejemplares.find((ejemplar) => ejemplar.num_copia === p1.data.num_copia).Estatus,
-    'En prestamo',
-  );
-
-  // Solo queda la copia de sala: no se presta y se puede apartar
-  const sala = await Solicitar('POST', '/prestamos', {
-    token: tokens.beto,
-    body: { id_libro: 14 },
-  });
-  assert.equal(sala.status, 409);
-  const espera = await Solicitar('POST', '/lista-espera', {
-    token: tokens.beto,
-    body: { id_libro: 14 },
-  });
-  assert.equal(espera.status, 201);
-
-  const dev = await Solicitar('POST', `/prestamos/${p1.data.id_prestamo}/devolucion`, {
-    token: tokens.biblio,
-    body: {},
-  });
-  assert.equal(dev.status, 201);
-  assert.equal(
-    dev.data.apartado_para,
-    (await Solicitar('GET', '/auth/me', { token: tokens.beto })).data.id_usuario,
-  );
-
-  const otro = await Solicitar('POST', '/prestamos', { token: tokens.ana, body: { id_libro: 14 } });
-  assert.equal(otro.status, 409);
-  const p2 = await Solicitar('POST', '/prestamos', { token: tokens.beto, body: { id_libro: 14 } });
-  assert.equal(p2.status, 201);
-  const dev2 = await Solicitar('POST', `/prestamos/${p2.data.id_prestamo}/devolucion`, {
-    token: tokens.biblio,
-    body: {},
-  });
-  assert.equal(dev2.data.apartado_para, null);
-  const despues = await Solicitar('GET', '/libros/14', { token: tokens.admin });
-  assert.equal(
-    despues.data.ejemplares.find((ejemplar) => ejemplar.num_copia === p2.data.num_copia).Estatus,
-    'Consulta externa',
-  );
-});
-
-test('renovación hasta 2 veces y devolución tardía con multa que bloquea préstamos', async () =>
-{
-  const parametro = await Solicitar('POST', '/prestamos', { token: tokens.ana, body: { id_libro: 12 } });
-  assert.equal(parametro.status, 201, JSON.stringify(parametro.data));
-  assert.equal(
-    (await Solicitar('POST', `/prestamos/${parametro.data.id_prestamo}/renovacion`, { token: tokens.ana }))
-      .status,
-    201,
-  );
-  assert.equal(
-    (await Solicitar('POST', `/prestamos/${parametro.data.id_prestamo}/renovacion`, { token: tokens.ana }))
-      .status,
-    201,
-  );
-  assert.equal(
-    (await Solicitar('POST', `/prestamos/${parametro.data.id_prestamo}/renovacion`, { token: tokens.ana }))
-      .status,
-    409,
-  );
-
-  await Consultar(
-    `UPDATE Prestamos SET Fecha_Prestamo = CURDATE() - INTERVAL 10 DAY,
-            Fecha_Entrega_Programada = CURDATE() - INTERVAL 3 DAY WHERE id_prestamo = ?`,
-    [parametro.data.id_prestamo],
-  );
-  const dev = await Solicitar('POST', `/prestamos/${parametro.data.id_prestamo}/devolucion`, {
-    token: tokens.biblio,
-    body: {},
-  });
-  assert.equal(dev.data.multa.Cantidad_a_Pagar, 30);
-
-  const bloqueado = await Solicitar('POST', '/prestamos', {
-    token: tokens.ana,
-    body: { id_libro: 8 },
-  });
-  assert.equal(bloqueado.data.detalles.codigo, 'MULTAS_PENDIENTES');
-  await Solicitar('POST', `/multas/${dev.data.multa.id_multa}/pago`, {
-    token: tokens.biblio,
-    body: {},
-  });
-  assert.equal(
-    (await Solicitar('POST', '/prestamos', { token: tokens.ana, body: { id_libro: 8 } })).status,
-    201,
-  );
 });
 
 /*------------------------------------------------------------------
@@ -766,46 +670,96 @@ test('GL01: solicitud de libro nuevo y de más copias; flujo de estados', async 
   assert.equal(orden.data.libros_nuevos[0].Editorial, 'Addison-Wesley');
   assert.equal(orden.data.CantidadTotal, 1200 * 2 + 1890 * 2);
 
-  const abiertas = await Solicitar('GET', '/ordenes-compra/solicitudes', { token: tokens.admin });
-  assert.ok(abiertas.data.some((elemento) => elemento.Titulo === 'Compilers' && elemento.Estatus === 'Pendiente'));
+  // Se envió a Tesorería: queda En revisión con el folio que asignó
+  assert.equal(orden.data.Estatus, 'En revision');
+  assert.equal(orden.data.envio_tesoreria.enviada, true);
+  const folio = orden.data.Folio_Tesoreria;
+  assert.equal(simulador.solicitudes.get(folio).renglones.length, 2);
 
+  // Biblio no puede aprobar: solo Tesorería
+  const aprobar = await Solicitar('PATCH', `/ordenes-compra/${orden.data.id_orden}/estatus`, {
+    token: tokens.admin,
+    body: { Estatus: 'Aprobada' },
+  });
+  assert.equal(aprobar.status, 400);
+
+  // Aviso de Tesorería: sin clave se rechaza; con clave se aplica (y repetirlo no cambia nada)
+  const AvisarTesoreria = (clave, cuerpo) =>
+    fetch(`${base}/tesoreria/notificaciones`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Clave-Integracion': clave },
+      body: JSON.stringify(cuerpo),
+    }).then(async (res) => ({ status: res.status, data: await res.json() }));
+  const aviso = { folio, referencia: orden.data.id_orden, estatus: 'Aceptada' };
+  assert.equal((await AvisarTesoreria('incorrecta', aviso)).status, 401);
+  const aceptada = await AvisarTesoreria(ENTORNO.EXTERNOS.CLAVE_NOTIFICACION, aviso);
+  assert.deepEqual(aceptada.data, {
+    id_orden: orden.data.id_orden,
+    Estatus: 'Aprobada',
+    cambio: true,
+  });
+  const repetido = await AvisarTesoreria(ENTORNO.EXTERNOS.CLAVE_NOTIFICACION, aviso);
+  assert.equal(repetido.data.cambio, false);
+
+  // Si Tesorería no responde, la orden queda Pendiente y se envía al revisar las solicitudes
+  const url_tesoreria = ENTORNO.EXTERNOS.TESORERIA.URL;
+  ENTORNO.EXTERNOS.TESORERIA.URL = 'http://127.0.0.1:9/tesoreria/api';
+  const sin_envio = await Solicitar('POST', '/ordenes-compra', {
+    token: tokens.admin,
+    body: { libros_existentes: [{ id_libro: 5, Num_Ejemplares: 1 }] },
+  });
+  ENTORNO.EXTERNOS.TESORERIA.URL = url_tesoreria;
+  assert.equal(sin_envio.status, 201);
+  assert.equal(sin_envio.data.Estatus, 'Pendiente');
+  assert.equal(sin_envio.data.envio_tesoreria.enviada, false);
+
+  // La respuesta que no llegó por aviso se consulta: Tesorería rechazó la orden
+  await Solicitar('GET', '/ordenes-compra/solicitudes', { token: tokens.admin });
+  const [, enviada] = [...simulador.solicitudes.entries()].find(
+    ([, solicitud]) => solicitud.Referencia === String(sin_envio.data.id_orden),
+  );
+  const folio_nuevo = enviada.Folio;
+  assert.ok(folio_nuevo);
+  Object.assign(simulador.solicitudes.get(folio_nuevo), {
+    Estatus: 'Rechazada',
+    Motivo: 'Sin presupuesto',
+  });
+  const abiertas = await Solicitar('GET', '/ordenes-compra/solicitudes', { token: tokens.admin });
+  const rechazada = abiertas.data.find((elemento) => elemento.id_orden === sin_envio.data.id_orden);
+  assert.equal(rechazada.Estatus, 'Rechazada');
+  assert.equal(rechazada.Motivo_Respuesta, 'Sin presupuesto');
+
+  // Llegaron los libros aprobados: se agregan las copias
   const antes = (await Solicitar('GET', '/libros/1', { token: tokens.admin })).data
     .Ejemplares_Totales;
-  for (const Estatus of ['En revision', 'Aprobada', 'Recibida'])
-  {
-    const resultado = await Solicitar('PATCH', `/ordenes-compra/${orden.data.id_orden}/estatus`, {
-      token: tokens.admin,
-      body: { Estatus },
-    });
-    assert.equal(resultado.status, 200, JSON.stringify(resultado.data));
-  }
+  const recibida = await Solicitar('PATCH', `/ordenes-compra/${orden.data.id_orden}/estatus`, {
+    token: tokens.admin,
+    body: { Estatus: 'Recibida' },
+  });
+  assert.equal(recibida.status, 200, JSON.stringify(recibida.data));
   const despues = (await Solicitar('GET', '/libros/1', { token: tokens.admin })).data
     .Ejemplares_Totales;
   assert.equal(despues, antes + 2);
 });
 
 /*------------------------------------------------------------------
- * Sección: Panel, chatbot y políticas
- * Objetivo: Probar el panel, el chatbot y la lectura de políticas.
+ * Sección: Panel
+ * Objetivo: Probar el panel del administrador y que las rutas fuera de esta entrega no existan.
  *------------------------------------------------------------------*/
-test('panel con indicadores y actividad reciente', async () =>
+test('panel con indicadores (sin bitácora)', async () =>
 {
   const resultado = await Solicitar('GET', '/panel', { token: tokens.admin });
   assert.equal(resultado.status, 200);
   assert.equal(resultado.data.libros_activos, 19); // 18 de la semilla + el alta de la 4.ª edición
   assert.ok(resultado.data.usuarios_validos > 5);
-  assert.ok(resultado.data.actividad.length > 0);
-  assert.equal(resultado.data.actividad[0].Accion, 'ESTATUS_COMPRA');
+  assert.equal(resultado.data.actividad, undefined);
 });
 
-test('chatbot y políticas', async () =>
+test('préstamos, multas, espera, chatbot y políticas no están en esta entrega', async () =>
 {
-  const resultado = await Solicitar('POST', '/chatbot/preguntar', {
-    token: tokens.alumna,
-    body: { texto: '¿qué diferencia hay entre disponible y consulta externa?' },
-  });
-  assert.equal(resultado.data.encontrada, true);
-  assert.match(resultado.data.respuesta.Respuesta, /llevar a casa/);
-  const politicas = await Solicitar('GET', '/politicas');
-  assert.equal(politicas.data.length, 6);
+  const rutas = ['/prestamos', '/multas', '/lista-espera', '/chatbot/frecuentes', '/politicas'];
+  for (const ruta of rutas)
+  {
+    assert.equal((await Solicitar('GET', ruta, { token: tokens.admin })).status, 404, ruta);
+  }
 });

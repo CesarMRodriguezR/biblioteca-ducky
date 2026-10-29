@@ -17,6 +17,7 @@
  * Contenido de listado:
  *     Módulo              Objetivo
  *     TRANSICIONES        Estatus a los que puede pasar una orden desde cada estatus
+ *     JUSTIFICACION_POR_DEFECTO  Justificación de un renglón cuando no se indica una
  *     ModeloOrdenCompra   Acceso a las órdenes de compra
  * ******************************************************************
  */
@@ -32,7 +33,7 @@
  * ******************************************************************
  */
 
-import { Consultar, EjecutarEnTransaccion } from '../configuracion/conexion.js';
+import { Consultar, EjecutarEnTransaccion, SiguienteId } from '../configuracion/conexion.js';
 import { ErrorHttp } from '../utilidades/ErrorHttp.js';
 import { Hoy } from '../utilidades/fechas.js';
 import { ModeloEjemplar } from './ModeloEjemplar.js';
@@ -44,10 +45,18 @@ import { ModeloEjemplar } from './ModeloEjemplar.js';
 const TRANSICIONES = {
   Pendiente: ['En revision', 'Aprobada', 'Rechazada'],
   'En revision': ['Aprobada', 'Rechazada'],
-  Aprobada: ['Recibida', 'Rechazada'],
+  Aprobada: ['Recibida'],
   Rechazada: [],
   Recibida: [],
 };
+
+/*
+ * Constante: JUSTIFICACION_POR_DEFECTO
+ * Objetivo: Justificación de un renglón cuando no se indica una. El diagrama la pide NOT NULL y
+ *           el formulario del prototipo no tiene ese campo: la solicitud viene de la lista de
+ *           peticiones del periodo.
+ */
+const JUSTIFICACION_POR_DEFECTO = 'Lista de peticiones del periodo';
 
 /*
  * Módulo: ModeloOrdenCompra
@@ -81,7 +90,7 @@ const ModeloOrdenCompra = {
       `SELECT o.*, u.Nombre_Completo
          FROM OrdenesCompra o JOIN Usuarios u ON u.id_usuario = o.id_usuario
         ${condicion.length ? `WHERE ${condicion.join(' AND ')}` : ''}
-        ORDER BY o.Fecha_Orden DESC, o.id_orden DESC
+        ORDER BY o.Fecha_Orden DESC, CAST(o.id_orden AS UNSIGNED) DESC
         LIMIT ? OFFSET ?`,
       parametros,
     );
@@ -89,30 +98,102 @@ const ModeloOrdenCompra = {
 
   /*
    * Función: SolicitudesAbiertas
-   * Objetivo: Renglones de todas las órdenes abiertas (tabla "Solicitudes pendientes"): título,
-   *           editorial, cantidad y estado.
+   * Objetivo: Renglones de las órdenes abiertas y de las rechazadas por Tesorería en los
+   *           últimos 30 días (tabla "Solicitudes pendientes"): título, editorial, cantidad y
+   *           estado. El folio y el motivo los agrega el controlador desde Tesorería.
    * Entrada: Ninguna
-   * Salida: Promesa con los renglones abiertos
+   * Salida: Promesa con los renglones
    */
   SolicitudesAbiertas()
   {
+    const visibles = `(o.Estatus IN ('Pendiente','En revision','Aprobada')
+          OR (o.Estatus = 'Rechazada' AND o.Fecha_Orden >= CURDATE() - INTERVAL 30 DAY))`;
     return Consultar(
-      `SELECT o.id_orden, o.Fecha_Orden, o.Estatus, 'existente' AS Tipo,
-              l.id_libro AS id_referencia, l.Titulo, e.Nombre_Editorial AS Editorial, ole.Num_Ejemplares
+      `SELECT o.id_orden, o.Fecha_Orden, o.Estatus,
+              'existente' AS Tipo, l.id_libro AS id_referencia, l.Titulo,
+              e.Nombre_Editorial AS Editorial, ole.Num_Ejemplares
          FROM OrdenLibrosExistentes ole
          JOIN OrdenesCompra o ON o.id_orden = ole.id_orden
          JOIN Libros l        ON l.id_libro = ole.id_libro
          JOIN Editoriales e   ON e.id_editorial = l.id_editorial
-        WHERE o.Estatus IN ('Pendiente','En revision','Aprobada')
+        WHERE ${visibles}
        UNION ALL
-       SELECT o.id_orden, o.Fecha_Orden, o.Estatus, 'nuevo' AS Tipo,
-              nl.id_libro_nuevo, nl.Titulo, nl.Editorial, oln.Num_Ejemplares
+       SELECT o.id_orden, o.Fecha_Orden, o.Estatus,
+              'nuevo' AS Tipo, nl.id_libro_nuevo, nl.Titulo, nl.Editorial, oln.Num_Ejemplares
          FROM OrdenLibrosNuevos oln
          JOIN OrdenesCompra o ON o.id_orden = oln.id_orden
-         JOIN NuevosLibros nl ON nl.id_libro_nuevo = oln.id_libro_nuevo
-        WHERE o.Estatus IN ('Pendiente','En revision','Aprobada')
-       ORDER BY Fecha_Orden DESC, id_orden DESC`,
+         JOIN LibrosNuevos nl ON nl.id_libro_nuevo = oln.id_libro_nuevo
+        WHERE ${visibles}
+       ORDER BY Fecha_Orden DESC, CAST(id_orden AS UNSIGNED) DESC`,
     );
+  },
+
+  /*
+   * Función: PorEstatus
+   * Objetivo: Obtener las órdenes de un estatus (para enviarlas o consultarlas en Tesorería).
+   * Entrada: estatus
+   * Salida: Promesa con [{ id_orden }]
+   */
+  PorEstatus(estatus)
+  {
+    return Consultar(
+      'SELECT id_orden FROM OrdenesCompra WHERE Estatus = ? ORDER BY CAST(id_orden AS UNSIGNED)',
+      [estatus],
+    );
+  },
+
+  /*
+   * Función: RegistrarEnvio
+   * Objetivo: Pasar la orden de Pendiente a En revisión cuando Tesorería la recibe.
+   * Entrada: id
+   * Salida: Promesa con la orden actualizada
+   */
+  async RegistrarEnvio(id)
+  {
+    await Consultar(
+      `UPDATE OrdenesCompra SET Estatus = 'En revision'
+        WHERE id_orden = ? AND Estatus = 'Pendiente'`,
+      [id],
+    );
+    return ModeloOrdenCompra.BuscarPorId(id);
+  },
+
+  /*
+   * Función: RegistrarRespuesta
+   * Objetivo: Aplicar la respuesta de Tesorería: Aceptada → Aprobada, Rechazada → Rechazada.
+   *           Si la orden ya tenía esa respuesta no cambia nada (el aviso puede repetirse).
+   * Entrada: { id_orden, estatus ('Aceptada' | 'Rechazada') }
+   * Salida: Promesa con { orden, cambio } (cambio = false si ya estaba aplicada)
+   */
+  RegistrarRespuesta({ id_orden, estatus })
+  {
+    const destino = estatus === 'Aceptada' ? 'Aprobada' : 'Rechazada';
+    return EjecutarEnTransaccion(async (conexion) =>
+    {
+      const [orden] = await Consultar(
+        'SELECT * FROM OrdenesCompra WHERE id_orden = ? FOR UPDATE',
+        [id_orden],
+        conexion,
+      );
+      if (!orden)
+      {
+        throw ErrorHttp.NoEncontrado(`No hay una orden con la referencia ${id_orden}`);
+      }
+      if (orden.Estatus === destino)
+      {
+        return { orden, cambio: false };
+      }
+      if (!['Pendiente', 'En revision'].includes(orden.Estatus))
+      {
+        throw ErrorHttp.Conflicto(`La orden ya está ${orden.Estatus.toLowerCase()}`);
+      }
+      await Consultar(
+        'UPDATE OrdenesCompra SET Estatus = ? WHERE id_orden = ?',
+        [destino, id_orden],
+        conexion,
+      );
+      return { orden: await ModeloOrdenCompra.BuscarPorId(id_orden, conexion), cambio: true };
+    });
   },
 
   /*
@@ -153,15 +234,16 @@ const ModeloOrdenCompra = {
       Consultar(
         `SELECT oln.*, nl.ISBN, nl.Titulo, nl.Autor, nl.Editorial, nl.Precio, nl.Anio, nl.Tema, nl.Sinopsis
            FROM OrdenLibrosNuevos oln
-           JOIN NuevosLibros nl ON nl.id_libro_nuevo = oln.id_libro_nuevo
+           JOIN LibrosNuevos nl ON nl.id_libro_nuevo = oln.id_libro_nuevo
           WHERE oln.id_orden = ?`,
         [id],
         conexion,
       ),
       Consultar(
-        `SELECT ole.*, l.ISBN, l.Titulo, l.Precio
+        `SELECT ole.*, l.ISBN, l.Titulo, l.Precio, e.Nombre_Editorial AS Editorial
            FROM OrdenLibrosExistentes ole
-           JOIN Libros l ON l.id_libro = ole.id_libro
+           JOIN Libros l      ON l.id_libro = ole.id_libro
+           JOIN Editoriales e ON e.id_editorial = l.id_editorial
           WHERE ole.id_orden = ?`,
         [id],
         conexion,
@@ -189,13 +271,13 @@ const ModeloOrdenCompra = {
     }
     return EjecutarEnTransaccion(async (conexion) =>
     {
-      const resultado = await Consultar(
-        `INSERT INTO OrdenesCompra (id_usuario, Fecha_Orden, Estatus, CantidadTotal)
-         VALUES (?, ?, 'Pendiente', 0)`,
-        [id_usuario, Hoy()],
+      const id_orden = await SiguienteId('OrdenesCompra', 'id_orden', conexion);
+      await Consultar(
+        `INSERT INTO OrdenesCompra (id_orden, id_usuario, Fecha_Orden, Estatus, CantidadTotal)
+         VALUES (?, ?, ?, 'Pendiente', 0)`,
+        [id_orden, id_usuario, Hoy()],
         conexion,
       );
-      const id_orden = resultado.insertId;
       let total = 0;
 
       for (const elemento of libros_nuevos)
@@ -233,26 +315,44 @@ const ModeloOrdenCompra = {
             }
             editorial = ed.Nombre_Editorial;
           }
-          const alta = await Consultar(
-            `INSERT INTO NuevosLibros (ISBN, Titulo, Autor, Editorial, Precio, Anio, Tema, Sinopsis)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-             ON DUPLICATE KEY UPDATE id_libro_nuevo = LAST_INSERT_ID(id_libro_nuevo)`,
-            [
-              total_actual.ISBN,
-              total_actual.Titulo,
-              total_actual.Autor ?? null,
-              editorial,
-              total_actual.Precio ?? 0,
-              total_actual.Anio ?? null,
-              total_actual.Tema ?? null,
-              total_actual.Sinopsis ?? null,
-            ],
+          if (!editorial)
+          {
+            throw ErrorHttp.SolicitudInvalida('Indica la editorial del libro nuevo.');
+          }
+          // Si ese ISBN ya se había solicitado, se reutiliza su registro de LibrosNuevos.
+          const [solicitado] = await Consultar(
+            'SELECT id_libro_nuevo FROM LibrosNuevos WHERE ISBN = ?',
+            [total_actual.ISBN],
             conexion,
           );
-          id_libro_nuevo = alta.insertId;
+          if (solicitado)
+          {
+            id_libro_nuevo = solicitado.id_libro_nuevo;
+          }
+          else
+          {
+            id_libro_nuevo = await SiguienteId('LibrosNuevos', 'id_libro_nuevo', conexion);
+            await Consultar(
+              `INSERT INTO LibrosNuevos
+                 (id_libro_nuevo, ISBN, Titulo, Autor, Editorial, Precio, Anio, Tema, Sinopsis)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+              [
+                id_libro_nuevo,
+                total_actual.ISBN,
+                total_actual.Titulo,
+                total_actual.Autor ?? null,
+                editorial,
+                total_actual.Precio ?? 0,
+                total_actual.Anio ?? null,
+                total_actual.Tema ?? null,
+                total_actual.Sinopsis ?? null,
+              ],
+              conexion,
+            );
+          }
         }
         const [libro] = await Consultar(
-          'SELECT Precio FROM NuevosLibros WHERE id_libro_nuevo = ?',
+          'SELECT Precio FROM LibrosNuevos WHERE id_libro_nuevo = ?',
           [id_libro_nuevo],
           conexion,
         );
@@ -263,7 +363,12 @@ const ModeloOrdenCompra = {
         await Consultar(
           `INSERT INTO OrdenLibrosNuevos (id_orden, id_libro_nuevo, Justificacion, Num_Ejemplares)
            VALUES (?, ?, ?, ?)`,
-          [id_orden, id_libro_nuevo, elemento.Justificacion ?? null, elemento.Num_Ejemplares],
+          [
+            id_orden,
+            id_libro_nuevo,
+            elemento.Justificacion || JUSTIFICACION_POR_DEFECTO,
+            elemento.Num_Ejemplares,
+          ],
           conexion,
         );
         total += libro.Precio * elemento.Num_Ejemplares;
@@ -283,7 +388,12 @@ const ModeloOrdenCompra = {
         await Consultar(
           `INSERT INTO OrdenLibrosExistentes (id_orden, id_libro, Justificacion, Num_Ejemplares)
            VALUES (?, ?, ?, ?)`,
-          [id_orden, elemento.id_libro, elemento.Justificacion ?? null, elemento.Num_Ejemplares],
+          [
+            id_orden,
+            elemento.id_libro,
+            elemento.Justificacion || JUSTIFICACION_POR_DEFECTO,
+            elemento.Num_Ejemplares,
+          ],
           conexion,
         );
         total += libro.Precio * elemento.Num_Ejemplares;

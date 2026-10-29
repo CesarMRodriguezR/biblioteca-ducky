@@ -1,8 +1,7 @@
 /*
  * ******************************************************************
  * Nombre del programa: BD-SP01-GU · ModeloUsuario.js
- * Función: Cuentas de usuario: sesión, intentos fallidos, consulta, cambios, alta y baja por
- *          lista.
+ * Función: Cuentas de usuario: sesión, consulta, cambios, alta y baja.
  * Autor: Equipo CCJMops
  * Fecha: 26/10/2026
  * Entrada: Datos validados por los controladores
@@ -17,10 +16,8 @@
  * ******************************************************************
  * Contenido de listado:
  *     Módulo              Objetivo
- *     MAX_INTENTOS        Intentos fallidos permitidos antes de bloquear la cuenta
  *     CAMPOS_PUBLICOS     Columnas del usuario que se pueden enviar al cliente
  *     FROM_USUARIOS       FROM y JOIN comunes de las consultas de usuarios
- *     ContrasenaInicial   Contraseña inicial de las cuentas creadas por lista:…
  *     FuncionesDePerfil   Obtener los códigos de función activos de un perfil
  *     ModeloUsuario       Acceso a las cuentas de usuario
  * ******************************************************************
@@ -38,13 +35,7 @@
  */
 
 import bcrypt from 'bcryptjs';
-import { Consultar, EjecutarEnTransaccion } from '../configuracion/conexion.js';
-
-/*
- * Constante: MAX_INTENTOS
- * Objetivo: Intentos fallidos permitidos antes de bloquear la cuenta.
- */
-const MAX_INTENTOS = 5;
+import { Consultar, EjecutarEnTransaccion, SiguienteId } from '../configuracion/conexion.js';
 
 /*
  * Constante: CAMPOS_PUBLICOS
@@ -59,17 +50,6 @@ const CAMPOS_PUBLICOS = `
  * Objetivo: FROM y JOIN comunes de las consultas de usuarios.
  */
 const FROM_USUARIOS = 'FROM Usuarios u JOIN Perfiles p ON p.id_perfil = u.id_perfil';
-
-/*
- * Función: ContrasenaInicial
- * Objetivo: Contraseña inicial de las cuentas creadas por lista: matrícula a 10 dígitos.
- * Entrada: matricula
- * Salida: Texto de 10 dígitos
- */
-function ContrasenaInicial(matricula)
-{
-  return String(matricula).padStart(10, '0');
-}
 
 /*
  * Función: FuncionesDePerfil
@@ -95,8 +75,7 @@ async function FuncionesDePerfil(id_perfil, conexion)
  * Objetivo: Acceso a las cuentas de usuario.
  */
 const ModeloUsuario = {
-  MAX_INTENTOS,
-  contrasena_inicial: ContrasenaInicial,
+  FuncionesDePerfil,
 
   /*
    * Función: BuscarTodos
@@ -176,14 +155,14 @@ const ModeloUsuario = {
 
   /*
    * Función: BuscarParaInicioSesion
-   * Objetivo: Incluye hash e intentos; solo para el inicio de sesión.
+   * Objetivo: Incluye el hash de la contraseña; solo para el inicio de sesión.
    * Entrada: usuario
    * Salida: Promesa con el usuario o null
    */
   async BuscarParaInicioSesion(usuario)
   {
     const filas = await Consultar(
-      `SELECT ${CAMPOS_PUBLICOS}, u.Contrasena_Usuario, u.Intentos_Fallidos
+      `SELECT ${CAMPOS_PUBLICOS}, u.Contrasena_Usuario
          ${FROM_USUARIOS}
         WHERE u.Nombre_Usuario = ?`,
       [usuario],
@@ -248,42 +227,6 @@ const ModeloUsuario = {
   },
 
   /*
-   * Función: RegistrarIntentoFallido
-   * Objetivo: Suma un intento fallido y bloquea la cuenta al llegar al máximo.
-   * Entrada: id
-   * Salida: Promesa con { intentos, bloqueada }
-   */
-  async RegistrarIntentoFallido(id)
-  {
-    await Consultar(
-      `UPDATE Usuarios
-          SET Intentos_Fallidos = Intentos_Fallidos + 1,
-              Estatus = IF(Intentos_Fallidos >= ?, 'Bloqueado', Estatus)
-        WHERE id_usuario = ?`,
-      [MAX_INTENTOS, id],
-    );
-    const [fila] = await Consultar(
-      'SELECT Intentos_Fallidos, Estatus FROM Usuarios WHERE id_usuario = ?',
-      [id],
-    );
-    return {
-      intentos_restantes: Math.max(0, MAX_INTENTOS - fila.Intentos_Fallidos),
-      estatus: fila.Estatus,
-    };
-  },
-
-  /*
-   * Función: ReiniciarIntentos
-   * Objetivo: Poner en cero los intentos fallidos tras un inicio de sesión correcto.
-   * Entrada: id
-   * Salida: Promesa con el resultado de la actualización
-   */
-  ReiniciarIntentos(id)
-  {
-    return Consultar('UPDATE Usuarios SET Intentos_Fallidos = 0 WHERE id_usuario = ?', [id]);
-  },
-
-  /*
    * Función: Crear
    * Objetivo: Dar de alta un usuario con su contraseña cifrada.
    * Entrada: datos, conexion
@@ -292,11 +235,14 @@ const ModeloUsuario = {
   async Crear(datos, conexion)
   {
     const hash = await bcrypt.hash(datos.Contrasena_Usuario, 10);
-    const resultado = await Consultar(
+    const id_usuario = await SiguienteId('Usuarios', 'id_usuario', conexion);
+    await Consultar(
       `INSERT INTO Usuarios
-         (Nombre_Usuario, Contrasena_Usuario, Matricula_Nomina, id_perfil, Nombre_Completo, Correo, Estatus)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+         (id_usuario, Nombre_Usuario, Contrasena_Usuario, Matricula_Nomina, id_perfil,
+          Nombre_Completo, Correo, Estatus)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       [
+        id_usuario,
         datos.Nombre_Usuario,
         hash,
         datos.Matricula_Nomina,
@@ -307,7 +253,7 @@ const ModeloUsuario = {
       ],
       conexion,
     );
-    return ModeloUsuario.BuscarPorId(resultado.insertId, conexion);
+    return ModeloUsuario.BuscarPorId(id_usuario, conexion);
   },
 
   /*
@@ -330,10 +276,6 @@ const ModeloUsuario = {
         parametros.push(datos[campo]);
       }
     });
-    if (datos.Estatus === 'Activo')
-    {
-      sets.push('Intentos_Fallidos = 0');
-    }
     if (datos.Contrasena_Usuario)
     {
       sets.push('Contrasena_Usuario = ?');
@@ -350,150 +292,10 @@ const ModeloUsuario = {
   },
 
   /*
-   * Función: ValidarLista
-   * Objetivo: Revisar cada fila de la lista de Servicios Escolares antes de crear las cuentas.
-   * Entrada: filas
-   * Salida: Promesa con { validos, errores }
-   */
-  async ValidarLista(filas)
-  {
-    const validos = [];
-    const errores = [];
-    const vistos = new Set();
-
-    const matriculas = filas.map((fila) => String(fila.Matricula_Nomina ?? '').trim()).filter(Boolean);
-    const usuarios = filas.map((fila) => String(fila.Nombre_Usuario ?? '').trim()).filter(Boolean);
-    const existentes =
-      matriculas.length || usuarios.length
-        ? await Consultar(
-          `SELECT Matricula_Nomina, Nombre_Usuario FROM Usuarios
-          WHERE Matricula_Nomina IN (?) OR Nombre_Usuario IN (?)`,
-          [matriculas.length ? matriculas : [''], usuarios.length ? usuarios : ['']],
-        )
-        : [];
-    const matriculas_existentes = new Set(
-      existentes.map((existente) => existente.Matricula_Nomina),
-    );
-    const usuarios_existentes = new Set(existentes.map((existente) => existente.Nombre_Usuario));
-
-    filas.forEach((fila, indice) =>
-    {
-      const numero = fila.Fila ?? indice + 2; // la fila 1 del archivo es el encabezado
-      const matricula = String(fila.Matricula_Nomina ?? '').trim();
-      const nombre = String(fila.Nombre_Completo ?? '').trim();
-      const usuario = String(fila.Nombre_Usuario ?? '')
-        .trim()
-        .toLowerCase();
-      const correo = String(fila.Correo ?? '')
-        .trim()
-        .toLowerCase();
-      const RegistrarError = (campo, mensaje) =>
-        errores.push({
-          Fila: numero,
-          Matricula_Nomina: matricula || '—',
-          Nombre_Completo: nombre || '—',
-          Campo: campo,
-          Error: mensaje,
-        });
-
-      if (!matricula)
-      {
-        return RegistrarError('Matrícula', 'Dato incompleto: la matrícula está vacía');
-      }
-      if (!/^\d{1,10}$/.test(matricula))
-      {
-        return RegistrarError('Matrícula', 'Formato inválido: solo se permiten números');
-      }
-      if (!nombre)
-      {
-        return RegistrarError('Nombre', 'Dato incompleto: el nombre está vacío');
-      }
-      if (!usuario)
-      {
-        return RegistrarError('Usuario', 'Dato incompleto: el usuario está vacío');
-      }
-      if (!/^[a-z0-9._-]{3,60}$/.test(usuario))
-      {
-        return RegistrarError('Usuario', 'Formato inválido: usa letras, números y puntos');
-      }
-      if (correo && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo))
-      {
-        return RegistrarError('Correo', 'Formato inválido de correo');
-      }
-      if (matriculas_existentes.has(matricula) || vistos.has(`m:${matricula}`))
-      {
-        return RegistrarError('Matrícula', 'Ya existe una cuenta con esta matrícula');
-      }
-      if (usuarios_existentes.has(usuario) || vistos.has(`u:${usuario}`))
-      {
-        return RegistrarError('Usuario', 'Ya existe una cuenta con este usuario');
-      }
-      vistos.add(`m:${matricula}`);
-      vistos.add(`u:${usuario}`);
-      validos.push({
-        Fila: numero,
-        Matricula_Nomina: matricula,
-        Nombre_Completo: nombre,
-        Nombre_Usuario: usuario,
-        Correo: correo || null,
-      });
-      return undefined;
-    });
-
-    return { validos, errores };
-  },
-
-  /*
-   * Función: CrearDesdeLista
-   * Objetivo: Crea las cuentas de la lista con su perfil. La contraseña inicial es la matrícula
-   *           a 10 dígitos y se devuelve solo en esta respuesta.
-   * Entrada: cuentas
-   * Salida: Promesa con { creados, errores }
-   */
-  async CrearDesdeLista(cuentas)
-  {
-    const { validos, errores } = await ModeloUsuario.ValidarLista(cuentas);
-    const perfil_por_fila = new Map(
-      cuentas.map((cuenta, indice) => [cuenta.Fila ?? indice + 2, cuenta.id_perfil]),
-    );
-    const sin_perfil = validos.filter((valido) => !perfil_por_fila.get(valido.Fila));
-    sin_perfil.forEach((elemento) =>
-      errores.push({
-        Fila: elemento.Fila,
-        Matricula_Nomina: elemento.Matricula_Nomina,
-        Nombre_Completo: elemento.Nombre_Completo,
-        Campo: 'Rol',
-        Error: 'Sin rol asignado',
-      }),
-    );
-
-    const creados = await EjecutarEnTransaccion(async (conexion) =>
-    {
-      const lista = [];
-      for (const valido of validos)
-      {
-        const id_perfil = perfil_por_fila.get(valido.Fila);
-        if (!id_perfil)
-        {
-          continue;
-        }
-        const contrasena = ContrasenaInicial(valido.Matricula_Nomina);
-        const usuario = await ModeloUsuario.Crear(
-          { ...valido, id_perfil, Contrasena_Usuario: contrasena },
-          conexion,
-        );
-        usuario.funciones = await FuncionesDePerfil(id_perfil, conexion);
-        lista.push({ ...usuario, Contrasena_Inicial: contrasena });
-      }
-      return lista;
-    });
-    return { creados, errores };
-  },
-
-  /*
    * Función: RevisarBajas
-   * Objetivo: Compara la lista nueva contra las cuentas activas: quienes ya no aparecen son
-   *           candidatos a baja. Los administradores no se dan de baja por lista.
+   * Objetivo: Compara las matrículas y nóminas vigentes (CIAA y Empleados) contra las cuentas
+   *           activas: quienes ya no aparecen son candidatos a baja. Los administradores no se
+   *           dan de baja por lista.
    * Entrada: matriculas_lista
    * Salida: Promesa con los usuarios candidatos a baja
    */

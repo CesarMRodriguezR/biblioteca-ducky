@@ -34,7 +34,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { FormatoFecha, UbicacionTexto } from '../../modelos/dominio.js';
+import { UbicacionTexto } from '../../modelos/dominio.js';
 import { AlertaError, Boton, InsigniaCopia, Portada, Selector, Tarjeta } from './interfaz.jsx';
 
 /*
@@ -71,21 +71,28 @@ const NIVELES = ['1', '2', '3', '4'];
  */
 export function PanelEjemplares({ libro, al_agregar, agregando, error })
 {
-  const [form, SetForm] = useState({ cantidad: '1', Pasillo: '4', Estante: 'B', Nivel: '2' });
+  const [form, SetForm] = useState({
+    cantidad: '1',
+    Pasillo: '4',
+    Estante: 'B',
+    Nivel: '2',
+    Seccion: '',
+  });
   const [error_cantidad, SetErrorCantidad] = useState(null);
 
   useEffect(() =>
   {
-    if (libro?.Pasillo)
+    if (libro)
     {
       SetForm((form_previo) => ({
         ...form_previo,
-        Pasillo: libro.Pasillo,
+        Pasillo: libro.Pasillo ?? form_previo.Pasillo,
         Estante: libro.Estante ?? form_previo.Estante,
         Nivel: libro.Nivel ?? form_previo.Nivel,
+        Seccion: libro.Seccion ?? form_previo.Seccion,
       }));
     }
-  }, [libro?.id_libro, libro?.Pasillo, libro?.Estante, libro?.Nivel]);
+  }, [libro?.id_libro, libro?.Pasillo, libro?.Estante, libro?.Nivel, libro?.Seccion]);
 
   if (!libro)
   {
@@ -104,7 +111,7 @@ export function PanelEjemplares({ libro, al_agregar, agregando, error })
     SetForm((form_previo) => ({ ...form_previo, [campo]: evento.target.value }));
     SetErrorCantidad(null);
   };
-  const activos = (libro.ejemplares ?? []).filter((elemento) => elemento.Estatus !== 'Baja');
+  const activos = (libro.ejemplares ?? []).filter((elemento) => elemento.Estatus !== 'Inactivo');
 
   async function Agregar()
   {
@@ -140,7 +147,10 @@ export function PanelEjemplares({ libro, al_agregar, agregando, error })
           }}
         />
         <strong style={{ fontSize: 14 }}>Agregar ejemplares</strong>
-        <div className="rejilla-4 margen-arriba-8" style={{ gridTemplateColumns: '0.8fr 1fr 1fr 1fr', gap: 10 }}>
+        <div
+          className="rejilla-4 margen-arriba-8"
+          style={{ gridTemplateColumns: '0.8fr 1fr 1fr 1fr 1.4fr', gap: 10 }}
+        >
           <div className={`campo ${error_cantidad ? 'campo-con-error' : ''}`}>
             <label className="campo-etiqueta" htmlFor="cantidad" style={{ fontSize: 14 }}>
               Cantidad
@@ -171,10 +181,17 @@ export function PanelEjemplares({ libro, al_agregar, agregando, error })
             onChange={Cambiar('Nivel')}
             opciones={Opciones(NIVELES, form.Nivel)}
           />
+          <Selector
+            etiqueta="Sección"
+            value={form.Seccion}
+            onChange={Cambiar('Seccion')}
+            opciones={Opciones((libro.temas ?? []).map((tema) => tema.Nombre_Tema), form.Seccion)}
+          />
         </div>
         {error_cantidad && <p className="campo-mensaje-error margen-arriba-8">{error_cantidad}</p>}
         <p className="texto-nota margen-arriba-8">
-          Pasillo, estante y nivel: por defecto se usan los de las demás copias del libro.
+          Pasillo, estante, nivel y sección: por defecto se usan los de las demás copias del libro.
+          Con ellos se genera el código de ubicación de cada copia.
         </p>
         <Boton
           className="margen-arriba-16"
@@ -203,7 +220,7 @@ export function PanelEjemplares({ libro, al_agregar, agregando, error })
               <tr>
                 <th>Código</th>
                 <th>Ubicación</th>
-                <th>Alta</th>
+                <th>Código de ubicación</th>
                 <th>Estado</th>
               </tr>
             </thead>
@@ -212,7 +229,7 @@ export function PanelEjemplares({ libro, al_agregar, agregando, error })
                 <tr key={activo.num_copia}>
                   <td className="codigo-copia">{activo.Codigo}</td>
                   <td className="texto-nota">{UbicacionTexto(activo)}</td>
-                  <td className="texto-nota">{FormatoFecha(activo.Fecha_Alta)}</td>
+                  <td className="codigo-copia">{activo.Ubicacion}</td>
                   <td>
                     <InsigniaCopia estatus={activo.Estatus} />
                   </td>

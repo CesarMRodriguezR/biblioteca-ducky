@@ -57,7 +57,7 @@ export function PaginaEditarLibro()
   const controlador = useControladorEditarLibro();
   const libro = controlador.libro;
   const copia_prestada =
-    controlador.copia && ['En prestamo', 'Apartado'].includes(controlador.copia.Estatus);
+    controlador.copia?.Estatus === 'En préstamo';
   const editorial_anterior =
     controlador.ficha &&
     controlador.original &&
@@ -66,7 +66,7 @@ export function PaginaEditarLibro()
         (editorial) => editorial.valor === controlador.original.id_editorial,
       )?.etiqueta
       : null;
-  const copias = libro?.ejemplares?.filter((evento) => evento.Estatus !== 'Baja') ?? [];
+  const copias = libro?.ejemplares?.filter((evento) => evento.Estatus !== 'Inactivo') ?? [];
 
   return (
     <Pagina miga="Libros · Editar ficha" titulo="Editar libro">
@@ -183,7 +183,7 @@ export function PaginaEditarLibro()
                 <tbody>
                   {copias.map((copia) =>
                   {
-                    const prestada = ['En prestamo', 'Apartado'].includes(copia.Estatus);
+                    const prestada = copia.Estatus === 'En préstamo';
                     return (
                       <tr
                         key={copia.num_copia}
@@ -226,7 +226,7 @@ export function PaginaEditarLibro()
                   disabled={controlador.inactivo || copia_prestada}
                   opciones={[
                     { valor: 'Disponible', etiqueta: 'Disponible' },
-                    { valor: 'Consulta externa', etiqueta: 'Consulta externa' },
+                    { valor: 'Consulta Externa', etiqueta: 'Consulta externa' },
                   ]}
                   error={
                     copia_prestada

@@ -17,8 +17,8 @@
  * Contenido de listado:
  *     Módulo            Objetivo
  *     ConvertirEntero   Convertir un texto a entero o usar el valor por defecto
- *     ConvertirNumero   Convertir un texto a número o usar el valor por defecto
  *     ENTORNO           Configuración de la API: modo, puerto, CORS, base de…
+ *                       datos, JWT y sistemas externos
  * ******************************************************************
  */
 
@@ -44,21 +44,9 @@ const ConvertirEntero = (valor, valor_defecto) =>
 };
 
 /*
- * Función: ConvertirNumero
- * Objetivo: Convertir un texto a número o usar el valor por defecto.
- * Entrada: valor, valor_defecto
- * Salida: Número
- */
-const ConvertirNumero = (valor, valor_defecto) =>
-{
-  const convertido = Number(valor);
-  return Number.isNaN(convertido) ? valor_defecto : convertido;
-};
-
-/*
  * Constante: ENTORNO
- * Objetivo: Configuración de la API: modo, puerto, CORS, base de datos, JWT y reglas de
- *           circulación.
+ * Objetivo: Configuración de la API: modo, puerto, CORS, base de datos, JWT y sistemas
+ *           externos.
  */
 const ENTORNO = {
   MODO: process.env.NODE_ENV || 'development',
@@ -81,12 +69,26 @@ const ENTORNO = {
     EXPIRA_EN: process.env.JWT_EXPIRES_IN || '8h',
   },
 
-  // Reglas de negocio de circulación (coinciden con la tabla Politicas)
-  REGLAS: {
-    DIAS_PRESTAMO: ConvertirEntero(process.env.DIAS_PRESTAMO, 7),
-    MAX_RENOVACIONES: ConvertirEntero(process.env.MAX_RENOVACIONES, 2),
-    MAX_PRESTAMOS_ACTIVOS: ConvertirEntero(process.env.MAX_PRESTAMOS_ACTIVOS, 3),
-    MULTA_POR_DIA: ConvertirNumero(process.env.MULTA_POR_DIA, 10),
+  // Sistemas externos (servicio externos/): de dónde salen los alumnos, los empleados y a
+  // dónde se envían las solicitudes de compra. Cada uno pide su clave en X-Clave-Api.
+  EXTERNOS: {
+    CIAA: {
+      NOMBRE: 'CIAA',
+      URL: process.env.EXT_CIAA_URL || 'http://localhost:4000/ciaa/api',
+      CLAVE: process.env.EXT_CIAA_CLAVE || 'clave-ciaa-dev',
+    },
+    EMPLEADOS: {
+      NOMBRE: 'Empleados',
+      URL: process.env.EXT_EMPLEADOS_URL || 'http://localhost:4000/empleados/api',
+      CLAVE: process.env.EXT_EMPLEADOS_CLAVE || 'clave-empleados-dev',
+    },
+    TESORERIA: {
+      NOMBRE: 'Tesorería',
+      URL: process.env.EXT_TESORERIA_URL || 'http://localhost:4000/tesoreria/api',
+      CLAVE: process.env.EXT_TESORERIA_CLAVE || 'clave-tesoreria-dev',
+    },
+    // Clave con la que Tesorería se identifica al avisar una respuesta a Biblio.
+    CLAVE_NOTIFICACION: process.env.TESORERIA_CLAVE_NOTIFICACION || 'clave-notificacion-dev',
   },
 };
 

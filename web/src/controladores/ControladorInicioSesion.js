@@ -40,7 +40,7 @@ import { RutaInicial } from '../modelos/ModeloAutenticacion.js';
 /*
  * Hook: useControladorInicioSesion
  * Objetivo: BD-SP01-GU01 Autenticación. Estados: inicial, campos incompletos, credenciales
- *           incorrectas (con intentos restantes) y cuenta bloqueada.
+ *           incorrectas y cuenta inactiva.
  * Entrada: Ninguna
  * Salida: Objeto con el estado y las acciones de la pantalla
  */
@@ -88,14 +88,13 @@ export function useControladorInicioSesion()
     }
     catch (error)
     {
-      const restantes = error.detalles?.intentos_restantes;
       SetErrores({ usuario: ' ', contrasena: ' ' });
       SetAviso({
         tipo: 'error',
         titulo: error.message,
         texto:
           error.status === 401
-            ? `Verifica tus datos e inténtalo de nuevo.${restantes !== undefined ? ` Te ${restantes === 1 ? 'queda 1 intento' : `quedan ${restantes} intentos`}.` : ''}`
+            ? 'Verifica tus datos e inténtalo de nuevo.'
             : null,
       });
     }

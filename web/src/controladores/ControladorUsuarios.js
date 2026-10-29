@@ -21,8 +21,8 @@
  *     useControladorUsuariosValidos   BD-SP01-GU02 "Usuarios válidos": búsqueda por matrícula y…
  *     useControladorConsultaUsuario   Consulta de un usuario por id o por matrícula
  *     useControladorCambioUsuario     Cambio de datos de usuario. La matrícula y el usuario no…
- *     useControladorCargaLista        Alta de cuentas por lista: cargar archivo → revisión y…
- *     useControladorBajasLista        Baja de cuentas: usuarios que ya no aparecen en la nueva…
+ *     useControladorCargaLista        Alta de cuentas por lista: la API genera la lista con…
+ *     useControladorBajasLista        Baja de cuentas: usuarios que ya no aparecen en CIAA ni…
  *     useControladorPerfiles          Gestión de perfiles: roles y funciones (el Administrador…
  * ******************************************************************
  */
@@ -40,7 +40,7 @@
  */
 
 import { useEffect, useMemo, useState } from 'react';
-import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ModeloUsuario, ContrasenaValida } from '../modelos/ModeloUsuario.js';
 import { ModeloPerfil } from '../modelos/ModeloPerfil.js';
 import { useAccion, useCarga } from './HooksAsincronos.js';
@@ -199,7 +199,7 @@ export function useControladorCambioUsuario()
     try
     {
       const actualizado = await guardar.Ejecutar({
-        id_perfil: Number(form.id_perfil),
+        id_perfil: form.id_perfil,
         Estatus: form.Estatus,
         Contrasena_Usuario: form.Contrasena_Usuario || undefined,
       });
@@ -239,8 +239,9 @@ export function useControladorCambioUsuario()
 
 /*
  * Hook: useControladorCargaLista
- * Objetivo: Alta de cuentas por lista: cargar archivo → revisión y rol por fila → confirmar
- *           registro → cuentas creadas / no creadas.
+ * Objetivo: Alta de cuentas por lista: la API genera la lista con CIAA y Empleados → revisión
+ *           y rol por persona (sugerido según su tipo) → confirmar registro → cuentas creadas
+ *           y registros con error. Tras corregir en el sistema de origen se genera de nuevo.
  * Entrada: Ninguna
  * Salida: Objeto con el estado y las acciones de la pantalla
  */
@@ -248,31 +249,29 @@ export function useControladorCargaLista()
 {
   const navegar = useNavigate();
   const perfiles = useCarga(() => ModeloPerfil.Listar(), []);
-  const [archivo, SetArchivo] = useState(null);
-  const [filas_archivo, SetFilasArchivo] = useState([]);
-  const [revision, SetRevision] = useState(null); // { validos, errores }
-  const [roles, SetRoles] = useState({}); // Fila → id_perfil
+  const [revision, SetRevision] = useState(null); // { generado_el, fuentes, altas, bajas }
+  const [roles, SetRoles] = useState({}); // Matricula_Nomina → id_perfil
   const [resultado, SetResultado] = useState(null); // { creados, errores }
   const [error, SetError] = useState(null);
-  const [procesando, SetProcesando] = useState(false);
+  const [procesando, SetProcesando] = useState(true);
+  const [corregidos, SetCorregidos] = useState(false);
 
-  async function CargarArchivo(archivo_actual)
+  async function Generar()
   {
-    if (!archivo_actual)
-    {
-      return;
-    }
     SetError(null);
-    SetResultado(null);
     SetProcesando(true);
     try
     {
-      const filas = await ModeloUsuario.LeerArchivoLista(archivo_actual);
-      const resultado_actual = await ModeloUsuario.ValidarLista(filas);
-      SetArchivo(archivo_actual);
-      SetFilasArchivo(filas);
-      SetRevision(resultado_actual);
-      SetRoles({});
+      const lista = await ModeloUsuario.GenerarLista();
+      SetRevision(lista);
+      SetRoles(
+        Object.fromEntries(
+          lista.altas.validos.map((valido) => [
+            valido.Matricula_Nomina,
+            valido.id_perfil_sugerido ? String(valido.id_perfil_sugerido) : '',
+          ]),
+        ),
+      );
     }
     catch (excepcion)
     {
@@ -285,20 +284,25 @@ export function useControladorCargaLista()
     }
   }
 
+  useEffect(() =>
+  {
+    Generar();
+  }, []);
+
   async function ConfirmarRegistro()
   {
     SetProcesando(true);
     SetError(null);
     try
     {
-      const cuentas = revision.validos.map((valido) => ({
-        ...valido,
-        id_perfil: roles[valido.Fila] ? Number(roles[valido.Fila]) : null,
+      const cuentas = revision.altas.validos.map((valido) => ({
+        Matricula_Nomina: valido.Matricula_Nomina,
+        id_perfil: roles[valido.Matricula_Nomina] || null,
       }));
       const resultado_actual = await ModeloUsuario.CrearDesdeLista(cuentas);
       SetResultado({
         creados: resultado_actual.creados,
-        errores: [...revision.errores, ...resultado_actual.errores],
+        errores: [...revision.altas.errores, ...resultado_actual.errores],
       });
     }
     catch (excepcion)
@@ -315,96 +319,43 @@ export function useControladorCargaLista()
     () => (perfiles.datos ?? []).filter((elemento) => elemento.Estatus === 'Activo'),
     [perfiles.datos],
   );
+  const validos = revision?.altas.validos ?? [];
 
   return {
-    archivo,
     revision,
+    validos,
     resultado,
     roles,
     perfiles: perfiles_asignables,
     error,
     procesando,
-    sin_rol: revision ? revision.validos.filter((valido) => !roles[valido.Fila]).length : 0,
-    CargarArchivo,
-    AsignarRol: (fila, id_perfil) =>
-      SetRoles((roles_previo) => ({ ...roles_previo, [fila]: id_perfil })),
+    corregidos,
+    sin_rol: validos.filter((valido) => !roles[valido.Matricula_Nomina]).length,
+    AsignarRol: (matricula, id_perfil) =>
+      SetRoles((roles_previo) => ({ ...roles_previo, [matricula]: id_perfil })),
     ConfirmarRegistro,
-    Reiniciar: () =>
+    GenerarDeNuevo: async () =>
     {
-      SetArchivo(null);
-      SetRevision(null);
+      SetCorregidos(Boolean(resultado?.errores.length));
       SetResultado(null);
-      SetError(null);
+      await Generar();
     },
-    RevisarBajas: () =>
-      navegar('/usuarios/bajas', {
-        state: {
-          matriculas: filas_archivo.map((elemento) => elemento.Matricula_Nomina),
-          archivo: archivo?.name,
-        },
-      }),
+    RevisarBajas: () => navegar('/usuarios/bajas'),
   };
 }
 
 /*
  * Hook: useControladorBajasLista
- * Objetivo: Baja de cuentas: usuarios que ya no aparecen en la nueva lista.
+ * Objetivo: Baja de cuentas: usuarios que ya no aparecen en CIAA ni en Empleados.
  * Entrada: Ninguna
  * Salida: Objeto con el estado y las acciones de la pantalla
  */
 export function useControladorBajasLista()
 {
-  const ubicacion = useLocation();
-  const [nombre_archivo, SetNombreArchivo] = useState(ubicacion.state?.archivo ?? null);
-  const [candidatos, SetCandidatos] = useState(null);
+  const lista = useCarga(() => ModeloUsuario.GenerarLista(), []);
   const [resultado, SetResultado] = useState(null);
   const [error, SetError] = useState(null);
   const [procesando, SetProcesando] = useState(false);
-
-  async function Revisar(matriculas)
-  {
-    SetProcesando(true);
-    SetError(null);
-    SetResultado(null);
-    try
-    {
-      SetCandidatos(await ModeloUsuario.RevisarBajas(matriculas));
-    }
-    catch (excepcion)
-    {
-      SetError(excepcion);
-    }
-    finally
-    {
-      SetProcesando(false);
-    }
-  }
-
-  useEffect(() =>
-  {
-    if (ubicacion.state?.matriculas?.length)
-    {
-      Revisar(ubicacion.state.matriculas);
-    }
-  }, [ubicacion.state]);
-
-  async function CargarArchivo(archivo)
-  {
-    if (!archivo)
-    {
-      return;
-    }
-    try
-    {
-      const filas = await ModeloUsuario.LeerArchivoLista(archivo);
-      SetNombreArchivo(archivo.name);
-      await Revisar(filas.map((fila) => fila.Matricula_Nomina).filter(Boolean));
-    }
-    catch (excepcion)
-    {
-      SetError(excepcion);
-    }
-  }
 
   async function ConfirmarBajas()
   {
@@ -413,7 +364,7 @@ export function useControladorBajasLista()
     try
     {
       SetResultado(
-        await ModeloUsuario.DarDeBaja(candidatos.map((candidato) => candidato.id_usuario)),
+        await ModeloUsuario.DarDeBaja(lista.datos.bajas.map((candidato) => candidato.id_usuario)),
       );
     }
     catch (excepcion)
@@ -427,12 +378,11 @@ export function useControladorBajasLista()
   }
 
   return {
-    nombre_archivo,
-    candidatos,
+    candidatos: lista.datos?.bajas ?? null,
+    fuentes: lista.datos?.fuentes ?? null,
     resultado,
-    error,
-    procesando,
-    CargarArchivo,
+    error: error ?? lista.error,
+    procesando: procesando || lista.cargando,
     ConfirmarBajas,
   };
 }

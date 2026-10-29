@@ -1,7 +1,7 @@
 /*
  * ******************************************************************
  * Nombre del programa: API-PANEL · ControladorPanel.js
- * Función: Indicadores y actividad reciente del panel del administrador.
+ * Función: Indicadores del panel del administrador.
  * Autor: Equipo CCJMops
  * Fecha: 26/10/2026
  * Entrada: Peticiones HTTP enrutadas desde rutas/rutas.js
@@ -36,7 +36,6 @@
 import { ModeloUsuario } from '../modelos/ModeloUsuario.js';
 import { ModeloLibro } from '../modelos/ModeloLibro.js';
 import { ModeloOrdenCompra } from '../modelos/ModeloOrdenCompra.js';
-import { ModeloBitacora } from '../modelos/ModeloBitacora.js';
 
 /*
  * Módulo: ControladorPanel
@@ -45,26 +44,18 @@ import { ModeloBitacora } from '../modelos/ModeloBitacora.js';
 const ControladorPanel = {
   /*
    * Función: Resumen
-   * Objetivo: GET /panel — indicadores y actividad reciente (pantalla "Panel").
+   * Objetivo: GET /panel — indicadores de la pantalla "Panel".
    * Entrada: req: petición HTTP (ya autenticada y validada); res: respuesta HTTP
    * Salida: Respuesta HTTP en formato JSON
    */
   async Resumen(_req, res)
   {
-    const [usuarios_validos, solicitudes_pendientes, libros_activos, actividad] = await Promise.all(
-      [
-        ModeloUsuario.ContarActivos(),
-        ModeloOrdenCompra.ContarPendientes(),
-        ModeloLibro.ContarActivos(),
-        ModeloBitacora.Recientes(8),
-      ],
-    );
-    res.json({
-      usuarios_validos,
-      solicitudes_pendientes,
-      libros_activos,
-      actividad,
-    });
+    const [usuarios_validos, solicitudes_pendientes, libros_activos] = await Promise.all([
+      ModeloUsuario.ContarActivos(),
+      ModeloOrdenCompra.ContarPendientes(),
+      ModeloLibro.ContarActivos(),
+    ]);
+    res.json({ usuarios_validos, solicitudes_pendientes, libros_activos });
   },
 };
 

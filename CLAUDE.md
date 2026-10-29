@@ -2,7 +2,9 @@
 
 Sistema de biblioteca: API (Node 22 + Express 5 + MariaDB) en `server/`, web (React 18 + Vite)
 en `web/` y móvil (React Native + Expo SDK 58) en `mobile/`. Los tres siguen MVC y comparten
-la misma API. El README.md explica la puesta en marcha, la API y los usuarios de prueba.
+la misma API. `externos/` simula los sistemas externos (CIAA de alumnos, Empleados y
+Tesorería), cada uno con su API y su propia BD; Biblio solo los consulta por HTTP. El README.md
+explica la puesta en marcha, la API y los usuarios de prueba.
 
 ## Referencias de diseño
 
@@ -19,6 +21,11 @@ la misma API. El README.md explica la puesta en marcha, la API y los usuarios de
 ## Comandos
 
 ```bash
+# externos/  (CIAA, Empleados y Tesorería en http://localhost:4000)
+npm run db:reset && npm run dev
+npm run tesoreria -- aceptar <folio>   # o rechazar <folio> "motivo"
+npm test
+
 # server/
 npm run dev                      # API en http://localhost:3000/api
 npm run db:reset && npm test     # reinicia la BD con la semilla y corre las pruebas

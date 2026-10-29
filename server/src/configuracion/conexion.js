@@ -18,6 +18,7 @@
  *     Módulo                  Objetivo
  *     Consultar               Ejecuta una consulta con el pool o con una conexión de…
  *     EjecutarEnTransaccion   Ejecuta `work(conn)` dentro de una transacción. Hace…
+ *     SiguienteId             Siguiente identificador VARCHAR(13) de una tabla
  * ******************************************************************
  */
 
@@ -87,4 +88,24 @@ async function EjecutarEnTransaccion(trabajo)
   }
 }
 
-export { pool, Consultar, EjecutarEnTransaccion };
+/*
+ * Función: SiguienteId
+ * Objetivo: Calcular el siguiente identificador de una tabla. Las llaves son VARCHAR(13) como
+ *           en el diccionario de datos y no tienen AUTO_INCREMENT: se guardan como texto
+ *           numérico ('1', '2'…) y el siguiente es el mayor + 1. Dentro de una transacción
+ *           bloquea la tabla hasta el COMMIT para que dos altas no tomen el mismo número.
+ * Entrada: tabla, llave, conexion (opcional)
+ * Salida: Promesa con el identificador como texto
+ */
+async function SiguienteId(tabla, llave, conexion = null)
+{
+  const [{ siguiente }] = await Consultar(
+    `SELECT COALESCE(MAX(CAST(\`${llave}\` AS UNSIGNED)), 0) + 1 AS siguiente
+       FROM \`${tabla}\` ${conexion ? 'FOR UPDATE' : ''}`,
+    [],
+    conexion,
+  );
+  return String(siguiente);
+}
+
+export { pool, Consultar, EjecutarEnTransaccion, SiguienteId };

@@ -74,8 +74,9 @@ export function useControladorInicio(navigation)
 
 /*
  * Hook: useControladorBusqueda
- * Objetivo: Pantalla Buscar (resultados y búsqueda sin filtro). Carga de 6 en 6 conforme el
- *           usuario se desplaza, igual que la paginación de la web.
+ * Objetivo: Pantalla Buscar (resultados y búsqueda sin filtro). El filtro elegido también
+ *           ordena los resultados. Carga de 6 en 6 conforme el usuario se desplaza, igual que la
+ *           paginación de la web.
  * Entrada: route, navigation
  * Salida: Objeto con el estado y las acciones de la pantalla
  */
@@ -158,6 +159,10 @@ export function useControladorBusqueda(route, navigation)
   const etiqueta_campo = CAMPOS_BUSQUEDA.find(
     (elemento) => elemento.valor === filtros.campo,
   )?.etiqueta;
+  const coincidencias = filtros.q
+    ? `${estado.total} ${estado.total === 1 ? 'resultado' : 'resultados'} para «${filtros.q}»${filtros.campo !== 'todos' ? ` en ${etiqueta_campo}` : ''}`
+    : `${estado.total} libros activos · sin filtros`;
+  const orden = filtros.campo === 'todos' ? 'título' : etiqueta_campo.toLowerCase();
 
   return {
     texto,
@@ -165,9 +170,7 @@ export function useControladorBusqueda(route, navigation)
     campo: filtros.campo,
     campos: CAMPOS_BUSQUEDA,
     sin_filtro: !filtros.q,
-    resumen: filtros.q
-      ? `${estado.total} ${estado.total === 1 ? 'resultado' : 'resultados'} para «${filtros.q}»${filtros.campo !== 'todos' ? ` en ${etiqueta_campo}` : ''}`
-      : `${estado.total} libros activos · sin filtros`,
+    resumen: `${coincidencias} · ordenados por ${orden}`,
     ...estado,
     hay_mas,
     Buscar: () => SetFiltros((filtros_previo) => ({ ...filtros_previo, q: texto.trim() })),
@@ -205,6 +208,6 @@ export function useControladorDetalle(route)
     cargando,
     Recargar,
     gestiona: Puede('gestionar_libros'),
-    copias: datos?.ejemplares?.filter((ejemplar) => ejemplar.Estatus !== 'Baja') ?? [],
+    copias: datos?.ejemplares?.filter((ejemplar) => ejemplar.Estatus !== 'Inactivo') ?? [],
   };
 }

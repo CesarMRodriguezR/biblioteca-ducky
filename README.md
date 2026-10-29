@@ -6,15 +6,22 @@ y del diagrama de base de datos (.drawio):
 - **API REST**: Node.js 22 + Express 5 sobre **MariaDB** (`server/`).
 - **Web**: React 18 + Vite (`web/`), pantallas del flujo web del prototipo.
 - **Móvil**: React Native + Expo SDK 58 (`mobile/`), pantallas del flujo "Teléfono".
+- **Sistemas externos simulados** (`externos/`): CIAA (alumnos), Empleados (nómina) y
+  Tesorería, cada uno con su propia API y su propia base de datos.
 
-Los tres siguen el patrón **MVC** y comparten la misma API y la misma base de datos.
+Los tres primeros siguen el patrón **MVC** y comparten la misma API y la misma base de datos.
+Biblio no entra a las bases de datos externas: las consulta por HTTP.
 
 ```
 biblioteca-ducky/
 ├── database/
 │   ├── 01_schema.sql        24 tablas del diagrama + ajustes del prototipo, vista vw_catalogo
-│   ├── 02_seed.sql          Perfiles, funciones, usuarios, 19 libros, préstamos, órdenes…
-│   └── ejemplos/            Lista de Servicios Escolares para probar la carga de usuarios
+│   └── 02_seed.sql          Perfiles, funciones, usuarios, 19 libros, préstamos, órdenes…
+├── externos/                Sistemas externos simulados (puerto 4000)
+│   ├── database/            ciaa_ducky, empleados_ducky y tesoreria_ducky (una BD por sistema)
+│   ├── src/                 /ciaa/api, /empleados/api y /tesoreria/api (modelos, controladores, rutas)
+│   ├── scripts/tesoreria.js Comando para aceptar o rechazar solicitudes de compra
+│   └── pruebas/             Pruebas de las tres APIs
 ├── server/                  API (Modelo + Controlador)
 │   ├── src/servidor.js      Punto de entrada: escucha el puerto
 │   ├── src/aplicacion.js    Express: CORS, JSON, rutas y manejo de errores
@@ -25,7 +32,7 @@ biblioteca-ducky/
 │   ├── src/intermediarios/  autenticacion (JWT + funciones), Validar (zod), errores
 │   ├── src/validaciones/    Esquemas zod con mensajes del prototipo
 │   ├── src/utilidades/      ErrorHttp, fechas y listado en PDF
-│   └── pruebas/             22 pruebas de integración (node:test)
+│   └── pruebas/             22 pruebas de integración (node:test) con los externos simulados
 ├── web/src/
 │   ├── principal.jsx        Punto de entrada (monta las rutas en #raiz)
 │   ├── modelos/             Acceso a la API y reglas del dominio (estados, formatos)
@@ -45,7 +52,7 @@ biblioteca-ducky/
 
 | Capa | Servidor | Web y móvil |
 |---|---|---|
-| **Modelo** | `server/src/modelos`: consultas, transacciones y reglas (copias en préstamo, ISBN inmutable, bloqueo tras 5 intentos…). | `modelos/`: llamadas a la API (`ModeloLibro.Buscar`, `ModeloAutenticacion.IniciarSesion`…) y reglas de presentación del dominio (`dominio.js`). |
+| **Modelo** | `server/src/modelos`: consultas, transacciones y reglas (copias en préstamo, ISBN inmutable, código de ubicación…). | `modelos/`: llamadas a la API (`ModeloLibro.Buscar`, `ModeloAutenticacion.IniciarSesion`…) y reglas de presentación del dominio (`dominio.js`). |
 | **Controlador** | `server/src/controladores` + `rutas`: permisos por función, validación y respuesta HTTP. | `controladores/`: un hook por pantalla (`useControladorEditarLibro`, `useControladorBusqueda`…) que maneja estado, validación previa y navegación. |
 | **Vista** | — (JSON / PDF) | `vistas/`: componentes que solo pintan lo que el controlador les entrega. |
 
@@ -60,20 +67,28 @@ mariadb -u root < database/02_seed.sql
 mariadb -u root -e "CREATE USER IF NOT EXISTS 'ducky'@'localhost' IDENTIFIED BY 'tu-contraseña';
                     GRANT ALL ON biblioteca_ducky.* TO 'ducky'@'localhost';"
 
-# 2. API  →  http://localhost:3000/api
-cd server
-cp .env.example .env        # ajusta DB_PASSWORD y JWT_SECRET
+# 2. Sistemas externos  →  http://localhost:4000 (CIAA, Empleados y Tesorería)
+cd externos
+cp .env.example .env        # mismo DB_PASSWORD; las claves deben coincidir con server/.env
+npm install
+npm run db:reset            # crea ciaa_ducky, empleados_ducky y tesoreria_ducky
+npm run dev
+npm test                    # (después de db:reset) pruebas de las tres APIs
+
+# 3. API  →  http://localhost:3000/api
+cd ../server
+cp .env.example .env        # ajusta DB_PASSWORD y JWT_SECRET; EXT_* apuntan a externos/
 npm install
 npm run dev
 npm run db:reset && npm test   # reinicia la BD con la semilla y corre las 22 pruebas
-npm run lint                   # revisa el estándar de codificación (también en web/ y mobile/)
+npm run lint                   # revisa el estándar de codificación (también en web/, mobile/ y externos/)
 
-# 3. Web  →  http://localhost:5173  (el proxy de Vite manda /api al puerto 3000)
+# 4. Web  →  http://localhost:5173  (el proxy de Vite manda /api al puerto 3000)
 cd ../web
 npm install
 npm run dev                 # npm run build genera web/dist
 
-# 4. Móvil (Expo Go en el teléfono, emulador o navegador)
+# 5. Móvil (Expo Go en el teléfono, emulador o navegador)
 cd ../mobile
 cp .env.example .env        # EXPO_PUBLIC_API_URL con la IP de tu computadora
 npm install
@@ -92,13 +107,67 @@ Contraseña de todos: `Ducky2026!`
 | Usuario | Matrícula / nómina | Perfil | Qué ve |
 |---|---|---|---|
 | `felipe.rodriguez` | 1001133 | Administrador | Panel, Usuarios, Libros, Catálogo (todo) |
-| `catherine.ramirez` | 2004720 | Bibliotecario | Libros (alta, edición, bajas) y Catálogo |
+| `catherine.ramirez` | 2004720 | Bibliotecario | Catálogo |
 | `javier.saavedra` | 1987345 | Profesor | Catálogo |
 | `marcela.guerra` | 3105843 | Alumno | Catálogo |
 | `cesar.rodriguez` | 2005872 | Colaborador | Catálogo |
 | `luis.moreno` | 3120558 | Alumno | Tiene 1 préstamo y $45 de multa (para probar bajas rechazadas) |
 
-Cinco intentos fallidos bloquean la cuenta; `npm run db:reset` la restablece.
+Los intentos fallidos no se cuentan; una cuenta solo deja de entrar si el administrador la marca
+como *Inactivo* en el cambio de datos.
+
+## Sistemas externos
+
+Biblio no captura alumnos ni empleados: los toma de dos sistemas de la universidad, y las
+compras las autoriza Tesorería. Los tres se simulan en `externos/` (un proceso, tres APIs con
+su propia clave en `X-Clave-Api` y su propia base de datos).
+
+| Sistema | API | Qué toma o envía Biblio |
+|---|---|---|
+| CIAA (alumnos) | `GET /ciaa/api/alumnos?estatus=Inscrito` | Matrícula, nombre, apellidos y correo (el CIAA también entrega carrera, teléfono, etc., que Biblio ignora) |
+| Empleados (nómina) | `GET /empleados/api/empleados?estatus=Activo` | Nómina, nombre, apellidos, correo y tipo (Docente, Bibliotecario, Administrativo, Directivo) |
+| Tesorería | `POST /tesoreria/api/solicitudes` | Envía cada solicitud de compra; Tesorería la acepta o rechaza y avisa a `POST /api/tesoreria/notificaciones` |
+
+**Alta y baja de cuentas** (*Usuarios → Actualizar lista de usuarios*). La API consulta CIAA y
+Empleados y arma dos listas:
+
+- **Altas**: personas activas cuya matrícula o nómina no tiene cuenta. El usuario es
+  `nombre.apellido` (si ya existe se agrega la inicial del segundo nombre, p. ej.
+  `cesarm.rodriguez`) y la contraseña inicial es la matrícula o nómina precedida de `000`
+  (`3105842` → `0003105842`). El rol se sugiere por tipo (alumno → Alumno, docente → Profesor,
+  bibliotecario → Bibliotecario, administrativo → Colaborador) y el administrador lo puede
+  cambiar. Los registros mal capturados (matrícula con letras, nombre vacío) se muestran como
+  error; se corrigen en el sistema de origen y se genera la lista de nuevo.
+- **Bajas**: cuentas activas que ya no aparecen en ninguno de los dos sistemas. No se dan de
+  baja si tienen libros prestados o multas pendientes; los administradores nunca se dan de baja
+  por lista.
+
+Para simular una corrección en el sistema de origen:
+
+```bash
+curl -X PUT localhost:4000/ciaa/api/alumnos/31O5877 -H 'X-Clave-Api: clave-ciaa-dev' \
+     -H 'Content-Type: application/json' -d '{"Matricula":"3105877"}'
+curl -X PUT localhost:4000/empleados/api/empleados/1004981 -H 'X-Clave-Api: clave-empleados-dev' \
+     -H 'Content-Type: application/json' -d '{"Nombre":"Héctor","Apellido_Paterno":"Garza"}'
+```
+
+**Solicitudes de compra.** Al enviar una solicitud, Biblio la manda a Tesorería y queda
+*En revisión* (si Tesorería no responde queda *Pendiente* y se reenvía al abrir *Solicitar
+libros*). Biblio no guarda el folio ni el motivo: identifica la orden ante Tesorería por su
+referencia (`id_orden`) y los consulta a Tesorería al mostrar las solicitudes. Tesorería no tiene interfaz: la señal de aceptación o
+rechazo se manda desde su entorno.
+
+```bash
+cd externos
+npm run tesoreria -- listar Recibida
+npm run tesoreria -- ver TES-2026-0003         # renglones y presupuesto del mes
+npm run tesoreria -- aceptar TES-2026-0003
+npm run tesoreria -- rechazar TES-2026-0004 "Sin presupuesto este mes"
+```
+
+Tesorería avisa a Biblio al momento; si Biblio estaba apagado, toma la respuesta la próxima vez
+que se abren las solicitudes. En Biblio solo se registra después la recepción de los libros
+(*Recibida*), que agrega las copias al inventario.
 
 ## Perfiles y funciones
 
@@ -107,23 +176,20 @@ código de función en cada ruta, y la web y la app muestran u ocultan menús y
 botones con las mismas funciones, así que basta con cambiar la asignación
 (pantalla *Perfiles y funciones*) para cambiar lo que ve cada rol.
 
+Solo existen las tres funciones del prototipo:
+
 | Función | Admin | Bibliotecario | Profesor | Alumno | Colaborador |
 |---|:-:|:-:|:-:|:-:|:-:|
-| gestionar_usuarios | ✔ | | | | |
-| gestionar_libros | ✔ | ✔ | | | |
-| buscar_libros | ✔ | ✔ | ✔ | ✔ | ✔ |
-| generar_listado | ✔ | | | | |
-| solicitar_compra | ✔ | | | | |
-| gestionar_compras | ✔ | | | | |
-| solicitar_prestamo | ✔ | ✔ | ✔ | ✔ | ✔ |
-| gestionar_prestamos | ✔ | ✔ | | | |
-| registrar_devolucion | ✔ | ✔ | | | |
-| renovar_prestamo | ✔ | ✔ | ✔ | ✔ | ✔ |
-| gestionar_multas | ✔ | ✔ | | | |
-| lista_espera | ✔ | ✔ | ✔ | ✔ | ✔ |
-| gestionar_politicas | ✔ | | | | |
-| usar_chatbot | ✔ | ✔ | ✔ | ✔ | ✔ |
-| gestionar_chatbot | ✔ | | | | |
+| gestionar_usuarios (Gestión de usuarios) | ✔ | | | | |
+| gestionar_libros (Gestión de libros) | ✔ | | | | |
+| buscar_libros (Búsqueda de libros) | ✔ | ✔ | ✔ | ✔ | ✔ |
+
+Alcance de esta entrega:
+
+- *Gestión de usuarios*: alta, baja, cambio y consulta de usuarios, y gestión de perfiles.
+- *Gestión de libros*: alta, baja, cambio y consulta de libros, solicitud de compra y listado.
+- *Búsqueda de libros*: búsqueda con filtros en web y móvil. El filtro elegido también ordena
+  los resultados (filtro *Autor* → ordenados por autor; *Todos* → por título).
 
 El perfil Administrador está protegido: sus funciones no se pueden modificar.
 
@@ -133,73 +199,80 @@ El perfil Administrador está protegido: sus funciones no se pueden modificar.
 
 | Clave | Pantalla | Ruta |
 |---|---|---|
-| GU01 | Inicio de sesión (vacío, incompleto, datos incorrectos, bloqueo) | `/login` |
-| — | Panel del administrador (usuarios válidos, solicitudes, libros activos, actividad) | `/panel` |
-| GU02 | Usuarios válidos, consulta por matrícula, cambio de datos, carga de lista, bajas por lista, perfiles y funciones | `/usuarios/…` |
+| — | Portal público de la biblioteca (búsqueda y acceso al sistema) | `/` |
+| GU01 | Inicio de sesión (vacío, incompleto, datos incorrectos, cuenta inactiva) | `/login` |
+| — | Panel del administrador (usuarios válidos, solicitudes, libros activos y accesos rápidos) | `/panel` |
+| GU02 | Usuarios válidos, consulta por matrícula, cambio de datos, alta y baja de cuentas según CIAA y Empleados, perfiles y funciones | `/usuarios/…` |
 | GL02 | Alta de libro con ISBN validado primero y ejemplares con ubicación | `/libros/nuevo` |
 | GL04 | Editar ficha (ISBN bloqueado, libro inactivo) y estado de cada copia | `/libros/:id/editar` |
 | GL03 | Baja: retirar una copia con motivo, o activar/inactivar el libro | `/libros/:id/baja` |
 | GL01 | Solicitar libros nuevos o más copias, solicitudes pendientes y editoriales | `/libros/solicitar`, `/libros/:id/solicitar` |
-| BL01 | Catálogo: búsqueda por campo, orden y paginación de 6 | `/catalogo` |
+| BL01 | Catálogo: búsqueda con filtros (el filtro también ordena) y paginación de 6 | `/catalogo` |
 | GL06 | Vista previa del listado, impresión y PDF | `/catalogo?listado=1` |
-| GL05 | Ficha bibliográfica (completa para quien gestiona libros, resumida para los demás) | `/catalogo/:id` |
+| GL05 | Ficha del libro (completa con ejemplares para quien gestiona libros, resumida por estado para los demás) | `/catalogo/:id` |
 
 **Móvil**: Inicio de sesión (con sus cuatro estados), Inicio (saludo, buscador,
 filtros y recomendados), Buscar (resultados y búsqueda sin filtro con carga de 6
-en 6), Detalle (códigos de copia para administrador/bibliotecario, conteo por
+en 6), Detalle (códigos de copia para quien gestiona libros, conteo por
 estado para los demás) y Perfil.
 
-Préstamos, devoluciones, multas, lista de espera, políticas y chatbot existen en
-la base de datos y en la API (con pruebas), pero el prototipo no tiene pantallas
-para ellos, así que no se agregaron vistas.
+Préstamos, devoluciones, multas, lista de espera, políticas y chatbot quedan fuera de esta
+entrega: sus tablas siguen en la base de datos (para entregas futuras), pero no tienen rutas en
+la API ni pantallas. Los préstamos y multas de la semilla solo se usan para mostrar el estado de
+las copias y para impedir la baja de cuentas con pendientes.
 
 ## Estados y reglas
 
-- **Usuario**: `Activo` (se muestra como *Válido*) · `Inactivo` · `Bloqueado` (5 intentos fallidos).
+- **Usuario**: `Activo` (se muestra como *Válido*) · `Inactivo` (no puede iniciar sesión).
 - **Libro**: `Activo` · `Inactivo`. Un libro inactivo no aparece en el catálogo ni se puede editar; solo se inactiva si ninguna copia está en préstamo.
-- **Copia**: `Disponible` (consulta en sala) · `Consulta externa` (se presta a domicilio) · `En prestamo` y `Apartado` (los asigna el sistema) · `Baja` con motivo `Perdido`, `Robado`, `Danado` u `Obsoleto`. Una copia prestada no cambia de estado ni se retira hasta devolverse.
-- **Solicitud de compra**: `Pendiente → En revision → Aprobada → Recibida`, o `Rechazada`. Al recibirse se agregan las copias.
-- **Préstamo**: 7 días, máximo 3 activos, 2 renovaciones, $10 por día de retraso; solo se prestan copias de *Consulta externa*.
+- **Copia** (valores del diagrama): `Disponible` (consulta en sala) · `Consulta Externa` (se presta a domicilio) · `En préstamo` (lo asigna el sistema) · `Inactivo` (dada de baja; en pantalla se muestra *Baja*). La baja pide un motivo (`Perdido`, `Robado`, `Dañado`, `Obsoleto`) que se informa pero no se guarda, porque el diagrama no tiene esa columna. Una copia prestada no cambia de estado ni se retira hasta devolverse.
+- **Ubicación de la copia**: se guarda en una sola columna (`Ejemplares.Ubicacion`) como el código `P{pasillo}-E{estante}-N{nivel}-S{sección}`. Por ejemplo, pasillo 2, estante Q, nivel 3 y sección Computación → `P2-EQ-N3-SComputación`. El sistema lo genera al agregar o mover copias y lo interpreta para mostrar «Pasillo 2 · Estante Q · Nivel 3 · Sección Computación» (`server/src/utilidades/CodigoUbicacion.js`). Ningún componente puede llevar «-».
+- **Código de copia** (`EJ-00101`): no se guarda; se calcula con `id_libro × 100 + num_copia`, por eso cada libro admite hasta 99 copias.
+- **Solicitud de compra**: `Pendiente` (aún no llega a Tesorería) `→ En revision` (Tesorería la recibió) `→ Aprobada` o `Rechazada` (lo decide Tesorería, con motivo) `→ Recibida` (llegaron los libros; se agregan las copias).
 - **Ficha**: el ISBN no cambia después del alta; el número de copias solo aumenta (para reducir se da de baja una copia).
 
 ## API
 
-Todas las rutas van bajo `/api` y, salvo `POST /auth/login`, `GET /salud` y la
-lectura de políticas, requieren `Authorization: Bearer <token>`.
+Todas las rutas van bajo `/api` y, salvo `POST /auth/login` y `GET /salud`, requieren
+`Authorization: Bearer <token>`.
 
 | Módulo | Rutas | Función requerida |
 |---|---|---|
 | Sesión | `POST /auth/login` · `GET /auth/me` · `PUT /auth/contrasena` | — |
 | Panel | `GET /panel` | gestionar_usuarios |
 | Usuarios | `GET /usuarios` · `GET /usuarios/:id` · `GET /usuarios/matricula/:m` · `POST /usuarios` · `PUT /usuarios/:id` | gestionar_usuarios |
-| Carga y bajas por lista | `POST /usuarios/carga/validar` · `POST /usuarios/carga` · `POST /usuarios/bajas/revisar` · `POST /usuarios/bajas` | gestionar_usuarios |
+| Alta y baja según CIAA y Empleados | `GET /usuarios/lista` · `POST /usuarios/carga` (`[{ Matricula_Nomina, id_perfil }]`) · `POST /usuarios/bajas` | gestionar_usuarios |
 | Perfiles | `GET/POST /perfiles` · `GET/PUT/DELETE /perfiles/:id` · `PUT /perfiles/:id/funciones` | gestionar_usuarios |
-| Catálogo | `GET /libros?q=&campo=&orden=&limit=&offset=` · `GET /libros/:id` | buscar_libros o gestionar_libros |
-| Listado | `GET /libros/listado` · `GET /libros/listado.pdf` | generar_listado |
+| Catálogo | `GET /libros?q=&campo=&limit=&offset=` (ordena por `campo`) · `GET /libros/:id` | buscar_libros o gestionar_libros |
+| Listado | `GET /libros/listado` · `GET /libros/listado.pdf` | gestionar_libros |
 | Libros | `GET /libros/isbn/:isbn` · `POST /libros` · `PUT /libros/:id` · `PATCH /libros/:id/estatus` | gestionar_libros |
 | Copias | `GET/POST /libros/:id/ejemplares` · `PUT /libros/:id/ejemplares/:n` · `POST /libros/:id/ejemplares/:n/baja` | gestionar_libros |
-| Editoriales, autores, temas | CRUD `/editoriales`, `/autores`, `/temas` | lectura: catálogo · escritura: gestionar_libros (editoriales también solicitar_compra) |
-| Compras | `GET /ordenes-compra` · `GET /ordenes-compra/solicitudes` · `POST /ordenes-compra` · `PATCH /ordenes-compra/:id/estatus` | solicitar_compra · gestionar_compras |
-| Préstamos | `GET/POST /prestamos` · `POST /prestamos/:id/renovacion` · `POST /prestamos/:id/devolucion` | solicitar_prestamo · renovar_prestamo · registrar_devolucion |
-| Multas | `GET /multas` · `POST /multas` · `POST /multas/:id/pago` | consulta propia · gestionar_multas |
-| Lista de espera | `GET/POST /lista-espera` · `DELETE /lista-espera/:id` | lista_espera |
-| Políticas | `GET /politicas` (pública) · `POST/PUT/DELETE /politicas/:id` | gestionar_politicas |
-| Chatbot | `POST /chatbot/preguntar` · `GET /chatbot/frecuentes` · CRUD `/chatbot/preguntas` | usar_chatbot · gestionar_chatbot |
+| Editoriales, autores, temas | CRUD `/editoriales`, `/autores`, `/temas` | lectura: catálogo · escritura: gestionar_libros |
+| Compras | `GET /ordenes-compra` · `GET /ordenes-compra/solicitudes` · `POST /ordenes-compra` · `PATCH /ordenes-compra/:id/estatus` (solo `Recibida`) | gestionar_libros |
+| Aviso de Tesorería | `POST /tesoreria/notificaciones` (`{ folio, referencia, estatus, motivo }`) | clave `X-Clave-Integracion` (no usa sesión) |
 
 Errores: `{ "error": "mensaje", "detalles": … }`. 400 trae un mensaje por campo
 (`[{ campo, mensaje }]`); 409 trae `detalles.codigo` (`ISBN_DUPLICADO`,
-`COPIAS_EN_PRESTAMO`, `LIBRO_INACTIVO`, `CUENTA_BLOQUEADA`…).
+`COPIAS_EN_PRESTAMO`, `LIBRO_INACTIVO`…); 403 al iniciar sesión trae `CUENTA_INACTIVA`.
 
 ## Cambios al diagrama de base de datos
 
 Todos están marcados con `[PROTOTIPO]` en `01_schema.sql`:
 
-- **Usuarios**: `Nombre_Usuario` (el login del prototipo es por usuario), `Nombre_Completo`, `Correo`, `Intentos_Fallidos` y estatus `Bloqueado`.
-- **Ejemplares**: `Codigo` (EJ-00101), `Pasillo`, `Estante`, `Nivel`, `Motivo_Baja`, `Fecha_Alta` y los estados del prototipo.
-- **NuevosLibros**: `Anio`, `Tema` y `Sinopsis`, porque la solicitud de compra los pide.
-- **OrdenesCompra**: estado `En revision`.
-- **Bitacora**: nueva, alimenta la "Actividad reciente" del panel.
-- `Año` → `Anio` y `Lista de Espera` → `ListaEspera` (identificadores sin acentos ni espacios); `Contrasena_Usuario` guarda un hash bcrypt; las relaciones 0..1 se aplican con índices `UNIQUE`.
+- **Usuarios**: `Nombre_Completo` y `Correo` (`Nombre_Usuario` es el login del prototipo).
+- **LibrosNuevos**: `Anio`, `Tema` y `Sinopsis`, porque la solicitud de compra los pide.
+- **OrdenesCompra**: estado `En revision` (la recibió Tesorería).
+
+`Ejemplares` ya sigue el diagrama (id_libro, num_copia, Estatus, Ubicacion) y no hay tabla de
+bitácora ni contador de intentos fallidos.
+
+Las llaves primarias y foráneas son `VARCHAR(13)`, como en el diccionario de datos. No usan
+AUTO_INCREMENT: la API asigna texto numérico (`'1'`, `'2'`…), el mayor + 1, con
+`SiguienteId` (`server/src/configuracion/conexion.js`). Por eso las rutas siguen siendo
+`/libros/1` y la API acepta los ids como número o texto, pero siempre los devuelve como texto.
+- `Año` → `Anio` y «Descripción del Perfil» → `Descripcion_Perfil` (identificadores sin acentos ni espacios); `Contrasena_Usuario` guarda un hash bcrypt (no cifrado César); las relaciones 0..1 se aplican con índices `UNIQUE`.
+- Longitudes, NOT NULL, nombres de tablas y columnas (`ListaDeEspera`, `LibrosNuevos`, `PreguntasChatbot.id_pregunta`…) y estados (`Perdido` en préstamos; `Pendiente/Notificado/Atendida/Cancelada` en la lista de espera) siguen el diccionario. Los `DECIMAL` llevan precisión `(10,2)` para guardar centavos.
+- Las solicitudes de compra no tienen campo de justificación en el prototipo; como el diagrama la pide NOT NULL, se guarda «Lista de peticiones del periodo» cuando no se indica.
 - La vista `vw_catalogo` reúne autores, temas, disponibilidad y ubicación para las búsquedas.
 - Las portadas se generan a partir del tema, porque la BD no guarda imágenes.
 

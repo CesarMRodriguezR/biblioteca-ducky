@@ -19,6 +19,7 @@
  *     Autenticar        Verifica el token Bearer y carga en req.usuario los datos…
  *     RequiereFuncion   Exige que el usuario tenga al menos una de las funciones…
  *     TieneFuncion      Indica si el usuario autenticado tiene una función
+ *     AutenticarTesoreria  Acepta solo los avisos con la clave de integración de…
  * ******************************************************************
  */
 
@@ -107,4 +108,20 @@ function TieneFuncion(req, funcion)
   return (req.usuario?.funciones || []).includes(funcion);
 }
 
-export { Autenticar, RequiereFuncion, TieneFuncion };
+/*
+ * Función: AutenticarTesoreria
+ * Objetivo: Acepta solo los avisos que traen la clave de integración de Tesorería en el
+ *           encabezado X-Clave-Integracion (los envía el sistema externo, no un usuario).
+ * Entrada: req, _res, next
+ * Salida: Ninguna (llama a next o envía 401)
+ */
+function AutenticarTesoreria(req, _res, next)
+{
+  if (req.get('X-Clave-Integracion') !== ENTORNO.EXTERNOS.CLAVE_NOTIFICACION)
+  {
+    return next(ErrorHttp.NoAutenticado('Clave de integración de Tesorería inválida'));
+  }
+  return next();
+}
+
+export { Autenticar, RequiereFuncion, TieneFuncion, AutenticarTesoreria };

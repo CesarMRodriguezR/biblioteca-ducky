@@ -279,13 +279,23 @@ export function PaginaSolicitarLibros()
               <tbody>
                 {controlador.solicitudes.map((solicitud) => (
                   <tr key={`${solicitud.id_orden}-${solicitud.Tipo}-${solicitud.id_referencia}`}>
-                    <td style={{ fontWeight: 700 }}>{solicitud.Titulo}</td>
+                    <td>
+                      <strong>{solicitud.Titulo}</strong>
+                      {solicitud.Folio_Tesoreria && (
+                        <div className="texto-nota">Tesorería · {solicitud.Folio_Tesoreria}</div>
+                      )}
+                    </td>
                     <td>{solicitud.Editorial}</td>
                     <td>{solicitud.Num_Ejemplares}</td>
                     <td>
                       <Insignia tono={ESTADOS_SOLICITUD[solicitud.Estatus].tono}>
                         {ESTADOS_SOLICITUD[solicitud.Estatus].etiqueta}
                       </Insignia>
+                      {solicitud.Motivo_Respuesta && (
+                        <div className="texto-nota margen-arriba-8">
+                          {solicitud.Motivo_Respuesta}
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ))}

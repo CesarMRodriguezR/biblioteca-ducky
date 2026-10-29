@@ -163,7 +163,12 @@ export function PantallaInicioSesion()
 
           <View style={estilos.pie}>
             <Text style={estilos.pie_texto}>Desarrollado por</Text>
-            <Text style={estilos.pie_marca}>CCJMops</Text>
+            <Image
+              source={require('../../../assets/logo-ccjmops-blanco.png')}
+              style={estilos.pie_logo}
+              resizeMode="contain"
+              accessibilityLabel="CCJMops"
+            />
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -210,7 +215,7 @@ const estilos = StyleSheet.create({
   },
   boton_texto: { color: COLORES.azul_principal, fontWeight: '700', fontSize: 16 },
   olvido: { color: 'rgba(255,255,255,0.85)', textAlign: 'center', fontWeight: '600', marginTop: 4 },
-  pie: { alignItems: 'center', gap: 2 },
-  pie_texto: { color: 'rgba(255,255,255,0.6)', fontSize: 12 },
-  pie_marca: { color: COLORES.blanco, fontSize: 22, fontWeight: '800' },
+  pie: { alignItems: 'center', gap: 6 },
+  pie_texto: { color: 'rgba(255,255,255,0.75)', opacity: 0.7, fontSize: 11, fontWeight: '700' },
+  pie_logo: { width: 150, height: 31.43 },
 });

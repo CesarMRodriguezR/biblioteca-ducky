@@ -1,7 +1,7 @@
 /*
  * ******************************************************************
  * Nombre del programa: BD-SP01-GU02 · PaginaCargaLista.jsx
- * Función: Alta de cuentas a partir de la lista de Servicios Escolares.
+ * Función: Alta de cuentas a partir de la lista que se genera con CIAA (alumnos) y Empleados.
  * Autor: Equipo CCJMops
  * Fecha: 26/10/2026
  * Entrada: Props y estado del controlador de la pantalla
@@ -18,7 +18,7 @@
  *     Componente          Objetivo
  *     ETIQUETAS_FUNCION   Nombre corto de las funciones principales para el resumen…
  *     ResumenFunciones    Resumir las funciones principales de un perfil
- *     TablaErrores        Tabla de filas con error de la lista cargada
+ *     TablaErrores        Tabla de registros con error de CIAA o Empleados
  *     PaginaCargaLista    BD-SP01-GU02 Alta de cuentas por lista (revisión, versión…
  * ******************************************************************
  */
@@ -36,11 +36,11 @@ import { ListChecks } from 'lucide-react';
 import { useControladorCargaLista } from '../../../controladores/ControladorUsuarios.js';
 import { TONOS_PERFIL, DescribirFuncion } from '../../../modelos/dominio.js';
 import { Pagina } from '../../plantillas/PlantillaAplicacion.jsx';
-import { SelectorArchivo } from '../../componentes/SelectorArchivo.jsx';
 import {
   Alerta,
   AlertaError,
   Boton,
+  Cargando,
   EnlaceVolver,
   Insignia,
   Tarjeta,
@@ -75,10 +75,10 @@ function ResumenFunciones(funciones = [])
 
 /*
  * Componente: TablaErrores
- * Objetivo: Tabla de filas con error de la lista cargada.
- * Uso: <TablaErrores errores={…} />
+ * Objetivo: Tabla de registros de CIAA o Empleados que no se pudieron crear.
+ * Uso: <TablaErrores errores={…} confirmado={…} />
  */
-function TablaErrores({ errores })
+function TablaErrores({ errores, confirmado })
 {
   if (!errores.length)
   {
@@ -86,15 +86,19 @@ function TablaErrores({ errores })
   }
   return (
     <>
-      <h2 className="margen-arriba-32 margen-abajo-16">Cuentas no creadas</h2>
+      <h2 className="margen-arriba-32 margen-abajo-16">
+        {confirmado ? 'Cuentas no creadas' : 'Registros con error'}
+      </h2>
       <p className="texto-nota margen-abajo-16">
-        Corrige estos registros en la lista y vuelve a cargarla; los demás ya quedaron registrados.
+        {confirmado
+          ? 'Corrige estos datos en el CIAA o en Empleados y genera la lista de nuevo; las demás cuentas ya quedaron registradas.'
+          : 'Estos datos vienen mal capturados del sistema de origen y no se crearán. Corrígelos en el CIAA o en Empleados y genera la lista de nuevo.'}
       </p>
       <Tarjeta relleno={false} className="tabla-envoltura">
         <table className="tabla">
           <thead>
             <tr>
-              <th>Fila</th>
+              <th>Origen</th>
               <th>Matrícula / No. de nómina</th>
               <th>Nombre</th>
               <th>Campo</th>
@@ -103,8 +107,8 @@ function TablaErrores({ errores })
           </thead>
           <tbody>
             {errores.map((error) => (
-              <tr key={`${error.Fila}-${error.Campo}`}>
-                <td style={{ fontWeight: 700 }}>{error.Fila}</td>
+              <tr key={`${error.Origen}-${error.Matricula_Nomina}-${error.Campo}`}>
+                <td style={{ fontWeight: 700 }}>{error.Origen}</td>
                 <td>{error.Matricula_Nomina}</td>
                 <td>{error.Nombre_Completo}</td>
                 <td>{error.Campo}</td>
@@ -120,30 +124,31 @@ function TablaErrores({ errores })
 
 /*
  * Componente: PaginaCargaLista
- * Objetivo: BD-SP01-GU02 Alta de cuentas por lista (revisión, versión exitosa y fallida).
+ * Objetivo: BD-SP01-GU02 Alta de cuentas por lista (revisión, versión exitosa y fallida, y
+ *           registros corregidos).
  * Uso: <PaginaCargaLista />
  */
 export function PaginaCargaLista()
 {
   const controlador = useControladorCargaLista();
+  const revision = controlador.revision;
+  const total = controlador.validos.length;
+  const creados = controlador.resultado?.creados ?? [];
 
   return (
     <Pagina miga="Usuarios · Carga de lista" titulo="Alta de cuentas por lista">
       <EnlaceVolver to="/usuarios">Volver a Usuarios</EnlaceVolver>
       <AlertaError error={controlador.error} />
-
-      {!controlador.revision && (
-        <div className={controlador.error ? 'margen-arriba-16' : undefined}>
-          <SelectorArchivo
-            titulo="Carga la lista de Servicios Escolares"
-            descripcion="Archivo .xlsx o .csv con las columnas Usuario, Matrícula / No. de nómina, Nombre y Correo institucional."
-            al_archivo={controlador.CargarArchivo}
-            procesando={controlador.procesando}
-          />
-        </div>
+      {controlador.error && !revision && (
+        <Boton className="margen-arriba-16" onClick={controlador.GenerarDeNuevo}>
+          Intentar de nuevo
+        </Boton>
+      )}
+      {controlador.procesando && !revision && (
+        <Cargando texto="Consultando CIAA y Empleados…" />
       )}
 
-      {controlador.revision && !controlador.resultado && (
+      {revision && !controlador.resultado && (
         <>
           <Tarjeta className="fila espacio-16">
             <div
@@ -160,18 +165,23 @@ export function PaginaCargaLista()
               <ListChecks size={16} aria-hidden />
             </div>
             <div style={{ flex: 1 }}>
-              <strong>Lista cargada</strong>
+              <strong>{controlador.corregidos ? 'Registros corregidos' : 'Lista generada'}</strong>
               <p className="texto-nota">
-                {controlador.archivo?.name} · {controlador.revision.validos.length} registros ·
-                asigna el rol de cada usuario y confirma el registro
+                {total} {total === 1 ? 'registro nuevo' : 'registros nuevos'} · CIAA (
+                {revision.fuentes.CIAA} alumnos) y Empleados ({revision.fuentes.Empleados}{' '}
+                empleados) · asigna el rol de cada usuario y confirma el registro
               </p>
             </div>
-            <Boton variante="texto" onClick={controlador.Reiniciar}>
-              Cambiar archivo
+            <Boton
+              variante="texto"
+              onClick={controlador.GenerarDeNuevo}
+              disabled={controlador.procesando}
+            >
+              Generar de nuevo
             </Boton>
             <Boton
               onClick={controlador.ConfirmarRegistro}
-              disabled={controlador.procesando || !controlador.revision.validos.length}
+              disabled={controlador.procesando || !total}
             >
               {controlador.procesando ? 'Registrando…' : 'Confirmar registro'}
             </Boton>
@@ -179,8 +189,9 @@ export function PaginaCargaLista()
 
           <h2 className="margen-arriba-24">Nuevos usuarios</h2>
           <p className="texto-nota margen-arriba-8 margen-abajo-16">
-            Revisa los usuarios de la lista y asigna el rol que tendrá cada uno. El rol define las
-            funciones disponibles para la cuenta.
+            Alumnos y empleados que aparecen en CIAA o en Empleados y aún no tienen cuenta. El
+            usuario se forma con nombre.apellido y la contraseña inicial es la matrícula o
+            nómina precedida de 000. El rol se sugiere según el tipo de persona; puedes cambiarlo.
             {controlador.sin_rol > 0 &&
               ` Los ${controlador.sin_rol} registro(s) sin rol no se crearán.`}
           </p>
@@ -192,23 +203,25 @@ export function PaginaCargaLista()
                   <th>Matrícula / No. de nómina</th>
                   <th>Nombre</th>
                   <th>Correo institucional</th>
+                  <th>Origen</th>
                   <th>Rol</th>
                 </tr>
               </thead>
               <tbody>
-                {controlador.revision.validos.map((valido) => (
-                  <tr key={valido.Fila}>
+                {controlador.validos.map((valido) => (
+                  <tr key={valido.Matricula_Nomina}>
                     <td style={{ fontWeight: 700 }}>{valido.Nombre_Usuario}</td>
                     <td>{valido.Matricula_Nomina}</td>
                     <td>{valido.Nombre_Completo}</td>
-                    <td>{valido.Correo}</td>
+                    <td>{valido.Correo ?? '—'}</td>
+                    <td>{valido.Origen}</td>
                     <td style={{ width: 180 }}>
                       <select
                         className="selector"
                         aria-label={`Rol de ${valido.Nombre_Usuario}`}
-                        value={controlador.roles[valido.Fila] ?? ''}
+                        value={controlador.roles[valido.Matricula_Nomina] ?? ''}
                         onChange={(evento) =>
-                          controlador.AsignarRol(valido.Fila, evento.target.value)
+                          controlador.AsignarRol(valido.Matricula_Nomina, evento.target.value)
                         }
                       >
                         <option value="">Seleccionar rol</option>
@@ -221,34 +234,43 @@ export function PaginaCargaLista()
                     </td>
                   </tr>
                 ))}
-                {!controlador.revision.validos.length && (
+                {!total && (
                   <tr>
-                    <td colSpan={5} className="tabla-vacia">
-                      Ningún registro de la lista es válido.
+                    <td colSpan={6} className="tabla-vacia">
+                      No hay alumnos ni empleados nuevos: todos ya tienen cuenta.
                     </td>
                   </tr>
                 )}
               </tbody>
             </table>
           </Tarjeta>
-          <TablaErrores errores={controlador.revision.errores} />
+          <TablaErrores errores={revision.altas.errores} />
+          <div className="fila espacio-12 margen-arriba-24">
+            <Boton variante="secundario" onClick={controlador.RevisarBajas}>
+              Revisar bajas de la lista ({revision.bajas.length})
+            </Boton>
+          </div>
         </>
       )}
 
       {controlador.resultado && (
         <>
-          {controlador.resultado.creados.length > 0 && (
+          {creados.length > 0 && (
             <Alerta
               tipo="exito"
-              titulo={`Se crearon ${controlador.resultado.creados.length} ${controlador.resultado.creados.length === 1 ? 'cuenta' : 'cuentas'}. Ya están disponibles en tiempo real.`}
+              titulo={
+                controlador.resultado.errores.length
+                  ? `Se crearon ${creados.length} ${creados.length === 1 ? 'cuenta' : 'cuentas'}. ${controlador.resultado.errores.length} ${controlador.resultado.errores.length === 1 ? 'registro no se creó' : 'registros no se crearon'}.`
+                  : `Se crearon ${creados.length} ${creados.length === 1 ? 'cuenta' : 'cuentas'}${controlador.corregidos ? ' de los registros corregidos' : ''}. Ya están disponibles en tiempo real.`
+              }
             />
           )}
-          {controlador.resultado.creados.length === 0 && (
-            <Alerta tipo="error" titulo="No se creó ninguna cuenta." />
-          )}
-          {controlador.resultado.creados.length > 0 && (
+          {creados.length === 0 && <Alerta tipo="error" titulo="No se creó ninguna cuenta." />}
+          {creados.length > 0 && (
             <>
-              <h2 className="margen-arriba-24 margen-abajo-16">Cuentas creadas</h2>
+              <h2 className="margen-arriba-24 margen-abajo-16">
+                {controlador.corregidos ? 'Cuentas creadas (registros corregidos)' : 'Cuentas creadas'}
+              </h2>
               <Tarjeta relleno={false} className="tabla-envoltura">
                 <table className="tabla">
                   <thead>
@@ -262,7 +284,7 @@ export function PaginaCargaLista()
                     </tr>
                   </thead>
                   <tbody>
-                    {controlador.resultado.creados.map((creado) => (
+                    {creados.map((creado) => (
                       <tr key={creado.id_usuario}>
                         <td style={{ fontWeight: 700 }}>{creado.Nombre_Usuario}</td>
                         <td>{creado.Matricula_Nomina}</td>
@@ -282,19 +304,19 @@ export function PaginaCargaLista()
                 </table>
               </Tarjeta>
               <p className="texto-nota margen-arriba-8">
-                La contraseña inicial es la matrícula a 10 dígitos; solo se muestra en esta
-                pantalla.
+                La contraseña inicial es la matrícula o nómina precedida de 000; solo se muestra en
+                esta pantalla.
               </p>
             </>
           )}
-          <TablaErrores errores={controlador.resultado.errores} />
+          <TablaErrores errores={controlador.resultado.errores} confirmado />
           <div className="fila espacio-12 margen-arriba-24">
             <Boton variante="secundario" onClick={controlador.RevisarBajas}>
               Revisar bajas de la lista
             </Boton>
             {controlador.resultado.errores.length > 0 && (
-              <Boton variante="texto" onClick={controlador.Reiniciar}>
-                Cargar registros corregidos
+              <Boton variante="texto" onClick={controlador.GenerarDeNuevo}>
+                Generar de nuevo con los registros corregidos
               </Boton>
             )}
           </div>

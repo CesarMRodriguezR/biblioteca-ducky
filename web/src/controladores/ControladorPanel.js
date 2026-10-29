@@ -1,7 +1,7 @@
 /*
  * ******************************************************************
  * Nombre del programa: WEB-PANEL · ControladorPanel.js
- * Función: Indicadores y actividad reciente del panel del administrador.
+ * Función: Indicadores del panel del administrador.
  * Autor: Equipo CCJMops
  * Fecha: 26/10/2026
  * Entrada: Parámetros de la ruta y acciones del usuario en la pantalla
@@ -16,7 +16,7 @@
  * ******************************************************************
  * Contenido de listado:
  *     Hook                  Objetivo
- *     useControladorPanel   BD-SP01-GU01 Resultado: panel con indicadores y actividad…
+ *     useControladorPanel   BD-SP01-GU01 Resultado: panel con indicadores y accesos…
  * ******************************************************************
  */
 
@@ -37,7 +37,7 @@ import { useCarga } from './HooksAsincronos.js';
 
 /*
  * Hook: useControladorPanel
- * Objetivo: BD-SP01-GU01 Resultado: panel con indicadores y actividad reciente.
+ * Objetivo: BD-SP01-GU01 Resultado: panel con indicadores y accesos rápidos.
  * Entrada: Ninguna
  * Salida: Objeto con el estado y las acciones de la pantalla
  */

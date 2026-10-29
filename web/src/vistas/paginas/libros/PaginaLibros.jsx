@@ -71,7 +71,7 @@ export function PaginaLibros()
       fondo: 'fondo-brillante',
       ruta: '/catalogo',
     },
-    Puede('solicitar_compra') && {
+    Puede('gestionar_libros') && {
       titulo: 'Solicitar libros',
       texto: 'Pide la compra de títulos nuevos o más ejemplares.',
       icono: ShoppingCart,
@@ -155,7 +155,7 @@ export function PaginaLibros()
                         etiqueta={`Editar ${libro.Titulo}`}
                         onClick={() => navegar(`/libros/${libro.id_libro}/editar`)}
                       />
-                      {Puede('solicitar_compra') && (
+                      {Puede('gestionar_libros') && (
                         <BotonIcono
                           icono={ShoppingCart}
                           etiqueta={`Solicitar copias de ${libro.Titulo}`}

@@ -17,7 +17,7 @@
  * Contenido de listado:
  *     Hook                     Objetivo
  *     POR_PAGINA               Libros por página del catálogo
- *     useControladorCatalogo   BD-SP02-BL01 Buscar libros: búsqueda por campo, orden,…
+ *     useControladorCatalogo   BD-SP02-BL01 Buscar libros: filtro por campo (que también…
  *     useControladorListado    BD-SP02-GL06 Generar listado: vista previa, impresión y PDF
  *     useControladorFicha      BD-SP02-GL05 Consultar ficha bibliográfica
  * ******************************************************************
@@ -50,8 +50,9 @@ const POR_PAGINA = 6;
 
 /*
  * Hook: useControladorCatalogo
- * Objetivo: BD-SP02-BL01 Buscar libros: búsqueda por campo, orden, paginación de 6 y apertura
- *           del listado (BD-SP02-GL06) para quien tiene `generar_listado`.
+ * Objetivo: BD-SP02-BL01 Buscar libros: filtro por campo (que también ordena los resultados),
+ *           paginación de 6 y apertura del listado (BD-SP02-GL06) para quien tiene
+ *           `gestionar_libros`.
  * Entrada: Ninguna
  * Salida: Objeto con el estado y las acciones de la pantalla
  */
@@ -61,20 +62,19 @@ export function useControladorCatalogo()
   const [parametros, set_params] = useSearchParams();
   const texto_busqueda = parametros.get('q') ?? '';
   const campo = parametros.get('campo') ?? 'todos';
-  const orden = parametros.get('orden') ?? 'titulo';
   const pagina = Number(parametros.get('pagina') ?? 1);
   const [texto, SetTexto] = useState(texto_busqueda);
 
-  const filtros = { q: texto_busqueda || undefined, campo, orden };
+  const filtros = { q: texto_busqueda || undefined, campo };
   const { datos, error, cargando } = useCarga(
     () => ModeloLibro.Buscar({ ...filtros, pagina, por_pagina: POR_PAGINA }),
-    [texto_busqueda, campo, orden, pagina],
+    [texto_busqueda, campo, pagina],
   );
   const total = datos?.total ?? 0;
 
   const Actualizar = (cambios) =>
   {
-    const siguiente = { q: texto_busqueda, campo, orden, ...cambios };
+    const siguiente = { q: texto_busqueda, campo, ...cambios };
     const limpio = {};
     if (siguiente.q)
     {
@@ -83,10 +83,6 @@ export function useControladorCatalogo()
     if (siguiente.campo !== 'todos')
     {
       limpio.campo = siguiente.campo;
-    }
-    if (siguiente.orden !== 'titulo')
-    {
-      limpio.orden = siguiente.orden;
     }
     if (siguiente.pagina && siguiente.pagina > 1)
     {
@@ -114,23 +110,23 @@ export function useControladorCatalogo()
   const resumen = texto_busqueda
     ? `${total} ${total === 1 ? 'resultado' : 'resultados'} para «${texto_busqueda}»${campo !== 'todos' ? ` en ${etiqueta_campo}` : ''}`
     : `${total} libros activos (sin filtros)`;
+  const orden_texto = `ordenados por ${campo === 'todos' ? 'título' : etiqueta_campo.toLowerCase()}`;
 
   return {
     libros: datos?.datos ?? [],
     total,
     resumen,
-    rango: total ? `mostrando ${desde}–${hasta}` : '',
+    rango: total ? `mostrando ${desde}–${hasta} · ${orden_texto}` : '',
     pagina,
     total_paginas: Math.max(1, Math.ceil(total / POR_PAGINA)),
     q: texto_busqueda,
     campo,
-    orden,
     texto,
     SetTexto,
     error,
     cargando,
-    puede_listar: Puede('generar_listado'),
-    listado_abierto: parametros.get('listado') === '1' && Puede('generar_listado'),
+    puede_listar: Puede('gestionar_libros'),
+    listado_abierto: parametros.get('listado') === '1' && Puede('gestionar_libros'),
     filtros,
     Buscar: () => Actualizar({ q: texto.trim(), pagina: 1 }),
     Limpiar: () =>
@@ -139,7 +135,6 @@ export function useControladorCatalogo()
       Actualizar({ q: '', pagina: 1 });
     },
     ElegirCampo: (valor) => Actualizar({ campo: valor, pagina: 1 }),
-    ElegirOrden: (valor) => Actualizar({ orden: valor, pagina: 1 }),
     IrAPagina: (total_actual) => Actualizar({ pagina: total_actual }),
     AbrirListado: () => Actualizar({ pagina, listado: '1' }),
     CerrarListado: () => Actualizar({ pagina, listado: null }),
@@ -156,7 +151,7 @@ export function useControladorListado(filtros)
 {
   const { datos, error, cargando } = useCarga(
     () => ModeloLibro.Listado(filtros),
-    [filtros.q, filtros.campo, filtros.orden],
+    [filtros.q, filtros.campo],
   );
   const pdf = useAccion(() => ModeloLibro.ListadoPdf(filtros));
 
@@ -206,5 +201,6 @@ export function useControladorFicha()
     no_encontrado: error?.status === 404,
     Editar: () => navegar(`/libros/${id}/editar`),
     Regresar: () => navegar(-1),
+    RegresarCatalogo: () => navegar('/catalogo'),
   };
 }

@@ -87,7 +87,7 @@ export function PaginaBajaLibro()
   const controlador = useControladorBajaLibro();
   const libro = controlador.libro;
   const activo = libro?.Estatus === 'Activo';
-  const copias = libro?.ejemplares?.filter((evento) => evento.Estatus !== 'Baja') ?? [];
+  const copias = libro?.ejemplares?.filter((evento) => evento.Estatus !== 'Inactivo') ?? [];
   const modo_copia = controlador.modo === 'copia';
 
   return (
@@ -144,7 +144,7 @@ export function PaginaBajaLibro()
                 <tbody>
                   {copias.map((copia) =>
                   {
-                    const prestada = ['En prestamo', 'Apartado'].includes(copia.Estatus);
+                    const prestada = copia.Estatus === 'En préstamo';
                     return (
                       <tr
                         key={copia.num_copia}

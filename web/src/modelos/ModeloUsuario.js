@@ -1,8 +1,8 @@
 /*
  * ******************************************************************
  * Nombre del programa: BD-SP01-GU02 · ModeloUsuario.js
- * Función: Usuarios: consulta, cambio, carga y baja por lista, y lectura del archivo de
- *          Servicios Escolares.
+ * Función: Usuarios: consulta, cambio, y alta y baja según la lista que se genera con CIAA y
+ *          Empleados.
  * Autor: Equipo CCJMops
  * Fecha: 26/10/2026
  * Entrada: Datos de las pantallas
@@ -17,8 +17,6 @@
  * ******************************************************************
  * Contenido de listado:
  *     Módulo             Objetivo
- *     COLUMNAS           Encabezados aceptados en la lista de Servicios Escolares…
- *     Normalizar         Quitar acentos, mayúsculas y espacios extra de un encabezado
  *     ModeloUsuario      Acceso a los usuarios
  *     ContrasenaValida   Regla de contraseña del prototipo: 8+ caracteres, una…
  * ******************************************************************
@@ -34,39 +32,7 @@
  * ******************************************************************
  */
 
-import * as XLSX from 'xlsx';
 import { ClienteApi } from './ClienteApi.js';
-
-/*
- * Constante: COLUMNAS
- * Objetivo: Encabezados aceptados en la lista de Servicios Escolares (sin acentos ni
- *           mayúsculas).
- */
-const COLUMNAS = {
-  Nombre_Usuario: ['usuario', 'user', 'nombre de usuario'],
-  Matricula_Nomina: [
-    'matricula',
-    'matricula / no. de nomina',
-    'no. de nomina',
-    'nomina',
-    'matricula/nomina',
-  ],
-  Nombre_Completo: ['nombre', 'nombre completo'],
-  Correo: ['correo', 'correo institucional', 'email'],
-};
-
-/*
- * Función: Normalizar
- * Objetivo: Quitar acentos, mayúsculas y espacios extra de un encabezado.
- * Entrada: texto
- * Salida: Texto normalizado
- */
-const Normalizar = (texto) =>
-  String(texto ?? '')
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .trim()
-    .toLowerCase();
 
 /*
  * Módulo: ModeloUsuario
@@ -118,36 +84,25 @@ export const ModeloUsuario = {
   },
 
   /*
-   * Función: ValidarLista
-   * Objetivo: Enviar las filas de la lista para su revisión.
-   * Entrada: filas
-   * Salida: Promesa con la respuesta de la API
+   * Función: GenerarLista
+   * Objetivo: Pedir la lista de altas y bajas que la API arma con CIAA y Empleados.
+   * Entrada: Ninguna
+   * Salida: Promesa con { generado_el, fuentes, altas: { validos, errores }, bajas }
    */
-  ValidarLista(filas)
+  GenerarLista()
   {
-    return ClienteApi.Enviar('/usuarios/carga/validar', { filas });
+    return ClienteApi.Obtener('/usuarios/lista');
   },
 
   /*
    * Función: CrearDesdeLista
-   * Objetivo: Crear las cuentas de las filas válidas con su perfil.
-   * Entrada: cuentas
+   * Objetivo: Crear las cuentas elegidas con su perfil.
+   * Entrada: cuentas ([{ Matricula_Nomina, id_perfil }])
    * Salida: Promesa con la respuesta de la API
    */
   CrearDesdeLista(cuentas)
   {
     return ClienteApi.Enviar('/usuarios/carga', { cuentas });
-  },
-
-  /*
-   * Función: RevisarBajas
-   * Objetivo: Pedir los usuarios que ya no aparecen en la lista.
-   * Entrada: matriculas
-   * Salida: Promesa con la respuesta de la API
-   */
-  RevisarBajas(matriculas)
-  {
-    return ClienteApi.Enviar('/usuarios/bajas/revisar', { matriculas });
   },
 
   /*
@@ -159,56 +114,6 @@ export const ModeloUsuario = {
   DarDeBaja(ids)
   {
     return ClienteApi.Enviar('/usuarios/bajas', { ids });
-  },
-
-  /*
-   * Función: LeerArchivoLista
-   * Objetivo: Lee la lista (.xlsx, .xls o .csv) en el navegador y devuelve filas con los
-   *           nombres de campo de la API. Fila = número de renglón en Excel.
-   * Entrada: archivo
-   * Salida: Promesa con las filas de la lista
-   */
-  async LeerArchivoLista(archivo)
-  {
-    // Los CSV se leen como texto UTF-8: leídos como binario, SheetJS los
-    // interpreta en Latin-1 y los acentos llegan dañados ("MÃ©ndez").
-    const es_csv = /\.csv$/i.test(archivo.name) || archivo.type === 'text/csv';
-    const libro = es_csv
-      ? XLSX.read((await archivo.text()).replace(/^﻿/, ''), { type: 'string' })
-      : XLSX.read(await archivo.arrayBuffer(), { type: 'array' });
-    const hoja = libro.Sheets[libro.SheetNames[0]];
-    const renglones = XLSX.utils.sheet_to_json(hoja, { header: 1, defval: '', raw: false });
-    if (renglones.length < 2)
-    {
-      throw new Error('La lista no tiene registros.');
-    }
-
-    const encabezados = renglones[0].map(Normalizar);
-    const indice = Object.fromEntries(
-      Object.entries(COLUMNAS).map(([campo, alias]) => [
-        campo,
-        encabezados.findIndex((encabezado) => alias.includes(encabezado)),
-      ]),
-    );
-    if (indice.Matricula_Nomina < 0)
-    {
-      throw new Error('No se encontró la columna «Matrícula / No. de nómina» en la lista.');
-    }
-
-    return renglones
-      .slice(1)
-      .map((renglon, posicion) => ({
-        Fila: posicion + 2,
-        Nombre_Usuario:
-          indice.Nombre_Usuario >= 0 ? String(renglon[indice.Nombre_Usuario]).trim() : '',
-        Matricula_Nomina: String(renglon[indice.Matricula_Nomina]).trim(),
-        Nombre_Completo:
-          indice.Nombre_Completo >= 0 ? String(renglon[indice.Nombre_Completo]).trim() : '',
-        Correo: indice.Correo >= 0 ? String(renglon[indice.Correo]).trim() : '',
-      }))
-      .filter(
-        (renglon) => renglon.Matricula_Nomina || renglon.Nombre_Completo || renglon.Nombre_Usuario,
-      );
   },
 };
 

@@ -16,7 +16,8 @@
  * ******************************************************************
  * Contenido de listado:
  *     Módulo                 Objetivo
- *     ORDENES                Cláusula ORDER BY de cada opción de orden del catálogo
+ *     ORDENES                Cláusula ORDER BY de cada filtro del catálogo
+ *     LibroVisible           Agregar a una fila del catálogo los componentes de su ubicación
  *     ParsearAutores         Convierte el texto de autores del formulario en…
  *     ObtenerIdsAutores      Obtener los ids de los autores del texto, dándolos de…
  *     ObtenerIdsTemas        Obtener los ids de los temas del texto, dándolos de alta…
@@ -37,9 +38,10 @@
  * ******************************************************************
  */
 
-import { Consultar, EjecutarEnTransaccion } from '../configuracion/conexion.js';
+import { Consultar, EjecutarEnTransaccion, SiguienteId } from '../configuracion/conexion.js';
 import { ErrorHttp } from '../utilidades/ErrorHttp.js';
 import { ModeloEjemplar } from './ModeloEjemplar.js';
+import { CodigoEjemplar, InterpretarCodigoUbicacion } from '../utilidades/CodigoUbicacion.js';
 
 /*
  * Constante: CAMPOS_BUSQUEDA
@@ -57,15 +59,31 @@ CAMPOS_BUSQUEDA.todos = Object.values(CAMPOS_BUSQUEDA).flat();
 
 /*
  * Constante: ORDENES
- * Objetivo: Cláusula ORDER BY de cada opción de orden del catálogo.
+ * Objetivo: Cláusula ORDER BY de cada filtro del catálogo: al buscar por un campo, los
+ *           resultados se ordenan por ese campo. «disponibles» solo lo usan los recomendados.
  */
 const ORDENES = {
+  todos: 'c.Titulo ASC',
   titulo: 'c.Titulo ASC',
   autor: 'c.Autores_Apellidos ASC, c.Titulo ASC',
-  anio_desc: 'c.Anio DESC, c.Titulo ASC',
-  anio_asc: 'c.Anio ASC, c.Titulo ASC',
+  editorial: 'c.Nombre_Editorial ASC, c.Titulo ASC',
+  isbn: 'c.ISBN ASC',
+  anio: 'c.Anio ASC, c.Titulo ASC',
+  tema: 'c.Temas ASC, c.Titulo ASC',
   disponibles: 'c.Ejemplares_Disponibles DESC, c.Titulo ASC',
 };
+
+/*
+ * Función: LibroVisible
+ * Objetivo: Agregar a una fila del catálogo los componentes de su ubicación, interpretados del
+ *           código de su primera copia (vw_catalogo.Ubicacion).
+ * Entrada: fila
+ * Salida: Fila con Pasillo, Estante, Nivel y Seccion
+ */
+function LibroVisible(fila)
+{
+  return { ...fila, ...InterpretarCodigoUbicacion(fila.Ubicacion) };
+}
 
 /*
  * Función: ParsearAutores
@@ -116,12 +134,13 @@ async function ObtenerIdsAutores(conexion, texto)
     }
     else
     {
-      const resultado = await Consultar(
-        'INSERT INTO Autores (Nombre, Apellido_Paterno) VALUES (?, ?)',
-        [elemento.Nombre, elemento.Apellido_Paterno],
+      const id_autor = await SiguienteId('Autores', 'id_autor', conexion);
+      await Consultar(
+        'INSERT INTO Autores (id_autor, Nombre, Apellido_Paterno) VALUES (?, ?, ?)',
+        [id_autor, elemento.Nombre, elemento.Apellido_Paterno],
         conexion,
       );
-      ids.push(resultado.insertId);
+      ids.push(id_autor);
     }
   }
   return [...new Set(ids)];
@@ -153,8 +172,13 @@ async function ObtenerIdsTemas(conexion, texto)
     }
     else
     {
-      const resultado = await Consultar('INSERT INTO Temas (Nombre_Tema) VALUES (?)', [nombre], conexion);
-      ids.push(resultado.insertId);
+      const id_tema = await SiguienteId('Temas', 'id_tema', conexion);
+      await Consultar(
+        'INSERT INTO Temas (id_tema, Nombre_Tema) VALUES (?, ?)',
+        [id_tema, nombre],
+        conexion,
+      );
+      ids.push(id_tema);
     }
   }
   return ids;
@@ -268,11 +292,12 @@ const ModeloLibro = {
 
   /*
    * Función: Buscar
-   * Objetivo: Búsqueda del catálogo con filtro por campo, rango de años, orden y paginación.
+   * Objetivo: Búsqueda del catálogo con filtro por campo, rango de años y paginación. Se
+   *           ordena por el campo del filtro, salvo que se pida orden «disponibles».
    * Entrada: { orden?, limit?, offset?, ...filtros } (opcional)
    * Salida: Promesa con { total, datos }
    */
-  async Buscar({ orden = 'titulo', limit = 6, offset = 0, ...filtros } = {})
+  async Buscar({ orden, limit = 6, offset = 0, ...filtros } = {})
   {
     const { where_sql, params: parametros } = ConstruirFiltro(filtros);
     const [{ total }] = await Consultar(
@@ -281,26 +306,29 @@ const ModeloLibro = {
     );
     const datos = await Consultar(
       `SELECT c.* FROM vw_catalogo c ${where_sql}
-        ORDER BY ${ORDENES[orden] || ORDENES.titulo}
+        ORDER BY ${ORDENES[orden || filtros.campo] || ORDENES.todos}
         LIMIT ? OFFSET ?`,
       [...parametros, Number(limit), Number(offset)],
     );
-    return { total, datos };
+    return { total, datos: datos.map(LibroVisible) };
   },
 
   /*
    * Función: Listado
-   * Objetivo: Todas las coincidencias, sin paginar (listado imprimible).
-   * Entrada: { orden?, ...filtros } (opcional)
+   * Objetivo: Todas las coincidencias, sin paginar (listado imprimible), ordenadas por el campo
+   *           del filtro.
+   * Entrada: filtros (opcional)
    * Salida: Promesa con todas las filas que coinciden
    */
-  Listado({ orden = 'titulo', ...filtros } = {})
+  async Listado(filtros = {})
   {
     const { where_sql, params: parametros } = ConstruirFiltro(filtros);
-    return Consultar(
-      `SELECT c.* FROM vw_catalogo c ${where_sql} ORDER BY ${ORDENES[orden] || ORDENES.titulo}`,
+    const orden = ORDENES[filtros.campo] || ORDENES.todos;
+    const filas = await Consultar(
+      `SELECT c.* FROM vw_catalogo c ${where_sql} ORDER BY ${orden}`,
       parametros,
     );
+    return filas.map(LibroVisible);
   },
 
   /*
@@ -335,7 +363,7 @@ const ModeloLibro = {
     const [autores, temas, ejemplares] = await Promise.all([
       Consultar(
         `SELECT a.* FROM AutoresLibros al JOIN Autores a ON a.id_autor = al.id_autor
-          WHERE al.id_libro = ? ORDER BY a.id_autor`,
+          WHERE al.id_libro = ? ORDER BY CAST(a.id_autor AS UNSIGNED)`,
         [id],
         conexion,
       ),
@@ -348,19 +376,20 @@ const ModeloLibro = {
       ModeloEjemplar.BuscarPorLibro(id, conexion),
     ]);
 
-    const activos = ejemplares.filter((ejemplar) => ejemplar.Estatus !== 'Baja');
+    const activos = ejemplares.filter((ejemplar) => ejemplar.Estatus !== 'Inactivo');
     const Conteo = (estatus) => activos.filter((activo) => activo.Estatus === estatus).length;
     const resumen_copias = {
       Disponible: Conteo('Disponible'),
-      'Consulta externa': Conteo('Consulta externa'),
-      'En prestamo': Conteo('En prestamo') + Conteo('Apartado'),
+      'Consulta Externa': Conteo('Consulta Externa'),
+      'En préstamo': Conteo('En préstamo'),
     };
+    const visible = LibroVisible(libro);
 
     return {
-      ...libro,
+      ...visible,
       Autor: autores.map((autor) => `${autor.Apellido_Paterno}, ${autor.Nombre}`).join('; '),
       Tema: temas.map((tema) => tema.Nombre_Tema).join(', '),
-      Seccion: temas[0]?.Nombre_Tema ?? null,
+      Seccion: visible.Seccion ?? temas[0]?.Nombre_Tema ?? null,
       autores,
       temas,
       resumen_copias,
@@ -390,10 +419,13 @@ const ModeloLibro = {
           id_libro: duplicado.id_libro,
         });
       }
-      const resultado = await Consultar(
-        `INSERT INTO Libros (ISBN, Titulo, Anio, Sinopsis, id_editorial, id_usuario, Precio, Estatus)
-         VALUES (?, ?, ?, ?, ?, ?, ?, 'Activo')`,
+      const id_libro = await SiguienteId('Libros', 'id_libro', conexion);
+      await Consultar(
+        `INSERT INTO Libros
+           (id_libro, ISBN, Titulo, Anio, Sinopsis, id_editorial, id_usuario, Precio, Estatus)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Activo')`,
         [
+          id_libro,
           datos.ISBN,
           datos.Titulo,
           datos.Anio,
@@ -404,8 +436,8 @@ const ModeloLibro = {
         ],
         conexion,
       );
-      await ReemplazarRelaciones(conexion, resultado.insertId, datos);
-      return ModeloLibro.BuscarPorId(resultado.insertId, {}, conexion);
+      await ReemplazarRelaciones(conexion, id_libro, datos);
+      return ModeloLibro.BuscarPorId(id_libro, {}, conexion);
     });
   },
 
@@ -470,7 +502,7 @@ const ModeloLibro = {
       if (Numero_Copias !== undefined)
       {
         const [{ actuales }] = await Consultar(
-          'SELECT COUNT(*) AS actuales FROM Ejemplares WHERE id_libro = ? AND Estatus <> \'Baja\'',
+          'SELECT COUNT(*) AS actuales FROM Ejemplares WHERE id_libro = ? AND Estatus <> \'Inactivo\'',
           [id],
           conexion,
         );
@@ -483,13 +515,8 @@ const ModeloLibro = {
         }
         if (Numero_Copias > actuales)
         {
-          const [referencia] = await Consultar(
-            `SELECT Pasillo, Estante, Nivel FROM Ejemplares WHERE id_libro = ? AND Estatus <> 'Baja'
-              ORDER BY num_copia LIMIT 1`,
-            [id],
-            conexion,
-          );
-          await ModeloEjemplar.Agregar(id, Numero_Copias - actuales, referencia || {}, conexion);
+          // Las copias nuevas toman la ubicación de las demás (ModeloEjemplar.Agregar).
+          await ModeloEjemplar.Agregar(id, Numero_Copias - actuales, {}, conexion);
         }
       }
       return ModeloLibro.BuscarPorId(id, {}, conexion);
@@ -524,16 +551,16 @@ const ModeloLibro = {
       if (estatus === 'Inactivo')
       {
         const prestadas = await Consultar(
-          'SELECT Codigo FROM Ejemplares WHERE id_libro = ? AND Estatus IN (\'En prestamo\',\'Apartado\')',
+          'SELECT num_copia FROM Ejemplares WHERE id_libro = ? AND Estatus = \'En préstamo\'',
           [id],
           conexion,
         );
         if (prestadas.length)
         {
-          const codigos = prestadas.map((prestada) => prestada.Codigo).join(', ');
+          const codigos = prestadas.map((prestada) => CodigoEjemplar(id, prestada.num_copia));
           throw ErrorHttp.Conflicto(
-            `No se puede inactivar el libro: tiene copias en préstamo (${codigos}).`,
-            { codigo: 'COPIAS_EN_PRESTAMO', copias: prestadas.map((prestada) => prestada.Codigo) },
+            `No se puede inactivar el libro: tiene copias en préstamo (${codigos.join(', ')}).`,
+            { codigo: 'COPIAS_EN_PRESTAMO', copias: codigos },
           );
         }
       }

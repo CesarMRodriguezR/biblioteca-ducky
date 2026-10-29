@@ -111,10 +111,9 @@ export function PaginaCambioUsuario()
                 onChange={controlador.Cambiar('Estatus')}
                 opciones={[
                   { valor: 'Activo', etiqueta: 'Activo' },
-                  { valor: 'Bloqueado', etiqueta: 'Bloqueado' },
                   { valor: 'Inactivo', etiqueta: 'Inactivo' },
                 ]}
-                ayuda="Elige «Activo» para desbloquear una cuenta tras intentos fallidos."
+                ayuda="Una cuenta inactiva no puede iniciar sesión; elige «Activo» para reactivarla."
               />
             </div>
             <hr

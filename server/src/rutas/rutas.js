@@ -35,19 +35,17 @@ import expressPaquete from 'express';
 const { Router } = expressPaquete;
 import { ManejarAsincrono } from '../utilidades/ManejarAsincrono.js';
 import { Validar } from '../intermediarios/Validar.js';
-import { Autenticar, RequiereFuncion as Puede } from '../intermediarios/autenticacion.js';
+import {
+  Autenticar,
+  AutenticarTesoreria,
+  RequiereFuncion as Puede,
+} from '../intermediarios/autenticacion.js';
 import { esquemas } from '../validaciones/esquemas.js';
 
 import { ControladorAutenticacion } from '../controladores/ControladorAutenticacion.js';
 import { ControladorUsuarios, ControladorPerfiles } from '../controladores/ControladorUsuarios.js';
 import { ControladorLibros } from '../controladores/ControladorLibros.js';
-import {
-  ControladorPrestamos,
-  ControladorMultas,
-  ControladorListaEspera,
-} from '../controladores/ControladorCirculacion.js';
 import { ControladorOrdenesCompra } from '../controladores/ControladorOrdenesCompra.js';
-import { ControladorChatbot } from '../controladores/ControladorChatbot.js';
 import { ControladorPanel } from '../controladores/ControladorPanel.js';
 import { CrearControladorCrud } from '../controladores/CrearControladorCrud.js';
 import {
@@ -55,9 +53,7 @@ import {
   ModeloAutor,
   ModeloTema,
   ModeloFuncion,
-  ModeloPolitica,
   ModeloNuevoLibro,
-  ModeloFuenteChatbot,
 } from '../modelos/ModelosCatalogo.js';
 
 const rutas = Router();
@@ -141,10 +137,11 @@ rutas.put(
 
 /*------------------------------------------------------------------
  * Sección: Gestión de usuarios
- * Objetivo: Consulta, cambio, alta y baja por lista de usuarios, perfiles y funciones.
+ * Objetivo: Consulta y cambio de usuarios, alta y baja según CIAA y Empleados, perfiles y
+ *           funciones.
  *------------------------------------------------------------------*/
 const adm_usuarios = Puede('gestionar_usuarios');
-const consulta_usuarios = Puede('gestionar_usuarios', 'gestionar_prestamos', 'gestionar_multas');
+const consulta_usuarios = Puede('gestionar_usuarios', 'gestionar_libros');
 rutas.get(
   '/usuarios',
   Autenticar,
@@ -158,12 +155,11 @@ rutas.get(
   consulta_usuarios,
   ManejarAsincrono(ControladorUsuarios.PorMatricula),
 );
-rutas.post(
-  '/usuarios/carga/validar',
+rutas.get(
+  '/usuarios/lista',
   Autenticar,
   adm_usuarios,
-  Validar(esquemas.carga_validar),
-  ManejarAsincrono(ControladorUsuarios.ValidarLista),
+  ManejarAsincrono(ControladorUsuarios.GenerarLista),
 );
 rutas.post(
   '/usuarios/carga',
@@ -171,13 +167,6 @@ rutas.post(
   adm_usuarios,
   Validar(esquemas.carga_confirmar),
   ManejarAsincrono(ControladorUsuarios.CrearDesdeLista),
-);
-rutas.post(
-  '/usuarios/bajas/revisar',
-  Autenticar,
-  adm_usuarios,
-  Validar(esquemas.bajas_revisar),
-  ManejarAsincrono(ControladorUsuarios.RevisarBajas),
 );
 rutas.post(
   '/usuarios/bajas',
@@ -272,14 +261,14 @@ rutas.get(
 rutas.get(
   '/libros/listado',
   Autenticar,
-  Puede('generar_listado'),
+  Puede('gestionar_libros'),
   busqueda_libros,
   ManejarAsincrono(ControladorLibros.Listado),
 );
 rutas.get(
   '/libros/listado.pdf',
   Autenticar,
-  Puede('generar_listado'),
+  Puede('gestionar_libros'),
   busqueda_libros,
   ManejarAsincrono(ControladorLibros.ListadoPdf),
 );
@@ -355,8 +344,8 @@ rutas.post(
 );
 
 RutasCatalogo('/editoriales', ModeloEditorial, 'Editorial', esquemas.editorial, {
-  lectura: [...consulta_catalogo, 'solicitar_compra'],
-  escritura: ['gestionar_libros', 'solicitar_compra'],
+  lectura: consulta_catalogo,
+  escritura: ['gestionar_libros'],
 });
 RutasCatalogo('/autores', ModeloAutor, 'Autor', esquemas.autor, {
   lectura: consulta_catalogo,
@@ -368,226 +357,55 @@ RutasCatalogo('/temas', ModeloTema, 'Tema', esquemas.tema, {
 });
 
 /*------------------------------------------------------------------
- * Sección: Circulación
- * Objetivo: Préstamos, devoluciones, renovaciones, multas y lista de espera.
- *------------------------------------------------------------------*/
-rutas.get(
-  '/prestamos',
-  Autenticar,
-  Puede('solicitar_prestamo', 'gestionar_prestamos'),
-  Validar(esquemas.prestamo_filtros, 'query'),
-  ManejarAsincrono(ControladorPrestamos.Listar),
-);
-rutas.get(
-  '/prestamos/:id',
-  Autenticar,
-  Puede('solicitar_prestamo', 'gestionar_prestamos'),
-  con_id,
-  ManejarAsincrono(ControladorPrestamos.Obtener),
-);
-rutas.post(
-  '/prestamos',
-  Autenticar,
-  Puede('solicitar_prestamo', 'gestionar_prestamos'),
-  Validar(esquemas.prestamo_crear),
-  ManejarAsincrono(ControladorPrestamos.Crear),
-);
-rutas.post(
-  '/prestamos/:id/devolucion',
-  Autenticar,
-  Puede('registrar_devolucion'),
-  con_id,
-  Validar(esquemas.devolucion),
-  ManejarAsincrono(ControladorPrestamos.Devolver),
-);
-rutas.post(
-  '/prestamos/:id/renovacion',
-  Autenticar,
-  Puede('renovar_prestamo', 'gestionar_prestamos'),
-  con_id,
-  ManejarAsincrono(ControladorPrestamos.Renovar),
-);
-
-rutas.get(
-  '/multas',
-  Autenticar,
-  Validar(esquemas.multa_filtros, 'query'),
-  ManejarAsincrono(ControladorMultas.Listar),
-);
-rutas.get('/multas/:id', Autenticar, con_id, ManejarAsincrono(ControladorMultas.Obtener));
-rutas.post(
-  '/multas',
-  Autenticar,
-  Puede('gestionar_multas'),
-  Validar(esquemas.multa_crear),
-  ManejarAsincrono(ControladorMultas.Crear),
-);
-rutas.post(
-  '/multas/:id/pago',
-  Autenticar,
-  Puede('gestionar_multas'),
-  con_id,
-  Validar(esquemas.multa_pago),
-  ManejarAsincrono(ControladorMultas.Pagar),
-);
-
-rutas.get(
-  '/lista-espera',
-  Autenticar,
-  Puede('lista_espera', 'gestionar_prestamos'),
-  Validar(esquemas.lista_espera_filtros, 'query'),
-  ManejarAsincrono(ControladorListaEspera.Listar),
-);
-rutas.post(
-  '/lista-espera',
-  Autenticar,
-  Puede('lista_espera'),
-  Validar(esquemas.lista_espera_crear),
-  ManejarAsincrono(ControladorListaEspera.Inscribir),
-);
-rutas.delete(
-  '/lista-espera/:id',
-  Autenticar,
-  Puede('lista_espera', 'gestionar_prestamos'),
-  con_id,
-  ManejarAsincrono(ControladorListaEspera.Cancelar),
-);
-
-/*------------------------------------------------------------------
  * Sección: Adquisiciones
  * Objetivo: Libros nuevos y órdenes de compra.
  *------------------------------------------------------------------*/
 RutasCatalogo('/nuevos-libros', ModeloNuevoLibro, 'Libro nuevo', esquemas.nuevo_libro, {
-  lectura: ['solicitar_compra', 'gestionar_compras'],
-  escritura: ['solicitar_compra', 'gestionar_compras'],
+  lectura: ['gestionar_libros'],
+  escritura: ['gestionar_libros'],
 });
 
 rutas.get(
   '/ordenes-compra',
   Autenticar,
-  Puede('solicitar_compra', 'gestionar_compras'),
+  Puede('gestionar_libros'),
   Validar(esquemas.orden_filtros, 'query'),
   ManejarAsincrono(ControladorOrdenesCompra.Listar),
 );
 rutas.get(
   '/ordenes-compra/solicitudes',
   Autenticar,
-  Puede('solicitar_compra', 'gestionar_compras'),
+  Puede('gestionar_libros'),
   ManejarAsincrono(ControladorOrdenesCompra.Solicitudes),
 );
 rutas.get(
   '/ordenes-compra/:id',
   Autenticar,
-  Puede('solicitar_compra', 'gestionar_compras'),
+  Puede('gestionar_libros'),
   con_id,
   ManejarAsincrono(ControladorOrdenesCompra.Obtener),
 );
 rutas.post(
   '/ordenes-compra',
   Autenticar,
-  Puede('solicitar_compra'),
+  Puede('gestionar_libros'),
   Validar(esquemas.orden_crear),
   ManejarAsincrono(ControladorOrdenesCompra.Crear),
 );
 rutas.patch(
   '/ordenes-compra/:id/estatus',
   Autenticar,
-  Puede('gestionar_compras'),
+  Puede('gestionar_libros'),
   con_id,
   Validar(esquemas.orden_estatus),
   ManejarAsincrono(ControladorOrdenesCompra.CambiarEstatus),
 );
-
-/*------------------------------------------------------------------
- * Sección: Políticas
- * Objetivo: Políticas de la biblioteca (lectura pública).
- *------------------------------------------------------------------*/
-{
-  const controlador = CrearControladorCrud(ModeloPolitica, 'Política');
-  rutas.get('/politicas', Validar(esquemas.paginacion, 'query'), ManejarAsincrono(controlador.Listar)); // pública
-  rutas.get('/politicas/:id', con_id, ManejarAsincrono(controlador.Obtener));
-  rutas.post(
-    '/politicas',
-    Autenticar,
-    Puede('gestionar_politicas'),
-    Validar(esquemas.politica),
-    ManejarAsincrono(controlador.Crear),
-  );
-  rutas.put(
-    '/politicas/:id',
-    Autenticar,
-    Puede('gestionar_politicas'),
-    con_id,
-    Validar(esquemas.politica),
-    ManejarAsincrono(controlador.Actualizar),
-  );
-  rutas.delete(
-    '/politicas/:id',
-    Autenticar,
-    Puede('gestionar_politicas'),
-    con_id,
-    ManejarAsincrono(controlador.Eliminar),
-  );
-}
-
-/*------------------------------------------------------------------
- * Sección: Chatbot
- * Objetivo: Preguntas al chatbot y administración de sus respuestas.
- *------------------------------------------------------------------*/
+// Aviso de Tesorería (sistema externo): aceptó o rechazó una solicitud.
 rutas.post(
-  '/chatbot/preguntar',
-  Autenticar,
-  Puede('usar_chatbot'),
-  Validar(esquemas.chatbot_preguntar),
-  ManejarAsincrono(ControladorChatbot.Preguntar),
+  '/tesoreria/notificaciones',
+  AutenticarTesoreria,
+  Validar(esquemas.respuesta_tesoreria),
+  ManejarAsincrono(ControladorOrdenesCompra.RecibirRespuestaTesoreria),
 );
-rutas.get(
-  '/chatbot/frecuentes',
-  Autenticar,
-  Puede('usar_chatbot'),
-  ManejarAsincrono(ControladorChatbot.Frecuentes),
-);
-
-const adm_chatbot = Puede('gestionar_chatbot');
-rutas.get(
-  '/chatbot/preguntas',
-  Autenticar,
-  adm_chatbot,
-  ManejarAsincrono(ControladorChatbot.Listar),
-);
-rutas.get(
-  '/chatbot/preguntas/:id',
-  Autenticar,
-  adm_chatbot,
-  con_id,
-  ManejarAsincrono(ControladorChatbot.Obtener),
-);
-rutas.post(
-  '/chatbot/preguntas',
-  Autenticar,
-  adm_chatbot,
-  Validar(esquemas.chatbot_pregunta_crear),
-  ManejarAsincrono(ControladorChatbot.Crear),
-);
-rutas.put(
-  '/chatbot/preguntas/:id',
-  Autenticar,
-  adm_chatbot,
-  con_id,
-  Validar(esquemas.chatbot_pregunta_actualizar),
-  ManejarAsincrono(ControladorChatbot.Actualizar),
-);
-rutas.delete(
-  '/chatbot/preguntas/:id',
-  Autenticar,
-  adm_chatbot,
-  con_id,
-  ManejarAsincrono(ControladorChatbot.Eliminar),
-);
-
-RutasCatalogo('/chatbot/fuentes', ModeloFuenteChatbot, 'Fuente', esquemas.fuente, {
-  lectura: ['gestionar_chatbot'],
-  escritura: ['gestionar_chatbot'],
-});
 
 export { rutas };

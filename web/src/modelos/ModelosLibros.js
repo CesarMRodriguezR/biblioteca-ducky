@@ -43,14 +43,13 @@ import { ClienteApi } from './ClienteApi.js';
 export const ModeloLibro = {
   /*
    * Función: Buscar
-   * Objetivo: Buscar libros por campo, orden y página.
-   * Entrada: { q, campo?, orden?, desde, hasta, pagina?, por_pagina?, inactivos } (opcional)
+   * Objetivo: Buscar libros por campo (que también da el orden) y página.
+   * Entrada: { q, campo?, desde, hasta, pagina?, por_pagina?, inactivos } (opcional)
    * Salida: Promesa con { total, datos }
    */
   Buscar({
     q: texto_busqueda,
     campo = 'todos',
-    orden = 'titulo',
     desde,
     hasta,
     pagina = 1,
@@ -61,7 +60,6 @@ export const ModeloLibro = {
     return ClienteApi.Obtener('/libros', {
       q: texto_busqueda,
       campo,
-      orden,
       desde,
       hasta,
       inactivos,
@@ -156,16 +154,17 @@ export const ModeloEjemplar = {
   /*
    * Función: Agregar
    * Objetivo: Agregar copias con su ubicación.
-   * Entrada: id_libro, { cantidad, Pasillo, Estante, Nivel }
+   * Entrada: id_libro, { cantidad, Pasillo, Estante, Nivel, Seccion }
    * Salida: Promesa con la respuesta de la API
    */
-  Agregar(id_libro, { cantidad, Pasillo, Estante, Nivel })
+  Agregar(id_libro, { cantidad, Pasillo, Estante, Nivel, Seccion })
   {
     return ClienteApi.Enviar(`/libros/${id_libro}/ejemplares`, {
       cantidad,
       Pasillo,
       Estante,
       Nivel,
+      Seccion,
     });
   },
 
@@ -289,7 +288,7 @@ export const ModeloCompra = {
 export const ModeloPanel = {
   /*
    * Función: Resumen
-   * Objetivo: Pedir los indicadores y la actividad reciente.
+   * Objetivo: Pedir los indicadores del panel.
    * Entrada: Ninguna
    * Salida: Promesa con la respuesta de la API
    */

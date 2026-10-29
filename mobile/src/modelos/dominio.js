@@ -50,25 +50,21 @@ export const ESTADOS_COPIA = {
     tono: 'exito',
     descripcion: 'Se consulta dentro de la biblioteca',
   },
-  'Consulta externa': {
+  'Consulta Externa': {
     etiqueta: 'Consulta externa',
     tono: 'informacion',
     descripcion: 'Se puede llevar a casa',
   },
-  'En prestamo': {
+  'En préstamo': {
     etiqueta: 'En préstamo',
     tono: 'advertencia',
     descripcion: 'Regresa a la biblioteca al devolverse',
   },
-  Apartado: {
-    etiqueta: 'Apartado',
-    tono: 'morado',
-    descripcion: 'Reservado para la lista de espera',
-  },
-  Baja: { etiqueta: 'Baja', tono: 'error', descripcion: 'Retirado del acervo' },
+  Inactivo: { etiqueta: 'Baja', tono: 'error', descripcion: 'Retirado del acervo' },
 };
 
-/** Filtros de búsqueda del prototipo móvil (los mismos campos que la API). */
+/** Filtros de búsqueda del prototipo móvil (los mismos campos que la API); el filtro también
+ *  ordena los resultados. */
 export const CAMPOS_BUSQUEDA = [
   { valor: 'todos', etiqueta: 'Todos' },
   { valor: 'titulo', etiqueta: 'Título' },
@@ -120,10 +116,11 @@ export function EtiquetaIdentificador(usuario)
 /*
  * Función: UbicacionTexto
  * Objetivo: Describir la ubicación de una copia (pasillo, estante, nivel y sección).
- * Entrada: { Pasillo, Estante, Nivel }, seccion
+ *           La API entrega los componentes ya interpretados del código de ubicación.
+ * Entrada: { Pasillo, Estante, Nivel, Seccion }, seccion (opcional, si no viene en el objeto)
  * Salida: Texto de la ubicación
  */
-export function UbicacionTexto({ Pasillo, Estante, Nivel }, seccion)
+export function UbicacionTexto({ Pasillo, Estante, Nivel, Seccion }, seccion = Seccion)
 {
   return [
     Pasillo && `Pasillo ${Pasillo}`,

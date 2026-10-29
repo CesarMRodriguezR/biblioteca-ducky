@@ -47,8 +47,8 @@ const MENSAJE_CREDENCIALES = 'Usuario o contraseña incorrectos.';
 const ControladorAutenticacion = {
   /*
    * Función: IniciarSesion
-   * Objetivo: POST /auth/login — inicia sesión con usuario y contraseña. Tras 5 intentos
-   *           fallidos la cuenta queda Bloqueada.
+   * Objetivo: POST /auth/login — inicia sesión con usuario y contraseña. Las cuentas
+   *           Inactivas (las marca el administrador) no pueden entrar.
    * Entrada: req: petición HTTP (ya autenticada y validada); res: respuesta HTTP
    * Salida: Respuesta HTTP en formato JSON
    */
@@ -60,16 +60,6 @@ const ControladorAutenticacion = {
     if (!usuario)
     {
       throw new ErrorHttp(401, MENSAJE_CREDENCIALES, { codigo: 'CREDENCIALES' });
-    }
-    if (usuario.Estatus === 'Bloqueado')
-    {
-      throw new ErrorHttp(
-        403,
-        'Tu cuenta está bloqueada por intentos fallidos. Acude al mostrador de la biblioteca.',
-        {
-          codigo: 'CUENTA_BLOQUEADA',
-        },
-      );
     }
     if (usuario.Estatus === 'Inactivo')
     {
@@ -84,25 +74,9 @@ const ControladorAutenticacion = {
     );
     if (!valido)
     {
-      const { intentos_restantes, estatus } =
-        await ModeloUsuario.RegistrarIntentoFallido(usuario.id_usuario);
-      if (estatus === 'Bloqueado')
-      {
-        throw new ErrorHttp(
-          403,
-          'Tu cuenta se bloqueó por demasiados intentos fallidos. Acude al mostrador de la biblioteca.',
-          {
-            codigo: 'CUENTA_BLOQUEADA',
-          },
-        );
-      }
-      throw new ErrorHttp(401, MENSAJE_CREDENCIALES, {
-        codigo: 'CREDENCIALES',
-        intentos_restantes,
-      });
+      throw new ErrorHttp(401, MENSAJE_CREDENCIALES, { codigo: 'CREDENCIALES' });
     }
 
-    await ModeloUsuario.ReiniciarIntentos(usuario.id_usuario);
     const token = jwt.sign(
       { sub: usuario.id_usuario, perfil: usuario.id_perfil },
       ENTORNO.JWT.SECRETO,

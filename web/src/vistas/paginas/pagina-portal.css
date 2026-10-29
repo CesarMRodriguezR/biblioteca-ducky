@@ -1,0 +1,355 @@
+/*
+ * ******************************************************************
+ * Nombre del programa: WEB-PORTAL · pagina-portal.css
+ * Función: Estilos del Inicio-Portal de biblioteca (página pública).
+ * Autor: Equipo CCJMops
+ * Fecha: 27/10/2026
+ * Entrada: Ninguna
+ * Salida: Ninguna
+ * Nomenclatura: Clases y propiedades personalizadas (variables CSS) en kebab-case.
+ * ******************************************************************
+ */
+
+/******************************************************************/
+/* Contenido de listado:
+/*     Sección              Objetivo
+/*     Estructura           Fondo, contenedor centrado y pie
+/*     Encabezado           Escudo, Desarrollado por CCJMops e Iniciar sesión
+/*     Héroe                Título y búsqueda
+/*     Servicios            Tarjetas de accesos rápidos
+/*     Pantallas pequeñas   Una columna en pantallas angostas
+/******************************************************************/
+
+/*----
+(1) Se importa solo en PaginaPortal.jsx.
+(2) Usa las propiedades personalizadas de estilos-globales.css (--azul-marino, --crema…).
+----*/
+
+/*------------------------------------------------------------------
+ * Sección: Estructura
+ * Objetivo: Fondo crema, contenedor de 1280 px y pie oscuro.
+ ------------------------------------------------------------------*/
+.portal
+{
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: var(--crema);
+}
+
+.portal-contenedor
+{
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 32px;
+}
+
+.portal-principal
+{
+  flex: 1;
+}
+
+.portal-pie
+{
+  padding: 24px 0;
+  background: var(--azul-marino-oscuro);
+  color: var(--blanco);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+/*------------------------------------------------------------------
+ * Sección: Encabezado
+ * Objetivo: Escudo con el nombre, Desarrollado por CCJMops y botón de inicio de sesión.
+ ------------------------------------------------------------------*/
+.portal-encabezado
+{
+  background: var(--azul-marino);
+}
+
+.portal-encabezado-contenido
+{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 20px;
+  padding-bottom: 20px;
+}
+
+.portal-escudo,
+.portal-acciones,
+.portal-desarrollado
+{
+  display: flex;
+  align-items: center;
+}
+
+.portal-escudo
+{
+  gap: 16px;
+}
+
+.portal-acciones
+{
+  gap: 24px;
+}
+
+.portal-desarrollado
+{
+  gap: 12px;
+}
+
+.portal-separador
+{
+  width: 1px;
+  height: 40px;
+  background: var(--blanco);
+}
+
+.portal-separador-chico
+{
+  height: 32px;
+}
+
+.portal-nombre
+{
+  font-family: var(--fuente-titulos);
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 32px;
+  color: var(--blanco);
+}
+
+.portal-universidad,
+.portal-desarrollado span
+{
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 16px;
+  letter-spacing: 1.44px;
+  text-transform: uppercase;
+}
+
+.portal-universidad
+{
+  padding-top: 6px;
+  color: var(--dorado-claro);
+}
+
+.portal-desarrollado span
+{
+  color: var(--blanco);
+}
+
+.portal-boton-sesion
+{
+  height: 44px;
+  padding: 0 20px;
+  border: 1.5px solid var(--azul-principal);
+  border-radius: var(--radio-control);
+  background: var(--blanco);
+  color: var(--azul-principal);
+  font: 700 15px/20px var(--fuente-texto);
+  cursor: pointer;
+}
+
+.portal-boton-sesion:hover
+{
+  background: var(--crema);
+}
+
+/*------------------------------------------------------------------
+ * Sección: Héroe
+ * Objetivo: Título grande y búsqueda sobre fondo azul marino.
+ ------------------------------------------------------------------*/
+.portal-heroe
+{
+  min-height: 496px;
+  padding: 128px 0;
+  background: var(--azul-marino);
+}
+
+.portal-titulo
+{
+  max-width: 820px;
+  font-family: var(--fuente-titulos);
+  font-size: 52px;
+  font-weight: 700;
+  line-height: 56px;
+  color: var(--blanco);
+}
+
+.portal-busqueda
+{
+  display: flex;
+  max-width: 880px;
+  height: 64px;
+  margin-top: 40px;
+}
+
+.portal-campo
+{
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+  border: 1px solid var(--borde-campos);
+  border-radius: var(--radio-control);
+  background: var(--blanco);
+}
+
+.portal-campo input
+{
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--texto-principal);
+  font: 400 15px/22px var(--fuente-texto);
+}
+
+.portal-campo input::placeholder
+{
+  color: var(--texto-suave);
+}
+
+.portal-campo:focus-within
+{
+  outline: 2px solid var(--azul-brillante);
+  outline-offset: 1px;
+}
+
+.portal-boton-buscar
+{
+  padding: 0 20px;
+  border: 0;
+  border-radius: var(--radio-control);
+  background: var(--azul-principal);
+  color: var(--blanco);
+  font: 700 15px/20px var(--fuente-texto);
+  cursor: pointer;
+}
+
+/*------------------------------------------------------------------
+ * Sección: Servicios
+ * Objetivo: Cuatro tarjetas de accesos rápidos.
+ ------------------------------------------------------------------*/
+.portal-servicios
+{
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 24px;
+  padding-top: 64px;
+  padding-bottom: 64px;
+}
+
+.portal-tarjeta
+{
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 24px;
+  border: 1.333px solid var(--linea-divisoria);
+  border-radius: var(--radio-tarjeta);
+  background: var(--blanco);
+  box-shadow: var(--sombra-1);
+}
+
+.portal-tarjeta-icono
+{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  border-radius: var(--radio-12);
+}
+
+.portal-tarjeta h2
+{
+  padding-top: 20px;
+  font-family: var(--fuente-titulos);
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 24px;
+  color: var(--texto-principal);
+}
+
+.portal-tarjeta p
+{
+  padding-top: 6px;
+  font-size: 15px;
+  line-height: 22px;
+  color: var(--texto-suave);
+}
+
+.portal-ir
+{
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 20px 0 0;
+  border: 0;
+  background: none;
+  color: var(--texto-principal);
+  font: 700 15px/20px var(--fuente-texto);
+  cursor: pointer;
+}
+
+.portal-ir-icono
+{
+  width: 16px;
+  height: 16px;
+  overflow: visible;
+}
+
+.portal-ir-icono img
+{
+  display: block;
+}
+
+/*------------------------------------------------------------------
+ * Sección: Pantallas pequeñas
+ * Objetivo: Acomodar el encabezado y las tarjetas en pantallas angostas.
+ ------------------------------------------------------------------*/
+@media (max-width: 900px)
+{
+  .portal-servicios
+  {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .portal-titulo
+  {
+    font-size: 40px;
+    line-height: 46px;
+  }
+}
+
+@media (max-width: 600px)
+{
+  .portal-contenedor
+  {
+    padding: 0 16px;
+  }
+
+  .portal-encabezado-contenido,
+  .portal-acciones
+  {
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .portal-heroe
+  {
+    min-height: 0;
+    padding: 64px 0;
+  }
+
+  .portal-servicios
+  {
+    grid-template-columns: 1fr;
+  }
+}

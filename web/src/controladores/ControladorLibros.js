@@ -48,6 +48,7 @@ import {
   ModeloEjemplar,
   ModeloLibro,
 } from '../modelos/ModelosLibros.js';
+import { ESTADOS_COPIA } from '../modelos/dominio.js';
 import { useAccion, useCarga } from './HooksAsincronos.js';
 
 /*
@@ -112,6 +113,14 @@ export function ValidarFicha(
     if (!String(ficha[elemento]).trim())
     {
       errores[elemento] = obligatorio;
+    }
+  });
+  // Longitudes del diccionario de datos: Titulo y Sinopsis son VARCHAR(150).
+  ['Titulo', 'Sinopsis'].forEach((elemento) =>
+  {
+    if (!errores[elemento] && String(ficha[elemento]).trim().length > 150)
+    {
+      errores[elemento] = 'Máximo 150 caracteres.';
     }
   });
   if (!ficha.id_editorial)
@@ -262,7 +271,7 @@ export function useControladorAltaLibro()
     {
       const nuevo = await guardar.Ejecutar({
         ...ficha,
-        id_editorial: Number(ficha.id_editorial),
+        id_editorial: ficha.id_editorial,
         Anio: Number(ficha.Anio),
         Precio: Number(ficha.Precio),
       });
@@ -371,7 +380,7 @@ export function useControladorEditarLibro()
       return;
     }
     const primera = libro.ejemplares.find((ejemplar) =>
-      ['Disponible', 'Consulta externa'].includes(ejemplar.Estatus),
+      ['Disponible', 'Consulta Externa'].includes(ejemplar.Estatus),
     );
     SetCopiaElegida((actual) => actual ?? primera?.num_copia ?? null);
   }, [libro]);
@@ -379,7 +388,7 @@ export function useControladorEditarLibro()
   const copia = libro?.ejemplares?.find((ejemplar) => ejemplar.num_copia === copia_elegida) ?? null;
   useEffect(() =>
   {
-    if (copia && ['Disponible', 'Consulta externa'].includes(copia.Estatus))
+    if (copia && ['Disponible', 'Consulta Externa'].includes(copia.Estatus))
     {
       SetNuevoEstado(copia.Estatus);
     }
@@ -418,7 +427,7 @@ export function useControladorEditarLibro()
     {
       cambios[modificado] = ficha[modificado];
     });
-    ['id_editorial', 'Anio', 'Numero_Copias'].forEach((elemento) =>
+    ['Anio', 'Numero_Copias'].forEach((elemento) =>
     {
       if (elemento in cambios)
       {
@@ -448,9 +457,10 @@ export function useControladorEditarLibro()
     {
       await guardar_copia.Ejecutar(copia.num_copia, nuevo_estado);
       await carga.Recargar();
+      const etiqueta = ESTADOS_COPIA[nuevo_estado].etiqueta;
       SetAvisoCopia({
         tipo: 'exito',
-        titulo: `Estado de ${copia.Codigo} actualizado a ${nuevo_estado}.`,
+        titulo: `Estado de ${copia.Codigo} actualizado a ${etiqueta}.`,
       });
     }
     catch (error)
@@ -541,7 +551,7 @@ export function useControladorBajaLibro()
       SetAviso({
         tipo: 'exito',
         titulo: 'Copia dada de baja.',
-        texto: `${copia.Codigo} quedó inactiva. El catálogo ya se actualizó.`,
+        texto: `${copia.mensaje} El catálogo ya se actualizó.`,
       });
     }
     catch (error)
@@ -671,19 +681,27 @@ export function useControladorSolicitudCompra()
     }
     try
     {
-      await enviar.Ejecutar({
+      const orden = await enviar.Ejecutar({
         ...form,
         Num_Ejemplares: total,
-        id_editorial: Number(form.id_editorial),
+        id_editorial: form.id_editorial,
         Anio: Number(form.Anio),
         Precio: 0,
       });
       await solicitudes.Recargar();
-      SetAviso({
-        tipo: 'exito',
-        titulo: 'Solicitud enviada.',
-        texto: 'Se envió a Tesorería para validar el presupuesto mensual.',
-      });
+      SetAviso(
+        orden.envio_tesoreria?.enviada
+          ? {
+            tipo: 'exito',
+            titulo: `Solicitud enviada a Tesorería (folio ${orden.Folio_Tesoreria}).`,
+            texto: 'Tesorería validará el presupuesto mensual y la aceptará o rechazará.',
+          }
+          : {
+            tipo: 'advertencia',
+            titulo: 'Solicitud registrada, pero Tesorería no respondió.',
+            texto: 'Queda pendiente y se enviará automáticamente la próxima vez que abras esta pantalla.',
+          },
+      );
       if (id)
       {
         SetForm((form_previo) => ({ ...form_previo, Num_Ejemplares: '' }));

@@ -40,14 +40,13 @@ import { ClienteApi } from './ClienteApi';
 export const ModeloLibro = {
   /*
    * Función: Buscar
-   * Objetivo: Buscar libros por campo y página.
-   * Entrada: { q, campo?, orden?, pagina?, por_pagina? } (opcional)
+   * Objetivo: Buscar libros por campo y página; la API ordena por el campo del filtro.
+   * Entrada: { q, campo?, pagina?, por_pagina? } (opcional)
    * Salida: Promesa con { total, datos }
    */
   Buscar({
     q: texto_busqueda,
     campo = 'todos',
-    orden = 'titulo',
     pagina = 1,
     por_pagina = 6,
   } = {})
@@ -55,7 +54,6 @@ export const ModeloLibro = {
     return ClienteApi.Obtener('/libros', {
       q: texto_busqueda,
       campo,
-      orden,
       limit: por_pagina,
       offset: (pagina - 1) * por_pagina,
     });

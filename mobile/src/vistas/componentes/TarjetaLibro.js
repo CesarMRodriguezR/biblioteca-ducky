@@ -43,7 +43,7 @@ import { Insignia, Portada, Tarjeta, Ubicacion } from './interfaz';
 export function TarjetaLibro({ libro, detallada, onPress })
 {
   const disponibles = libro.Ejemplares_Disponibles ?? 0;
-  const seccion = libro.Temas?.split(',')[0]?.trim();
+  const seccion = libro.Seccion ?? libro.Temas?.split(',')[0]?.trim();
   return (
     <Tarjeta
       onPress={onPress}

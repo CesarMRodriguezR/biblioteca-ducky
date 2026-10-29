@@ -1,7 +1,8 @@
 /*
  * ******************************************************************
  * Nombre del programa: WEB-RUTAS · RutasAplicacion.jsx
- * Función: Rutas de la versión web protegidas por sesión y por función del perfil.
+ * Función: Rutas de la versión web: portal público en / y pantallas protegidas por sesión y
+ *          por función del perfil.
  * Autor: Equipo CCJMops
  * Fecha: 26/10/2026
  * Entrada: URL del navegador
@@ -37,6 +38,7 @@ import { useSesion } from '../controladores/ControladorSesion.jsx';
 import { RutaInicial } from '../modelos/ModeloAutenticacion.js';
 import { PlantillaAplicacion } from '../vistas/plantillas/PlantillaAplicacion.jsx';
 import { Cargando } from '../vistas/componentes/interfaz.jsx';
+import { PaginaPortal } from '../vistas/paginas/PaginaPortal.jsx';
 import { PaginaInicioSesion } from '../vistas/paginas/PaginaInicioSesion.jsx';
 import { PaginaPanel } from '../vistas/paginas/PaginaPanel.jsx';
 import { PaginaAccesoRestringido } from '../vistas/paginas/PaginaAccesoRestringido.jsx';
@@ -69,7 +71,9 @@ function ConSesion({ children })
   }
   if (!usuario)
   {
-    return <Navigate to="/login" replace state={{ desde: ubicacion.pathname }} />;
+    return (
+      <Navigate to="/login" replace state={{ desde: ubicacion.pathname + ubicacion.search }} />
+    );
   }
   return children;
 }
@@ -121,6 +125,7 @@ export function RutasAplicacion()
 {
   return (
     <Routes>
+      <Route path="/" element={<PaginaPortal />} />
       <Route path="/login" element={<PaginaInicioSesion />} />
       <Route
         element={
@@ -129,7 +134,6 @@ export function RutasAplicacion()
           </ConSesion>
         }
       >
-        <Route index element={<Inicio />} />
         <Route
           path="panel"
           element={Proteger(['gestionar_usuarios'], 'Panel de administración', <PaginaPanel />)}
@@ -202,7 +206,7 @@ export function RutasAplicacion()
           <Route
             path="solicitar"
             element={Proteger(
-              ['solicitar_compra'],
+              ['gestionar_libros'],
               'Solicitud de compra de libros',
               <PaginaSolicitarLibros />,
             )}
@@ -210,7 +214,7 @@ export function RutasAplicacion()
           <Route
             path=":id/solicitar"
             element={Proteger(
-              ['solicitar_compra'],
+              ['gestionar_libros'],
               'Solicitud de compra de libros',
               <PaginaSolicitarLibros />,
             )}

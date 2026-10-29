@@ -20,9 +20,7 @@
  *     ModeloAutor           Autores
  *     ModeloTema            Temas
  *     ModeloFuncion         Funciones (permisos)
- *     ModeloPolitica        Políticas de la biblioteca
  *     ModeloNuevoLibro      Libros nuevos solicitados en órdenes de compra
- *     ModeloFuenteChatbot   Fuentes de las respuestas del chatbot
  * ******************************************************************
  */
 
@@ -89,37 +87,15 @@ const ModeloFuncion = new ModeloBase({
 });
 
 /*
- * Variable: ModeloPolitica
- * Objetivo: Políticas de la biblioteca.
- */
-const ModeloPolitica = new ModeloBase({
-  tabla: 'Politicas',
-  llave_primaria: 'id_politica',
-  columnas: ['Informacion'],
-  buscables: ['Informacion'],
-});
-
-/*
  * Variable: ModeloNuevoLibro
  * Objetivo: Libros nuevos solicitados en órdenes de compra.
  */
 const ModeloNuevoLibro = new ModeloBase({
-  tabla: 'NuevosLibros',
+  tabla: 'LibrosNuevos',
   llave_primaria: 'id_libro_nuevo',
   columnas: ['ISBN', 'Titulo', 'Autor', 'Editorial', 'Precio', 'Anio', 'Tema', 'Sinopsis'],
   buscables: ['ISBN', 'Titulo', 'Autor', 'Editorial'],
   ordenar_por: 'Titulo',
-});
-
-/*
- * Variable: ModeloFuenteChatbot
- * Objetivo: Fuentes de las respuestas del chatbot.
- */
-const ModeloFuenteChatbot = new ModeloBase({
-  tabla: 'fuentesChatbot',
-  llave_primaria: 'id_fuentes',
-  columnas: ['Fuente'],
-  buscables: ['Fuente'],
 });
 
 export {
@@ -127,7 +103,5 @@ export {
   ModeloAutor,
   ModeloTema,
   ModeloFuncion,
-  ModeloPolitica,
   ModeloNuevoLibro,
-  ModeloFuenteChatbot,
 };
