@@ -41,6 +41,7 @@
 import { ErrorHttp } from '../utilidades/ErrorHttp.js';
 import { ModeloLibro } from '../modelos/ModeloLibro.js';
 import { ModeloEjemplar } from '../modelos/ModeloEjemplar.js';
+import { ModeloOrdenCompra } from '../modelos/ModeloOrdenCompra.js';
 import { TieneFuncion } from '../intermediarios/autenticacion.js';
 import { GenerarListadoPdf } from '../utilidades/GenerarListadoPdf.js';
 
@@ -211,6 +212,23 @@ const ControladorLibros = {
     if (!libro)
     {
       throw ErrorHttp.NoEncontrado('No hay ningún libro registrado con ese ISBN.');
+    }
+    res.json(libro);
+  },
+
+  /*
+   * Función: SolicitadoPorIsbn
+   * Objetivo: GET /libros/solicitados/:isbn — datos del libro pedido en una orden de compra
+   *           para precargar el alta cuando el ISBN aún no está en el catálogo.
+   * Entrada: req: petición HTTP (ya autenticada y validada); res: respuesta HTTP
+   * Salida: Respuesta HTTP en formato JSON
+   */
+  async SolicitadoPorIsbn(req, res)
+  {
+    const libro = await ModeloOrdenCompra.BuscarLibroNuevoPorIsbn(req.params.isbn);
+    if (!libro)
+    {
+      throw ErrorHttp.NoEncontrado('Ese ISBN no aparece en ninguna solicitud de compra.');
     }
     res.json(libro);
   },

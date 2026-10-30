@@ -280,6 +280,13 @@ rutas.get(
   ManejarAsincrono(ControladorLibros.PorIsbn),
 );
 rutas.get(
+  '/libros/solicitados/:isbn',
+  Autenticar,
+  adm_libros,
+  Validar(esquemas.isbn_param, 'params'),
+  ManejarAsincrono(ControladorLibros.SolicitadoPorIsbn),
+);
+rutas.get(
   '/libros/:id',
   Autenticar,
   Puede(...consulta_catalogo),

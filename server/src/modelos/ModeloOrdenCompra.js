@@ -253,6 +253,30 @@ const ModeloOrdenCompra = {
   },
 
   /*
+   * Función: BuscarLibroNuevoPorIsbn
+   * Objetivo: Datos de un libro solicitado en una orden de compra (LibrosNuevos) para precargar
+   *           su alta en el catálogo. La editorial se guarda por nombre; se busca su
+   *           id_editorial (null si no está registrada). El precio no se incluye: la solicitud
+   *           no lo captura.
+   * Entrada: isbn
+   * Salida: Promesa con { ISBN, Titulo, Autor, Editorial, id_editorial, Anio, Tema, Sinopsis }
+   *         o null si el ISBN no se ha solicitado
+   */
+  async BuscarLibroNuevoPorIsbn(isbn)
+  {
+    const [libro] = await Consultar(
+      `SELECT nl.ISBN, nl.Titulo, nl.Autor, nl.Editorial, e.id_editorial,
+              nl.Anio, nl.Tema, nl.Sinopsis
+         FROM LibrosNuevos nl
+         LEFT JOIN Editoriales e ON e.Nombre_Editorial = nl.Editorial
+        WHERE nl.ISBN = ?
+        LIMIT 1`,
+      [isbn],
+    );
+    return libro ?? null;
+  },
+
+  /*
    * Función: Crear
    * Objetivo: Crea una orden. Un libro nuevo puede referenciarse por id_libro_nuevo o darse de
    *           alta en la misma orden con `nuevo: {...}`; si el ISBN ya está en el catálogo se

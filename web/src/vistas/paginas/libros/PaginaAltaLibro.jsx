@@ -74,7 +74,9 @@ export function PaginaAltaLibro()
               editoriales={controlador.editoriales}
               al_salir_isbn={controlador.ValidarIsbn}
               ayudas={{
-                ISBN: 'Se valida primero: si el libro ya está registrado, se muestra su ficha.',
+                ISBN:
+                  'Se valida primero: si el libro ya está registrado se muestra su ficha, y si ' +
+                  'se pidió en una solicitud de compra se cargan sus datos.',
               }}
             />
             <div className="fila entre margen-arriba-24">

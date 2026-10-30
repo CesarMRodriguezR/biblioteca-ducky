@@ -245,7 +245,7 @@ Todas las rutas van bajo `/api` y, salvo `POST /auth/login` y `GET /salud`, requ
 | Perfiles | `GET/POST /perfiles` · `GET/PUT/DELETE /perfiles/:id` · `PUT /perfiles/:id/funciones` | gestionar_usuarios |
 | Catálogo | `GET /libros?q=&campo=&limit=&offset=` (ordena por `campo`) · `GET /libros/:id` | buscar_libros o gestionar_libros |
 | Listado | `GET /libros/listado` · `GET /libros/listado.pdf` | gestionar_libros |
-| Libros | `GET /libros/isbn/:isbn` · `POST /libros` · `PUT /libros/:id` · `PATCH /libros/:id/estatus` | gestionar_libros |
+| Libros | `GET /libros/isbn/:isbn` · `GET /libros/solicitados/:isbn` · `POST /libros` · `PUT /libros/:id` · `PATCH /libros/:id/estatus` | gestionar_libros |
 | Copias | `GET/POST /libros/:id/ejemplares` · `PUT /libros/:id/ejemplares/:n` · `POST /libros/:id/ejemplares/:n/baja` | gestionar_libros |
 | Editoriales, autores, temas | CRUD `/editoriales`, `/autores`, `/temas` | lectura: catálogo · escritura: gestionar_libros |
 | Compras | `GET /ordenes-compra` · `GET /ordenes-compra/solicitudes` · `POST /ordenes-compra` · `PATCH /ordenes-compra/:id/estatus` (solo `Recibida`) | gestionar_libros |

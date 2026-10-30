@@ -204,8 +204,8 @@ export function useControladorLibrosRegistrados()
 /*
  * Hook: useControladorAltaLibro
  * Objetivo: BD-SP02-GL02 Alta de libro: el ISBN se valida primero; si ya existe se muestra la
- *           ficha para agregar ejemplares. Tras guardar la ficha se habilita el panel de
- *           ejemplares.
+ *           ficha para agregar ejemplares, y si se pidió en una solicitud de compra se
+ *           precargan sus datos. Tras guardar la ficha se habilita el panel de ejemplares.
  * Entrada: Ninguna
  * Salida: Objeto con el estado y las acciones de la pantalla
  */
@@ -239,6 +239,7 @@ export function useControladorAltaLibro()
       const encontrado = await ModeloLibro.PorIsbn(isbn);
       SetLibro(encontrado);
       SetExistente(true);
+      SetAviso((aviso_previo) => (aviso_previo?.precarga ? null : aviso_previo));
       SetErrores((er) => ({
         ...er,
         ISBN: 'Ya existe una ficha con este ISBN. Puedes agregarle ejemplares.',
@@ -251,6 +252,42 @@ export function useControladorAltaLibro()
         SetLibro(null);
         SetExistente(false);
       }
+      await PrecargarSolicitado(isbn);
+    }
+  }
+
+  // Si el ISBN no está en el catálogo pero se pidió en una orden de compra, se copian los datos
+  // de la solicitud; solo falta capturar el precio (la solicitud no lo pide).
+  async function PrecargarSolicitado(isbn)
+  {
+    try
+    {
+      const solicitado = await ModeloLibro.SolicitadoPorIsbn(isbn);
+      SetFicha((ficha_previo) => ({
+        ...ficha_previo,
+        Titulo: solicitado.Titulo,
+        Autor: solicitado.Autor,
+        id_editorial: solicitado.id_editorial ?? '',
+        Anio: solicitado.Anio ? String(solicitado.Anio) : '',
+        Tema: solicitado.Tema ?? '',
+        Sinopsis: solicitado.Sinopsis ?? '',
+      }));
+      SetErrores({
+        ...(!solicitado.id_editorial && {
+          id_editorial: `La editorial «${solicitado.Editorial}» de la solicitud no está registrada; elige una.`,
+        }),
+      });
+      SetAviso({
+        tipo: 'informacion',
+        titulo: 'Datos tomados de la solicitud de compra.',
+        texto: 'Revisa la ficha y captura el precio del libro.',
+        precarga: true,
+      });
+    }
+    catch
+    {
+      // No se ha solicitado: la ficha se captura a mano. Se quita el aviso de una precarga previa.
+      SetAviso((aviso_previo) => (aviso_previo?.precarga ? null : aviso_previo));
     }
   }
 

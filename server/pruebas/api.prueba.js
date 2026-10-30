@@ -306,6 +306,28 @@ test('GL02: alta con datos inválidos devuelve un mensaje por campo', async () =
   assert.match(por_campo.Precio, /mayor a \$0\.00/);
 });
 
+test('GL02: un ISBN de una solicitud de compra precarga los datos del alta', async () =>
+{
+  const solicitado = await Solicitar('GET', '/libros/solicitados/978-0-201-10088-4', {
+    token: tokens.admin,
+  });
+  assert.equal(solicitado.status, 200);
+  assert.equal(solicitado.data.Titulo, 'Compilers: Principles, Techniques, and Tools');
+  assert.equal(solicitado.data.Editorial, 'Addison-Wesley');
+  assert.equal(solicitado.data.id_editorial, '3');
+  assert.equal(solicitado.data.Precio, undefined);
+
+  const no_solicitado = await Solicitar('GET', '/libros/solicitados/978-0-262-03384-8', {
+    token: tokens.admin,
+  });
+  assert.equal(no_solicitado.status, 404);
+  assert.equal(
+    (await Solicitar('GET', '/libros/solicitados/978-0-201-10088-4', { token: tokens.biblio }))
+      .status,
+    403,
+  );
+});
+
 test('GL02: ISBN duplicado devuelve la ficha existente y luego alta completa con ejemplares', async () =>
 {
   const existente = await Solicitar('GET', '/libros/isbn/978-0-262-03384-8', {

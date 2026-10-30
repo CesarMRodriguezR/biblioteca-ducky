@@ -91,6 +91,17 @@ export const ModeloLibro = {
   },
 
   /*
+   * Función: SolicitadoPorIsbn
+   * Objetivo: Pedir los datos de un libro solicitado en una orden de compra por su ISBN.
+   * Entrada: isbn
+   * Salida: Promesa con la respuesta de la API
+   */
+  SolicitadoPorIsbn(isbn)
+  {
+    return ClienteApi.Obtener(`/libros/solicitados/${encodeURIComponent(isbn.trim())}`);
+  },
+
+  /*
    * Función: Crear
    * Objetivo: Dar de alta una ficha bibliográfica.
    * Entrada: ficha
