@@ -74,7 +74,7 @@ test('CIAA: solo con su clave; filtra inscritos y permite corregir una matrícul
   const sin_clave = await Solicitar('GET', '/ciaa/api/alumnos', 'otra');
   assert.equal(sin_clave.status, 401);
   const { data } = await Solicitar('GET', '/ciaa/api/alumnos?estatus=Inscrito', ENTORNO.CLAVES.CIAA);
-  assert.equal(data.total, 6);
+  assert.equal(data.total, 9);
   assert.equal(data.datos.some((alumno) => alumno.Matricula === '3098117'), false);
 
   const corregido = await Solicitar('PUT', '/ciaa/api/alumnos/31O5877', ENTORNO.CLAVES.CIAA, {
@@ -123,4 +123,48 @@ test('Tesorería: recibe una vez, se acepta o rechaza una sola vez y pide motivo
   assert.equal(aceptada.data.Estatus, 'Aceptada');
   assert.equal(aceptada.data.Notificada, false); // Biblio no está encendido en la prueba
   assert.equal((await Solicitar('POST', `${ruta}/aceptar`, clave, {})).status, 409);
+});
+
+test('CIAA: recibe los avisos de la biblioteca (lista de deudores)', async () =>
+{
+  const clave = ENTORNO.CLAVES.CIAA;
+  const sin_tipo = await Solicitar('POST', '/ciaa/api/avisos', clave, { detalle: {} });
+  assert.equal(sin_tipo.status, 400);
+  const aviso = await Solicitar('POST', '/ciaa/api/avisos', clave, {
+    tipo: 'Lista de deudores',
+    periodo: 'Parciales · 09/11/2026 al 13/11/2026',
+    detalle: { alumnos: [{ Matricula: '3109921', Total_Adeudo: 150 }] },
+  });
+  assert.equal(aviso.status, 201);
+  assert.equal(aviso.data.Detalle.alumnos[0].Matricula, '3109921');
+  const { data } = await Solicitar('GET', '/ciaa/api/avisos?tipo=Lista de deudores', clave);
+  assert.equal(data.total, 1);
+});
+
+test('Tesorería: recibe una multa una sola vez y registra su pago una sola vez', async () =>
+{
+  const clave = ENTORNO.CLAVES.TESORERIA;
+  const multa = {
+    referencia: '77',
+    matricula: '3105843',
+    lector: 'Marcela Guerra',
+    motivo: 'Daño del libro',
+    monto: 250,
+    fecha: '2026-11-09',
+  };
+  assert.equal((await Solicitar('POST', '/tesoreria/api/multas', clave, {})).status, 400);
+  const recibida = await Solicitar('POST', '/tesoreria/api/multas', clave, multa);
+  assert.equal(recibida.status, 201);
+  assert.equal(recibida.data.Estatus, 'Pendiente');
+  assert.equal((await Solicitar('POST', '/tesoreria/api/multas', clave, multa)).status, 200);
+
+  const pago = await Solicitar('POST', '/tesoreria/api/multas/77/pagar', clave, {});
+  assert.equal(pago.status, 200);
+  assert.match(pago.data.Folio, /^TES-\d{4}-\d{2}-\d{4}$/);
+  assert.equal(pago.data.Monto, 250);
+  assert.equal(pago.data.Notificado, false); // Biblio no está encendido en la prueba
+  assert.equal((await Solicitar('POST', '/tesoreria/api/multas/77/pagar', clave, {})).status, 409);
+
+  const { data } = await Solicitar('GET', '/tesoreria/api/pagos?sistema=Biblio', clave);
+  assert.equal(data.datos[0].Referencia, '77');
 });

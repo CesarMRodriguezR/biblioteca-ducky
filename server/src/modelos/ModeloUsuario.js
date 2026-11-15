@@ -36,13 +36,14 @@
 
 import bcrypt from 'bcryptjs';
 import { Consultar, EjecutarEnTransaccion, SiguienteId } from '../configuracion/conexion.js';
+import { Hoy } from '../utilidades/fechas.js';
 
 /*
  * Constante: CAMPOS_PUBLICOS
  * Objetivo: Columnas del usuario que se pueden enviar al cliente.
  */
 const CAMPOS_PUBLICOS = `
-  u.id_usuario, u.Nombre_Usuario, u.Nombre_Completo, u.Correo, u.Matricula_Nomina,
+  u.id_usuario, u.Nombre_Usuario, u.Nombre_Completo, u.Correo, u.Telefono, u.Matricula_Nomina,
   u.Estatus, u.id_perfil, p.Nombre_Rol`;
 
 /*
@@ -79,7 +80,8 @@ const ModeloUsuario = {
 
   /*
    * Función: BuscarTodos
-   * Objetivo: Listar usuarios con búsqueda, filtro por perfil y estatus, y paginación.
+   * Objetivo: Listar usuarios con búsqueda, filtro por perfil y estatus, y paginación. Cada
+   *           usuario trae sus préstamos activos y cuántos están vencidos.
    * Entrada: { q, id_perfil, estatus, limit?, offset? } (opcional)
    * Salida: Promesa con { total, datos }
    */
@@ -112,11 +114,18 @@ const ModeloUsuario = {
       `SELECT COUNT(*) AS total ${FROM_USUARIOS} ${where_sql}`,
       parametros,
     );
+    const hoy = Hoy();
     const datos = await Consultar(
-      `SELECT ${CAMPOS_PUBLICOS} ${FROM_USUARIOS} ${where_sql}
+      `SELECT ${CAMPOS_PUBLICOS},
+              (SELECT COUNT(*) FROM Prestamos pr
+                WHERE pr.id_usuario = u.id_usuario AND pr.Estado = 'Activo') AS Prestamos_Activos,
+              (SELECT COUNT(*) FROM Prestamos pr
+                WHERE pr.id_usuario = u.id_usuario AND pr.Estado = 'Activo'
+                  AND pr.Fecha_Entrega_Programada < ?) AS Prestamos_Vencidos
+         ${FROM_USUARIOS} ${where_sql}
         ORDER BY u.Estatus = 'Activo' DESC, u.Nombre_Completo
         LIMIT ? OFFSET ?`,
-      [...parametros, Number(limit), Number(offset)],
+      [hoy, ...parametros, Number(limit), Number(offset)],
     );
     return { total, datos };
   },
@@ -239,8 +248,8 @@ const ModeloUsuario = {
     await Consultar(
       `INSERT INTO Usuarios
          (id_usuario, Nombre_Usuario, Contrasena_Usuario, Matricula_Nomina, id_perfil,
-          Nombre_Completo, Correo, Estatus)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          Nombre_Completo, Correo, Telefono, Estatus)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         id_usuario,
         datos.Nombre_Usuario,
@@ -249,6 +258,7 @@ const ModeloUsuario = {
         datos.id_perfil,
         datos.Nombre_Completo,
         datos.Correo ?? null,
+        datos.Telefono ?? null,
         datos.Estatus ?? 'Activo',
       ],
       conexion,
@@ -259,13 +269,13 @@ const ModeloUsuario = {
   /*
    * Función: Actualizar
    * Objetivo: Cambio de datos. La matrícula y el usuario no se modifican (regla del prototipo);
-   *           solo perfil, nombre, correo, estatus y contraseña.
+   *           solo perfil, nombre, correo, teléfono, estatus y contraseña.
    * Entrada: id, datos
    * Salida: Promesa con el registro actualizado
    */
   async Actualizar(id, datos)
   {
-    const permitidos = ['Nombre_Completo', 'Correo', 'id_perfil', 'Estatus'];
+    const permitidos = ['Nombre_Completo', 'Correo', 'Telefono', 'id_perfil', 'Estatus'];
     const sets = [];
     const parametros = [];
     permitidos.forEach((campo) =>

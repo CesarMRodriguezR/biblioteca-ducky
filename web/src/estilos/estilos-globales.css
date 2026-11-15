@@ -23,6 +23,7 @@
 /*     Utilidades    Clases de apoyo de tamaño y espaciado
 /*     Catálogo      Rejilla y tarjetas de libros del catálogo
 /*     Ficha         Consulta de un libro (vista completa y resumida)
+/*     Circulación   Indicadores, buscador por matrícula, documentos y Asistente Biblio
 /******************************************************************/
 
 /*----
@@ -1650,4 +1651,156 @@ button
   {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+}
+
+/*------------------------------------------------------------------
+ * Sección: Circulación
+ * Objetivo: Préstamos, devoluciones, multas, detalle de usuario y Asistente Biblio:
+ *           indicadores, buscador por matrícula, documentos imprimibles y conversación.
+ ------------------------------------------------------------------*/
+.indicador-valor
+{
+  font-family: var(--fuente-titulos);
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 34px;
+  color: var(--texto-principal);
+}
+
+.indicador-etiqueta
+{
+  font-size: 14px;
+  color: var(--texto-secundario);
+}
+
+.titulo-seccion
+{
+  font-size: 18px;
+  line-height: 26px;
+}
+
+.margen-arriba-4
+{
+  margin-top: 4px;
+}
+
+.fila-buscador
+{
+  align-items: flex-end;
+}
+
+.campo-buscador
+{
+  flex: 1;
+  max-width: 420px;
+}
+
+.campo-angosto
+{
+  max-width: 320px;
+}
+
+.separador
+{
+  border: 0;
+  border-top: 1px solid var(--linea-divisoria);
+  margin: 20px 0;
+}
+
+.avatar-grande
+{
+  width: 56px;
+  height: 56px;
+  font-size: 18px;
+  background: var(--azul-principal);
+  color: var(--blanco);
+}
+
+.documento
+{
+  padding: 8px 4px;
+}
+
+.chat
+{
+  display: flex;
+  flex-direction: column;
+  min-height: 620px;
+}
+
+.chat-encabezado
+{
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--linea-divisoria);
+}
+
+.chat-cuerpo
+{
+  flex: 1;
+  padding: 20px;
+  background: var(--fondo-gris);
+  border-radius: 0 0 var(--radio-tarjeta) var(--radio-tarjeta);
+}
+
+.chat-renglon
+{
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.chat-renglon-usuario
+{
+  justify-content: flex-end;
+}
+
+.chat-icono
+{
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  background: #e3effa;
+  color: var(--azul-principal);
+}
+
+.chat-burbuja
+{
+  max-width: 640px;
+  padding: 12px 14px;
+  border: 1px solid var(--linea-divisoria);
+  border-radius: var(--radio-12);
+  background: var(--blanco);
+  font-size: 14.5px;
+  line-height: 21px;
+  color: var(--texto-principal);
+}
+
+.chat-burbuja-usuario
+{
+  background: var(--azul-principal);
+  border-color: var(--azul-principal);
+  color: var(--blanco);
+  font-weight: 700;
+}
+
+.chat-fuente
+{
+  margin-top: 8px;
+  font-size: 12.5px;
+  color: var(--texto-suave);
+}
+
+.chat-opciones
+{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-left: 42px;
 }

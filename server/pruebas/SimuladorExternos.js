@@ -65,6 +65,9 @@ const ALUMNOS = [
   Persona({ Matricula: '3150221' }, 'César', 'Manuel', 'Rodríguez', 'Leal'),
   Persona({ Matricula: '31O5877' }, 'Paola', null, 'Treviño', 'Garza'),
   Persona({ Matricula: '3108890' }, 'Diego', null, 'Flores', 'Garza'),
+  Persona({ Matricula: '3109921' }, 'Ana', null, 'López', 'Garza'),
+  Persona({ Matricula: '3111456' }, 'Luis', null, 'Pérez', 'Salinas'),
+  Persona({ Matricula: '3104410' }, 'Daniela', null, 'Cruz', 'Treviño'),
 ];
 
 /*
@@ -94,7 +97,8 @@ const EMPLEADOS = [
  * Función: IniciarSimulador
  * Objetivo: Levantar el servidor simulado en un puerto libre.
  * Entrada: Ninguna
- * Salida: Promesa con { servidor, url, solicitudes (Map folio → solicitud), Cerrar }
+ * Salida: Promesa con { servidor, url, solicitudes (Map folio → solicitud), multas (Map
+ *         referencia → multa), avisos (avisos del CIAA), Cerrar }
  */
 function IniciarSimulador()
 {
@@ -102,6 +106,9 @@ function IniciarSimulador()
     ['TES-2026-0001', { Folio: 'TES-2026-0001', Referencia: '3', Estatus: 'Aceptada' }],
     ['TES-2026-0002', { Folio: 'TES-2026-0002', Referencia: '2', Estatus: 'Recibida' }],
   ]);
+  const multas = new Map(['1', '2', '3', '4', '5'].map((referencia) => [referencia, { referencia }]));
+  const pagos = [];
+  const avisos = [];
   const servidor = http.createServer(async (req, res) =>
   {
     const Responder = (estado, datos) =>
@@ -153,6 +160,22 @@ function IniciarSimulador()
       );
       return Responder(200, { total: datos.length, datos });
     }
+    if (req.method === 'POST' && ruta === '/tesoreria/api/multas')
+    {
+      const datos = JSON.parse(cuerpo);
+      const nueva = !multas.has(datos.referencia);
+      multas.set(datos.referencia, datos);
+      return Responder(nueva ? 201 : 200, datos);
+    }
+    if (req.method === 'GET' && ruta === '/tesoreria/api/pagos')
+    {
+      return Responder(200, { total: pagos.length, datos: pagos });
+    }
+    if (req.method === 'POST' && ruta === '/ciaa/api/avisos')
+    {
+      avisos.push(JSON.parse(cuerpo));
+      return Responder(201, avisos.at(-1));
+    }
     const folio = ruta.match(/^\/tesoreria\/api\/solicitudes\/([^/]+)$/)?.[1];
     if (req.method === 'GET' && folio)
     {
@@ -171,6 +194,9 @@ function IniciarSimulador()
         servidor,
         url: `http://127.0.0.1:${servidor.address().port}`,
         solicitudes,
+        multas,
+        pagos,
+        avisos,
         Cerrar: () => new Promise((listo) => servidor.close(listo)),
       });
     });

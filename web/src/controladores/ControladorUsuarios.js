@@ -20,6 +20,7 @@
  *     POR_PAGINA                      Usuarios por página de la lista de válidos
  *     useControladorUsuariosValidos   BD-SP01-GU02 "Usuarios válidos": búsqueda por matrícula y…
  *     useControladorConsultaUsuario   Consulta de un usuario por id o por matrícula
+ *     useControladorDetalleUsuario    Detalle de usuario con sus préstamos y multas
  *     useControladorCambioUsuario     Cambio de datos de usuario. La matrícula y el usuario no…
  *     useControladorCargaLista        Alta de cuentas por lista: la API genera la lista con…
  *     useControladorBajasLista        Baja de cuentas: usuarios que ya no aparecen en CIAA ni…
@@ -44,6 +45,7 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ModeloUsuario, ContrasenaValida } from '../modelos/ModeloUsuario.js';
 import { ModeloPerfil } from '../modelos/ModeloPerfil.js';
 import { useAccion, useCarga } from './HooksAsincronos.js';
+import { useSesion } from './ControladorSesion.jsx';
 
 /*
  * Constante: POR_PAGINA
@@ -147,6 +149,29 @@ export function useControladorConsultaUsuario()
 }
 
 /*
+ * Hook: useControladorDetalleUsuario
+ * Objetivo: Detalle de usuario (BD-SP01-GU02) con préstamos activos, vencidos, multas
+ *           pendientes y si puede pedir préstamos.
+ * Entrada: Ninguna (id del usuario en la ruta)
+ * Salida: Objeto con el estado y las acciones de la pantalla
+ */
+export function useControladorDetalleUsuario()
+{
+  const { id } = useParams();
+  const navegar = useNavigate();
+  const { Puede } = useSesion();
+  const { datos, error, cargando } = useCarga(() => ModeloUsuario.Obtener(id), [id]);
+  return {
+    usuario: datos,
+    error,
+    cargando,
+    ver_historial: Puede('prestar_libros'),
+    Modificar: () => navegar(`/usuarios/${id}/editar`),
+    VerHistorial: () => navegar(`/prestamos/usuario?matricula=${datos.Matricula_Nomina}`),
+  };
+}
+
+/*
  * Hook: useControladorCambioUsuario
  * Objetivo: Cambio de datos de usuario. La matrícula y el usuario no se modifican; si la
  *           contraseña no cumple la regla, no se guarda nada.
@@ -159,7 +184,12 @@ export function useControladorCambioUsuario()
   const navegar = useNavigate();
   const usuario = useCarga(() => ModeloUsuario.Obtener(id), [id]);
   const perfiles = useCarga(() => ModeloPerfil.Listar(), []);
-  const [form, SetForm] = useState({ id_perfil: '', Estatus: '', Contrasena_Usuario: '' });
+  const [form, SetForm] = useState({
+    id_perfil: '',
+    Estatus: '',
+    Telefono: '',
+    Contrasena_Usuario: '',
+  });
   const [errores, SetErrores] = useState({});
   const [resultado, SetResultado] = useState(null);
   const guardar = useAccion((cambios) => ModeloUsuario.Actualizar(id, cambios));
@@ -171,6 +201,7 @@ export function useControladorCambioUsuario()
       SetForm({
         id_perfil: String(usuario.datos.id_perfil),
         Estatus: usuario.datos.Estatus,
+        Telefono: usuario.datos.Telefono ?? '',
         Contrasena_Usuario: '',
       });
     }
@@ -196,11 +227,22 @@ export function useControladorCambioUsuario()
       });
       return;
     }
+    if (form.Telefono.trim() && !/^\d{10}$/.test(form.Telefono.trim()))
+    {
+      SetErrores({ Telefono: 'Debe tener 10 dígitos, sin espacios.' });
+      SetResultado({
+        tipo: 'error',
+        titulo: 'No se guardaron los cambios: el teléfono no es válido.',
+        texto: 'Se conserva la información anterior del usuario.',
+      });
+      return;
+    }
     try
     {
       const actualizado = await guardar.Ejecutar({
         id_perfil: form.id_perfil,
         Estatus: form.Estatus,
+        Telefono: form.Telefono.trim(),
         Contrasena_Usuario: form.Contrasena_Usuario || undefined,
       });
       usuario.SetDatos({ ...usuario.datos, ...actualizado });

@@ -34,6 +34,22 @@
  *     PALETA_PORTADAS       Colores de las portadas generadas
  *     COLOR_TEMA            Color de portada de cada tema
  *     ColorPortada          Elegir el color de la portada según el tema o el id del…
+ *     ESTADOS_PRESTAMO      Tono de cada estado visible de un préstamo
+ *     RESULTADOS_DEVOLUCION Tono del resultado de una devolución
+ *     ESTADOS_MULTA         Tono del estado de pago de una multa
+ *     MOTIVOS_MULTA         Motivos de multa del prototipo
+ *     CONDICIONES_LIBRO     Condición del libro al recibirlo
+ *     PERIODOS_EXAMEN       Periodos de exámenes de la lista de deudores
+ *     FILTROS_PERFIL        Filtros por perfil de los préstamos vencidos
+ *     HoyIso                Fecha local de hoy en formato AAAA-MM-DD
+ *     FechaCorta            Mostrar una fecha como DD/MM/AAAA
+ *     FechaLarga            Mostrar una fecha con su día de la semana
+ *     FolioMulta            Folio visible de una multa (M-0058)
+ *     TelefonoTexto         Mostrar un teléfono de 10 dígitos con espacios
+ *     IndicacionAdeudos     Qué debe hacer un lector para volver a pedir préstamos
+ *     TextoRecibo           Texto del recibo para enviarlo por correo o WhatsApp
+ *     EnlaceWhatsApp        Enlace de WhatsApp con el recibo escrito
+ *     EnlaceCorreo          Enlace de correo con el recibo escrito
  * ******************************************************************
  */
 
@@ -321,4 +337,223 @@ export function ColorPortada(libro)
     return por_tema;
   }
   return PALETA_PORTADAS[(libro.id_libro ?? 0) % PALETA_PORTADAS.length];
+}
+
+/*
+ * Constante: ESTADOS_PRESTAMO
+ * Objetivo: Tono de cada estado visible de un préstamo (Vencido y Renovado se calculan).
+ */
+export const ESTADOS_PRESTAMO = {
+  Activo: 'informacion',
+  Renovado: 'exito',
+  Vencido: 'error',
+  Devuelto: 'exito',
+  'Devuelto con retraso': 'advertencia',
+  Perdido: 'error',
+};
+
+/*
+ * Constante: RESULTADOS_DEVOLUCION
+ * Objetivo: Tono del resultado de una devolución en el menú Devoluciones.
+ */
+export const RESULTADOS_DEVOLUCION = {
+  'A tiempo': 'exito',
+  'Con multa': 'error',
+  Perdido: 'morado',
+};
+
+/*
+ * Constante: ESTADOS_MULTA
+ * Objetivo: Tono del estado de pago de una multa.
+ */
+export const ESTADOS_MULTA = {
+  Pendiente: 'advertencia',
+  Pagada: 'exito',
+};
+
+/*
+ * Constante: MOTIVOS_MULTA
+ * Objetivo: Motivos de multa del prototipo.
+ */
+export const MOTIVOS_MULTA = [
+  { valor: 'Entrega extemporánea', etiqueta: 'Entrega extemporánea' },
+  { valor: 'Daño del libro', etiqueta: 'Daño del libro' },
+  { valor: 'Pérdida del libro', etiqueta: 'Pérdida del libro' },
+];
+
+/*
+ * Constante: CONDICIONES_LIBRO
+ * Objetivo: Condición del libro al recibirlo en una devolución.
+ */
+export const CONDICIONES_LIBRO = [
+  { valor: 'Buen estado', etiqueta: 'Buen estado' },
+  { valor: 'Dañado', etiqueta: 'Dañado' },
+];
+
+/*
+ * Constante: PERIODOS_EXAMEN
+ * Objetivo: Periodos de exámenes del semestre para la lista de alumnos deudores.
+ */
+export const PERIODOS_EXAMEN = [
+  { valor: 'Parciales · 09/11/2026 al 13/11/2026', etiqueta: 'Parciales · 09/11/2026 al 13/11/2026' },
+  { valor: 'Finales · 07/12/2026 al 11/12/2026', etiqueta: 'Finales · 07/12/2026 al 11/12/2026' },
+];
+
+/*
+ * Constante: FILTROS_PERFIL
+ * Objetivo: Filtros por perfil de los préstamos vencidos (valor = Nombre_Rol).
+ */
+export const FILTROS_PERFIL = [
+  { valor: '', etiqueta: 'Todos', plural: 'todos' },
+  { valor: 'Alumno', etiqueta: 'Alumnos', plural: 'alumnos' },
+  { valor: 'Profesor', etiqueta: 'Profesores', plural: 'profesores' },
+  { valor: 'Colaborador', etiqueta: 'Colaboradores', plural: 'colaboradores' },
+  { valor: 'Bibliotecario', etiqueta: 'Bibliotecarios', plural: 'bibliotecarios' },
+  { valor: 'Administrador', etiqueta: 'Administradores', plural: 'administradores' },
+];
+
+/*
+ * Constante: DIAS_SEMANA
+ * Objetivo: Nombres de los días de la semana (0 = domingo, como Date.getDay).
+ */
+const DIAS_SEMANA = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+
+/*
+ * Función: HoyIso
+ * Objetivo: Fecha local de hoy en formato AAAA-MM-DD (toISOString usaría la hora UTC).
+ * Entrada: Ninguna
+ * Salida: Texto AAAA-MM-DD
+ */
+export function HoyIso()
+{
+  const hoy = new Date();
+  const mes = String(hoy.getMonth() + 1).padStart(2, '0');
+  const dia = String(hoy.getDate()).padStart(2, '0');
+  return `${hoy.getFullYear()}-${mes}-${dia}`;
+}
+
+/*
+ * Función: FechaCorta
+ * Objetivo: Mostrar una fecha AAAA-MM-DD como DD/MM/AAAA.
+ * Entrada: iso
+ * Salida: Texto DD/MM/AAAA (— si no hay fecha)
+ */
+export function FechaCorta(iso)
+{
+  if (!iso)
+  {
+    return '—';
+  }
+  const [anio, mes, dia] = iso.slice(0, 10).split('-');
+  return `${dia}/${mes}/${anio}`;
+}
+
+/*
+ * Función: FechaLarga
+ * Objetivo: Mostrar una fecha AAAA-MM-DD con su día de la semana.
+ * Entrada: iso
+ * Salida: Texto como «Lunes 09/11/2026»
+ */
+export function FechaLarga(iso)
+{
+  if (!iso)
+  {
+    return '—';
+  }
+  const [anio, mes, dia] = iso.slice(0, 10).split('-').map(Number);
+  return `${DIAS_SEMANA[new Date(anio, mes - 1, dia).getDay()]} ${FechaCorta(iso)}`;
+}
+
+/*
+ * Función: FolioMulta
+ * Objetivo: Folio visible de una multa a partir de su id.
+ * Entrada: id_multa
+ * Salida: Texto como M-0058
+ */
+export function FolioMulta(id_multa)
+{
+  return `M-${String(id_multa).padStart(4, '0')}`;
+}
+
+/*
+ * Función: TelefonoTexto
+ * Objetivo: Mostrar un teléfono de 10 dígitos agrupado (81 1234 5601).
+ * Entrada: telefono
+ * Salida: Texto del teléfono (— si no hay)
+ */
+export function TelefonoTexto(telefono)
+{
+  if (!telefono)
+  {
+    return '—';
+  }
+  return telefono.replace(/^(\d{2})(\d{4})(\d{4})$/, '$1 $2 $3');
+}
+
+/*
+ * Función: IndicacionAdeudos
+ * Objetivo: Qué debe hacer un lector para volver a pedir préstamos según lo que no cumple.
+ * Entrada: resumen ({ Multas_Pendientes, Prestamos_Vencidos, Prestamos_Activos,
+ *          Maximo_Prestamos })
+ * Salida: Texto con las acciones pendientes
+ */
+export function IndicacionAdeudos(resumen)
+{
+  const pasos = [];
+  if (resumen.Prestamos_Vencidos)
+  {
+    pasos.push('devolver los libros vencidos');
+  }
+  if (resumen.Multas_Pendientes)
+  {
+    pasos.push('pagar sus multas en Tesorería');
+  }
+  if (!pasos.length && resumen.Prestamos_Activos >= resumen.Maximo_Prestamos)
+  {
+    pasos.push('devolver alguno de sus libros');
+  }
+  return pasos.length ? `Debe ${pasos.join(' y ')} antes de pedir otro.` : '';
+}
+
+/*
+ * Función: TextoRecibo
+ * Objetivo: Texto del recibo de préstamo para enviarlo por correo o WhatsApp.
+ * Entrada: recibo
+ * Salida: Texto con los datos del préstamo
+ */
+export function TextoRecibo(recibo)
+{
+  return [
+    `Biblio · Universidad Ducky — Recibo de préstamo ${recibo.Folio}`,
+    `Lector: ${recibo.Nombre_Completo} (${recibo.Matricula_Nomina})`,
+    `Libro: ${recibo.Titulo} · Copia ${recibo.num_copia} · ISBN ${recibo.ISBN}`,
+    `Ubicación: ${UbicacionTexto(recibo.ubicacion ?? {}, null) || '—'}`,
+    `Fecha de préstamo: ${FechaLarga(recibo.Fecha_Prestamo)}`,
+    `Fecha de devolución: ${FechaLarga(recibo.Fecha_Entrega_Programada)}`,
+    `Atendió: ${recibo.Atendio}`,
+    recibo.Nota,
+  ].join('\n');
+}
+
+/*
+ * Función: EnlaceWhatsApp
+ * Objetivo: Enlace de WhatsApp (wa.me) al teléfono del lector con el texto escrito. Los
+ *           teléfonos se guardan sin lada; se agrega la de México (52).
+ * Entrada: telefono, texto
+ * Salida: URL de WhatsApp
+ */
+export function EnlaceWhatsApp(telefono, texto)
+{
+  return `https://wa.me/52${telefono}?text=${encodeURIComponent(texto)}`;
+}
+
+/*
+ * Función: EnlaceCorreo
+ * Objetivo: Enlace mailto al correo del lector con asunto y cuerpo.
+ * Entrada: correo, asunto, cuerpo
+ * Salida: URL mailto
+ */
+export function EnlaceCorreo(correo, asunto, cuerpo)
+{
+  return `mailto:${correo}?subject=${encodeURIComponent(asunto)}&body=${encodeURIComponent(cuerpo)}`;
 }

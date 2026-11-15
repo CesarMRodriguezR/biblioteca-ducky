@@ -99,6 +99,28 @@ const Requerido = (maximo) =>
     ConvertirATexto,
     z.string({ error: obligatorio }).trim().min(1, obligatorio).max(maximo),
   );
+/*
+ * Constante: telefono
+ * Objetivo: Teléfono de 10 dígitos (para enviar el recibo por WhatsApp); vacío = sin teléfono.
+ */
+const telefono = z
+  .union([z.string().trim().regex(/^\d{10}$/, 'Debe tener 10 dígitos, sin espacios.'), z.literal('')])
+  .optional()
+  .nullable()
+  .transform((valor) => (valor === '' ? null : valor));
+/*
+ * Constante: matricula
+ * Objetivo: Matrícula o número de nómina escrito en una búsqueda de circulación.
+ */
+const matricula = z.preprocess(
+  ConvertirATexto,
+  z
+    .string({ error: obligatorio })
+    .trim()
+    .min(1, obligatorio)
+    .max(13)
+    .regex(/^[0-9A-Za-z]+$/, 'Formato inválido: solo letras y números.'),
+);
 const contrasena_segura = z
   .string()
   .min(8, 'Mínimo 8 caracteres, una mayúscula y un número.')
@@ -159,6 +181,7 @@ const esquemas = {
       .regex(/^[a-z0-9._-]{3,150}$/, 'Usa letras, números y puntos.'),
     Nombre_Completo: Requerido(150),
     Correo: z.string().trim().email('Correo inválido.').optional().nullable(),
+    Telefono: telefono,
     Contrasena_Usuario: contrasena_segura,
     Matricula_Nomina: z
       .preprocess(ConvertirATexto, z.string({ error: obligatorio }).trim())
@@ -171,6 +194,7 @@ const esquemas = {
     .object({
       Nombre_Completo: Requerido(150).optional(),
       Correo: z.string().trim().email('Correo inválido.').optional().nullable(),
+      Telefono: telefono,
       Contrasena_Usuario: z
         .union([contrasena_segura, z.literal('')])
         .optional()
@@ -392,6 +416,54 @@ const esquemas = {
   // Aprobar o rechazar le corresponde a Tesorería; en Biblio solo se registra la recepción.
   orden_estatus: z.object({
     Estatus: z.enum(['Recibida'], { error: 'Solo se puede marcar como Recibida' }),
+  }),
+
+  // Circulación ---------------------------------------------------------
+  matricula_param: z.object({ matricula }),
+
+  prestamo_crear: z.object({
+    matricula,
+    id_libro: z.preprocess((valor) => valor ?? '', id),
+    num_copia: z.coerce
+      .number({ error: obligatorio })
+      .int(obligatorio)
+      .positive(obligatorio),
+  }),
+
+  vencidos_filtros: z.object({
+    perfil: z
+      .enum(['Alumno', 'Profesor', 'Colaborador', 'Bibliotecario', 'Administrador'])
+      .optional(),
+    matricula: matricula.optional(),
+  }),
+
+  lista_espera_busqueda: z.object({ q: Requerido(150) }),
+
+  lista_espera_agregar: z.object({ id_libro: id, matricula }),
+
+  devolucion_crear: z.object({
+    id_prestamo: id,
+    condicion: z.enum(['Buen estado', 'Dañado']).default('Buen estado'),
+  }),
+
+  multa_crear: z.object({
+    id_prestamo: id,
+    motivo: z.enum(['Entrega extemporánea', 'Daño del libro', 'Pérdida del libro'], {
+      error: 'Elige el motivo de la multa.',
+    }),
+    justificacion: z.preprocess(
+      (valor) => valor ?? '',
+      z.string().trim().min(1, 'Escribe la justificación de la multa.').max(150),
+    ),
+  }),
+
+  deudores_periodo: z.object({ periodo: Requerido(80) }),
+
+  pago_tesoreria: z.object({
+    folio: z.string().trim().min(1).max(40),
+    referencia: z.preprocess(ConvertirATexto, z.string().regex(/^\d+$/)),
+    monto: z.coerce.number().positive(),
+    fecha: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   }),
 
   respuesta_tesoreria: z.object({

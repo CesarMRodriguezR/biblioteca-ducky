@@ -24,6 +24,7 @@ explica la puesta en marcha, la API y los usuarios de prueba.
 # externos/  (CIAA, Empleados y Tesorería en http://localhost:4000)
 npm run db:reset && npm run dev
 npm run tesoreria -- aceptar <folio>   # o rechazar <folio> "motivo"
+npm run tesoreria -- pagar M-0004      # registrar el pago de una multa
 npm test
 
 # server/

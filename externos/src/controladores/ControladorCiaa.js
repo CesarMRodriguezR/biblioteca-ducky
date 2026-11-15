@@ -28,6 +28,7 @@
  */
 
 import { ModeloAlumno } from '../modelos/ModeloAlumno.js';
+import { ModeloAviso } from '../modelos/ModeloAviso.js';
 import { ErrorHttp } from '../utilidades/ErrorHttp.js';
 
 /*
@@ -72,6 +73,39 @@ const ControladorCiaa = {
   async Actualizar(req, res)
   {
     res.json(await ModeloAlumno.Actualizar(req.params.matricula, req.body ?? {}));
+  },
+
+  /*
+   * Función: RecibirAviso
+   * Objetivo: POST /avisos — guardar un aviso de la biblioteca (lista de deudores o libro
+   *           perdido).
+   * Entrada: req, res
+   * Salida: 201 con el aviso guardado
+   */
+  async RecibirAviso(req, res)
+  {
+    const { tipo, periodo, matricula, detalle } = req.body ?? {};
+    if (!ModeloAviso.TIPOS_AVISO.includes(tipo))
+    {
+      throw new ErrorHttp(400, `El tipo de aviso debe ser: ${ModeloAviso.TIPOS_AVISO.join(' o ')}`);
+    }
+    if (!detalle || typeof detalle !== 'object')
+    {
+      throw new ErrorHttp(400, 'El aviso debe traer su detalle');
+    }
+    res.status(201).json(await ModeloAviso.Registrar({ tipo, periodo, matricula, detalle }));
+  },
+
+  /*
+   * Función: ListarAvisos
+   * Objetivo: GET /avisos?tipo= — avisos recibidos de la biblioteca.
+   * Entrada: req, res
+   * Salida: Respuesta JSON { total, datos }
+   */
+  async ListarAvisos(req, res)
+  {
+    const datos = await ModeloAviso.Listar({ tipo: req.query.tipo });
+    res.json({ total: datos.length, datos });
   },
 };
 

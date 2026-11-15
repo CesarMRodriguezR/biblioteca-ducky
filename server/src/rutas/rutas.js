@@ -47,6 +47,9 @@ import { ControladorUsuarios, ControladorPerfiles } from '../controladores/Contr
 import { ControladorLibros } from '../controladores/ControladorLibros.js';
 import { ControladorOrdenesCompra } from '../controladores/ControladorOrdenesCompra.js';
 import { ControladorPanel } from '../controladores/ControladorPanel.js';
+import { ControladorPrestamos } from '../controladores/ControladorPrestamos.js';
+import { ControladorDevoluciones } from '../controladores/ControladorDevoluciones.js';
+import { ControladorAsistente } from '../controladores/ControladorAsistente.js';
 import { CrearControladorCrud } from '../controladores/CrearControladorCrud.js';
 import {
   ModeloEditorial,
@@ -413,6 +416,180 @@ rutas.post(
   AutenticarTesoreria,
   Validar(esquemas.respuesta_tesoreria),
   ManejarAsincrono(ControladorOrdenesCompra.RecibirRespuestaTesoreria),
+);
+// Aviso de Tesorería (sistema externo): se pagó una multa en caja.
+rutas.post(
+  '/tesoreria/pagos',
+  AutenticarTesoreria,
+  Validar(esquemas.pago_tesoreria),
+  ManejarAsincrono(ControladorDevoluciones.RecibirPago),
+);
+
+/*------------------------------------------------------------------
+ * Sección: Préstamos
+ * Objetivo: Situación del lector, registro, recibo, renovación, vencidos y lista de espera.
+ *------------------------------------------------------------------*/
+const prestar = Puede('prestar_libros');
+const devolver = Puede('devolver_libros');
+const circulacion = Puede('prestar_libros', 'devolver_libros');
+rutas.get(
+  '/circulacion/lectores/:matricula',
+  Autenticar,
+  circulacion,
+  Validar(esquemas.matricula_param, 'params'),
+  ManejarAsincrono(ControladorPrestamos.Lector),
+);
+rutas.get('/prestamos/resumen', Autenticar, prestar, ManejarAsincrono(ControladorPrestamos.Resumen));
+rutas.get(
+  '/prestamos/vencidos',
+  Autenticar,
+  circulacion,
+  Validar(esquemas.vencidos_filtros, 'query'),
+  ManejarAsincrono(ControladorPrestamos.Vencidos),
+);
+rutas.get(
+  '/prestamos/libros/:isbn',
+  Autenticar,
+  prestar,
+  Validar(esquemas.isbn_param, 'params'),
+  ManejarAsincrono(ControladorPrestamos.Libro),
+);
+rutas.post(
+  '/prestamos',
+  Autenticar,
+  prestar,
+  Validar(esquemas.prestamo_crear),
+  ManejarAsincrono(ControladorPrestamos.Registrar),
+);
+rutas.get('/prestamos/:id', Autenticar, prestar, con_id, ManejarAsincrono(ControladorPrestamos.Recibo));
+rutas.get(
+  '/prestamos/:id/recibo.pdf',
+  Autenticar,
+  prestar,
+  con_id,
+  ManejarAsincrono(ControladorPrestamos.ReciboPdf),
+);
+rutas.post(
+  '/prestamos/:id/renovacion',
+  Autenticar,
+  prestar,
+  con_id,
+  ManejarAsincrono(ControladorPrestamos.Renovar),
+);
+rutas.post(
+  '/prestamos/:id/perdido',
+  Autenticar,
+  devolver,
+  con_id,
+  ManejarAsincrono(ControladorDevoluciones.ReportarPerdido),
+);
+rutas.get(
+  '/lista-espera',
+  Autenticar,
+  prestar,
+  Validar(esquemas.lista_espera_busqueda, 'query'),
+  ManejarAsincrono(ControladorPrestamos.ListaEspera),
+);
+rutas.post(
+  '/lista-espera',
+  Autenticar,
+  prestar,
+  Validar(esquemas.lista_espera_agregar),
+  ManejarAsincrono(ControladorPrestamos.AgregarEspera),
+);
+rutas.delete(
+  '/lista-espera/:id',
+  Autenticar,
+  prestar,
+  con_id,
+  ManejarAsincrono(ControladorPrestamos.QuitarEspera),
+);
+
+/*------------------------------------------------------------------
+ * Sección: Devoluciones, multas y adeudos
+ * Objetivo: Registro de devoluciones, multas, lista de alumnos deudores y pagos de Tesorería.
+ *------------------------------------------------------------------*/
+rutas.get(
+  '/devoluciones/resumen',
+  Autenticar,
+  devolver,
+  ManejarAsincrono(ControladorDevoluciones.Resumen),
+);
+rutas.post(
+  '/devoluciones',
+  Autenticar,
+  devolver,
+  Validar(esquemas.devolucion_crear),
+  ManejarAsincrono(ControladorDevoluciones.Registrar),
+);
+rutas.get(
+  '/multas/resumen',
+  Autenticar,
+  devolver,
+  ManejarAsincrono(ControladorDevoluciones.ResumenMultas),
+);
+const con_periodo = Validar(esquemas.deudores_periodo, 'query');
+rutas.get(
+  '/multas/deudores',
+  Autenticar,
+  devolver,
+  con_periodo,
+  ManejarAsincrono(ControladorDevoluciones.Deudores),
+);
+rutas.get(
+  '/multas/deudores.pdf',
+  Autenticar,
+  devolver,
+  con_periodo,
+  ManejarAsincrono(ControladorDevoluciones.DeudoresPdf),
+);
+rutas.post(
+  '/multas/deudores/envio',
+  Autenticar,
+  devolver,
+  Validar(esquemas.deudores_periodo),
+  ManejarAsincrono(ControladorDevoluciones.EnviarDeudores),
+);
+rutas.get('/multas/pagos', Autenticar, devolver, ManejarAsincrono(ControladorDevoluciones.Pagos));
+rutas.post(
+  '/multas',
+  Autenticar,
+  devolver,
+  Validar(esquemas.multa_crear),
+  ManejarAsincrono(ControladorDevoluciones.GenerarMulta),
+);
+rutas.get(
+  '/multas/:id',
+  Autenticar,
+  devolver,
+  con_id,
+  ManejarAsincrono(ControladorDevoluciones.ObtenerMulta),
+);
+rutas.get(
+  '/multas/:id/comprobante.pdf',
+  Autenticar,
+  devolver,
+  con_id,
+  ManejarAsincrono(ControladorDevoluciones.MultaPdf),
+);
+
+/*------------------------------------------------------------------
+ * Sección: Asistente Biblio
+ * Objetivo: Preguntas frecuentes según las funciones del perfil.
+ *------------------------------------------------------------------*/
+const asistente = Puede('usar_asistente');
+rutas.get(
+  '/asistente/preguntas',
+  Autenticar,
+  asistente,
+  ManejarAsincrono(ControladorAsistente.Preguntas),
+);
+rutas.get(
+  '/asistente/preguntas/:id',
+  Autenticar,
+  asistente,
+  con_id,
+  ManejarAsincrono(ControladorAsistente.Responder),
 );
 
 export { rutas };

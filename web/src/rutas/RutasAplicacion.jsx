@@ -55,6 +55,24 @@ import { PaginaBajaLibro } from '../vistas/paginas/libros/PaginaBajaLibro.jsx';
 import { PaginaSolicitarLibros } from '../vistas/paginas/libros/PaginaSolicitarLibros.jsx';
 import { PaginaCatalogo } from '../vistas/paginas/catalogo/PaginaCatalogo.jsx';
 import { PaginaFichaLibro } from '../vistas/paginas/catalogo/PaginaFichaLibro.jsx';
+import { PaginaDetalleUsuario } from '../vistas/paginas/usuarios/PaginaDetalleUsuario.jsx';
+import { PaginaPrestamos } from '../vistas/paginas/prestamos/PaginaPrestamos.jsx';
+import { PaginaRegistrarPrestamo } from '../vistas/paginas/prestamos/PaginaRegistrarPrestamo.jsx';
+import { PaginaReciboPrestamo } from '../vistas/paginas/prestamos/PaginaReciboPrestamo.jsx';
+import { PaginaReimprimirRecibo } from '../vistas/paginas/prestamos/PaginaReimprimirRecibo.jsx';
+import { PaginaRenovarPrestamo } from '../vistas/paginas/prestamos/PaginaRenovarPrestamo.jsx';
+import { PaginaPrestamosUsuario } from '../vistas/paginas/prestamos/PaginaPrestamosUsuario.jsx';
+import { PaginaListaEspera } from '../vistas/paginas/prestamos/PaginaListaEspera.jsx';
+import { PaginaDevoluciones } from '../vistas/paginas/devoluciones/PaginaDevoluciones.jsx';
+import { PaginaRegistrarDevolucion } from '../vistas/paginas/devoluciones/PaginaRegistrarDevolucion.jsx';
+import { PaginaLibroPerdido } from '../vistas/paginas/devoluciones/PaginaLibroPerdido.jsx';
+import { PaginaPrestamosVencidos } from '../vistas/paginas/devoluciones/PaginaPrestamosVencidos.jsx';
+import { PaginaMultas } from '../vistas/paginas/multas/PaginaMultas.jsx';
+import { PaginaGenerarMulta } from '../vistas/paginas/multas/PaginaGenerarMulta.jsx';
+import { PaginaAdeudosUsuario } from '../vistas/paginas/multas/PaginaAdeudosUsuario.jsx';
+import { PaginaDeudores } from '../vistas/paginas/multas/PaginaDeudores.jsx';
+import { PaginaPagosTesoreria } from '../vistas/paginas/multas/PaginaPagosTesoreria.jsx';
+import { PaginaAsistente } from '../vistas/paginas/asistente/PaginaAsistente.jsx';
 
 /*
  * Componente: ConSesion
@@ -180,8 +198,8 @@ export function RutasAplicacion()
             path=":id"
             element={Proteger(
               ['gestionar_usuarios'],
-              'Consulta de usuario',
-              <PaginaConsultaUsuario />,
+              'Detalle de usuario',
+              <PaginaDetalleUsuario />,
             )}
           />
           <Route
@@ -255,6 +273,92 @@ export function RutasAplicacion()
             )}
           />
         </Route>
+
+        <Route path="prestamos">
+          <Route
+            index
+            element={Proteger(['prestar_libros'], 'Préstamos', <PaginaPrestamos />)}
+          />
+          <Route
+            path="registro"
+            element={Proteger(
+              ['prestar_libros'],
+              'Registro de préstamos',
+              <PaginaRegistrarPrestamo />,
+            )}
+          />
+          <Route
+            path="recibos"
+            element={Proteger(['prestar_libros'], 'Recibo de préstamo', <PaginaReimprimirRecibo />)}
+          />
+          <Route
+            path=":id/recibo"
+            element={Proteger(['prestar_libros'], 'Recibo de préstamo', <PaginaReciboPrestamo />)}
+          />
+          <Route
+            path="renovacion"
+            element={Proteger(['prestar_libros'], 'Renovación de préstamos', <PaginaRenovarPrestamo />)}
+          />
+          <Route
+            path="usuario"
+            element={Proteger(['prestar_libros'], 'Préstamos de un usuario', <PaginaPrestamosUsuario />)}
+          />
+          <Route
+            path="lista-espera"
+            element={Proteger(['prestar_libros'], 'Lista de espera', <PaginaListaEspera />)}
+          />
+        </Route>
+
+        <Route path="devoluciones">
+          <Route
+            index
+            element={Proteger(['devolver_libros'], 'Devoluciones', <PaginaDevoluciones />)}
+          />
+          <Route
+            path="registro"
+            element={Proteger(
+              ['devolver_libros'],
+              'Registro de devoluciones',
+              <PaginaRegistrarDevolucion />,
+            )}
+          />
+          <Route
+            path="perdido"
+            element={Proteger(['devolver_libros'], 'Reporte de libro perdido', <PaginaLibroPerdido />)}
+          />
+          <Route
+            path="vencidos"
+            element={Proteger(['devolver_libros'], 'Préstamos vencidos', <PaginaPrestamosVencidos />)}
+          />
+        </Route>
+
+        <Route path="multas">
+          <Route
+            index
+            element={Proteger(['devolver_libros'], 'Multas y adeudos', <PaginaMultas />)}
+          />
+          <Route
+            path="generar"
+            element={Proteger(['devolver_libros'], 'Generación de multas', <PaginaGenerarMulta />)}
+          />
+          <Route
+            path="adeudos"
+            element={Proteger(['devolver_libros'], 'Multas y adeudos', <PaginaAdeudosUsuario />)}
+          />
+          <Route
+            path="deudores"
+            element={Proteger(['devolver_libros'], 'Lista de alumnos deudores', <PaginaDeudores />)}
+          />
+          <Route
+            path="pagos"
+            element={Proteger(['devolver_libros'], 'Pagos de Tesorería', <PaginaPagosTesoreria />)}
+          />
+        </Route>
+
+        <Route
+          path="asistente"
+          element={Proteger(['usar_asistente'], 'Asistente Biblio', <PaginaAsistente />)}
+        />
 
         <Route path="*" element={<Inicio />} />
       </Route>

@@ -2,7 +2,8 @@
  * ******************************************************************
  * Nombre del programa: TESORERIA-CLI · tesoreria.js
  * Función: Operar Tesorería desde la terminal: ver las solicitudes recibidas y mandar la señal
- *          de aceptación o rechazo (que Tesorería avisa a Biblio).
+ *          de aceptación o rechazo, ver las multas y registrar su pago (Tesorería avisa a
+ *          Biblio).
  * Autor: Equipo CCJMops
  * Fecha: 27/10/2026
  * Entrada: Argumentos de la terminal
@@ -20,6 +21,8 @@
  *     AYUDA               Texto de uso del comando
  *     LlamarTesoreria     Hacer una petición a la API de Tesorería
  *     MostrarSolicitud    Imprimir una solicitud con sus renglones y presupuesto
+ *     MostrarMulta        Imprimir una multa recibida de la biblioteca
+ *     ReferenciaMulta     Aceptar el folio de Biblio (M-0004) o solo el número
  *     Principal           Ejecutar el comando indicado
  * ******************************************************************
  */
@@ -32,6 +35,8 @@
  *       npm run tesoreria -- ver TES-2026-0003
  *       npm run tesoreria -- aceptar TES-2026-0003
  *       npm run tesoreria -- rechazar TES-2026-0003 "Sin presupuesto este mes"
+ *       npm run tesoreria -- multas [Pendiente|Pagada]
+ *       npm run tesoreria -- pagar M-0004
  * (2) Usa la API (no la base de datos), igual que lo haría el personal de Tesorería.
  * ******************************************************************
  */
@@ -46,7 +51,9 @@ const AYUDA = `Uso:
   npm run tesoreria -- listar [Recibida|Aceptada|Rechazada]
   npm run tesoreria -- ver <folio>
   npm run tesoreria -- aceptar <folio> [comentario]
-  npm run tesoreria -- rechazar <folio> "<motivo>"`;
+  npm run tesoreria -- rechazar <folio> "<motivo>"
+  npm run tesoreria -- multas [Pendiente|Pagada]
+  npm run tesoreria -- pagar <multa>      (folio de Biblio, p. ej. M-0004)`;
 
 /*
  * Función: LlamarTesoreria
@@ -99,6 +106,29 @@ function MostrarSolicitud(solicitud)
 }
 
 /*
+ * Función: MostrarMulta
+ * Objetivo: Imprimir una multa recibida de la biblioteca.
+ * Entrada: multa
+ * Salida: Ninguna (escribe en la terminal)
+ */
+function MostrarMulta(multa)
+{
+  console.log(`M-${multa.Referencia.padStart(4, '0')} · ${multa.Estatus} · ${multa.Lector} ` +
+    `(${multa.Matricula}) · ${multa.Motivo} · $${multa.Monto.toFixed(2)} · ${multa.Fecha_Multa}`);
+}
+
+/*
+ * Función: ReferenciaMulta
+ * Objetivo: Aceptar el folio de Biblio (M-0004) o solo el número y devolver la referencia.
+ * Entrada: texto
+ * Salida: Referencia sin ceros a la izquierda (p. ej. '4')
+ */
+function ReferenciaMulta(texto)
+{
+  return String(Number(String(texto).replace(/^M-/i, '')));
+}
+
+/*
  * Función: Principal
  * Objetivo: Ejecutar el comando indicado en la terminal.
  * Entrada: Argumentos de process.argv
@@ -116,6 +146,26 @@ async function Principal()
       console.log('No hay solicitudes.');
     }
     datos.forEach(MostrarSolicitud);
+    return;
+  }
+  if (comando === 'multas')
+  {
+    const { datos } = await LlamarTesoreria('GET', `/multas${folio ? `?estatus=${folio}` : ''}`);
+    if (!datos.length)
+    {
+      console.log('No hay multas.');
+    }
+    datos.forEach(MostrarMulta);
+    return;
+  }
+  if (comando === 'pagar' && folio)
+  {
+    const pago = await LlamarTesoreria('POST', `/multas/${ReferenciaMulta(folio)}/pagar`, {});
+    console.log(`Pago ${pago.Folio} · M-${pago.Referencia.padStart(4, '0')} · ${pago.Lector} · ` +
+      `$${pago.Monto.toFixed(2)}`);
+    console.log(pago.Notificado
+      ? 'Biblio recibió el pago y marcó la multa como pagada.'
+      : 'Biblio no respondió; verá el pago cuando abra Pagos de Tesorería.');
     return;
   }
   if (!folio || !['ver', 'aceptar', 'rechazar'].includes(comando))

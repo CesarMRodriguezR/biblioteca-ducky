@@ -34,7 +34,17 @@
  */
 
 import { NavLink, Outlet } from 'react-router-dom';
-import { BookMarked, LayoutGrid, Library, LogOut, Users } from 'lucide-react';
+import {
+  BookMarked,
+  CircleAlert,
+  CircleHelp,
+  FileText,
+  LayoutGrid,
+  Library,
+  LogOut,
+  RefreshCw,
+  Users,
+} from 'lucide-react';
 import { useSesion } from '../../controladores/ControladorSesion.jsx';
 import { Iniciales } from '../../modelos/dominio.js';
 
@@ -47,6 +57,10 @@ const MENU = [
   { to: '/usuarios', etiqueta: 'Usuarios', icono: Users, funcion: 'gestionar_usuarios' },
   { to: '/libros', etiqueta: 'Libros', icono: BookMarked, funcion: 'gestionar_libros' },
   { to: '/catalogo', etiqueta: 'Catálogo', icono: Library, funcion: 'buscar_libros' },
+  { to: '/prestamos', etiqueta: 'Préstamos', icono: FileText, funcion: 'prestar_libros' },
+  { to: '/devoluciones', etiqueta: 'Devoluciones', icono: RefreshCw, funcion: 'devolver_libros' },
+  { to: '/multas', etiqueta: 'Multas y adeudos', icono: CircleAlert, funcion: 'devolver_libros' },
+  { to: '/asistente', etiqueta: 'Asistente Biblio', icono: CircleHelp, funcion: 'usar_asistente' },
 ];
 
 /*

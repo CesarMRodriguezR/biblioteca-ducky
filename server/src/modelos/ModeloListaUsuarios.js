@@ -219,6 +219,7 @@ const ModeloListaUsuarios = {
         Nombre_Completo: NombreCompleto(persona),
         Nombre_Usuario: GenerarNombreUsuario(persona, ocupados),
         Correo: persona.Correo,
+        Telefono: persona.Telefono ?? null,
         Rol_Sugerido: rol,
         id_perfil_sugerido: perfil_por_rol.get(rol) ?? null,
       });

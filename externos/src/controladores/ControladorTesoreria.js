@@ -2,7 +2,8 @@
  * ******************************************************************
  * Nombre del programa: TESORERIA · ControladorTesoreria.js
  * Función: Atender la API de Tesorería: recibir solicitudes de compra, consultarlas y
- *          aceptarlas o rechazarlas (la respuesta se avisa a Biblio).
+ *          aceptarlas o rechazarlas, y recibir multas y registrar su pago (la respuesta y el
+ *          pago se avisan a Biblio).
  * Autor: Equipo CCJMops
  * Fecha: 27/10/2026
  * Entrada: Peticiones HTTP de /tesoreria/api
@@ -18,6 +19,7 @@
  * Contenido de listado:
  *     Módulo                 Objetivo
  *     ValidarSolicitud       Revisar los datos de una solicitud recibida
+ *     ValidarMulta           Revisar los datos de una multa recibida
  *     ControladorTesoreria   Manejadores de la API de Tesorería
  * ******************************************************************
  */
@@ -32,7 +34,8 @@
  */
 
 import { ModeloSolicitud } from '../modelos/ModeloSolicitud.js';
-import { NotificarBiblio } from '../utilidades/NotificarBiblio.js';
+import { ModeloMulta } from '../modelos/ModeloMulta.js';
+import { NotificarBiblio, NotificarPago } from '../utilidades/NotificarBiblio.js';
 import { ErrorHttp } from '../utilidades/ErrorHttp.js';
 
 /*
@@ -63,6 +66,34 @@ function ValidarSolicitud(cuerpo = {})
     fecha,
     total: Number(total) || 0,
     renglones,
+  };
+}
+
+/*
+ * Función: ValidarMulta
+ * Objetivo: Revisar los datos de una multa recibida.
+ * Entrada: cuerpo
+ * Salida: Datos normalizados; lanza ErrorHttp 400 si falta algo
+ */
+function ValidarMulta(cuerpo = {})
+{
+  const { referencia, matricula, lector, motivo, monto, fecha } = cuerpo;
+  if (!referencia || !matricula || !lector || !motivo || !/^\d{4}-\d{2}-\d{2}$/.test(fecha ?? ''))
+  {
+    throw new ErrorHttp(400, 'La multa debe traer referencia, matrícula, lector, motivo y fecha');
+  }
+  if (!(Number(monto) > 0))
+  {
+    throw new ErrorHttp(400, 'El monto de la multa debe ser mayor a cero');
+  }
+  return {
+    sistema_origen: cuerpo.sistema_origen || 'Biblio',
+    referencia: String(referencia),
+    matricula: String(matricula),
+    lector,
+    motivo,
+    monto: Number(monto),
+    fecha,
   };
 }
 
@@ -165,6 +196,62 @@ const ControladorTesoreria = {
       await ModeloSolicitud.MarcarNotificada(solicitud.Folio);
     }
     return { ...solicitud, Notificada: notificada };
+  },
+
+  /*
+   * Función: RecibirMulta
+   * Objetivo: POST /multas — registrar una multa enviada por Biblio para que se cobre en caja.
+   * Entrada: req, res
+   * Salida: 201 con la multa (200 si ya se había recibido)
+   */
+  async RecibirMulta(req, res)
+  {
+    const { multa, nueva } = await ModeloMulta.Recibir(ValidarMulta(req.body));
+    res.status(nueva ? 201 : 200).json(multa);
+  },
+
+  /*
+   * Función: ListarMultas
+   * Objetivo: GET /multas?estatus=&sistema= — multas recibidas.
+   * Entrada: req, res
+   * Salida: Respuesta JSON { total, datos }
+   */
+  async ListarMultas(req, res)
+  {
+    const datos = await ModeloMulta.Listar({
+      estatus: req.query.estatus,
+      sistema: req.query.sistema,
+    });
+    res.json({ total: datos.length, datos });
+  },
+
+  /*
+   * Función: ListarPagos
+   * Objetivo: GET /pagos?sistema= — pagos de multas registrados en caja.
+   * Entrada: req, res
+   * Salida: Respuesta JSON { total, datos }
+   */
+  async ListarPagos(req, res)
+  {
+    const datos = await ModeloMulta.ListarPagos({ sistema: req.query.sistema });
+    res.json({ total: datos.length, datos });
+  },
+
+  /*
+   * Función: PagarMulta
+   * Objetivo: POST /multas/:referencia/pagar — registrar el pago de una multa y avisar a Biblio.
+   * Entrada: req, res
+   * Salida: Respuesta JSON con el pago y si Biblio recibió el aviso
+   */
+  async PagarMulta(req, res)
+  {
+    const pago = await ModeloMulta.Pagar(req.params.referencia, req.body?.sistema || 'Biblio');
+    const notificado = await NotificarPago(pago);
+    if (notificado)
+    {
+      await ModeloMulta.MarcarNotificado(pago.Folio);
+    }
+    res.json({ ...pago, Notificado: notificado });
   },
 };
 

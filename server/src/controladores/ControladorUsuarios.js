@@ -39,6 +39,7 @@ import { ErrorHttp } from '../utilidades/ErrorHttp.js';
 import { ModeloUsuario } from '../modelos/ModeloUsuario.js';
 import { ModeloListaUsuarios } from '../modelos/ModeloListaUsuarios.js';
 import { ModeloPerfil } from '../modelos/ModeloPerfil.js';
+import { ModeloPrestamo } from '../modelos/ModeloPrestamo.js';
 import { CrearControladorCrud } from './CrearControladorCrud.js';
 
 /*
@@ -67,7 +68,8 @@ const ControladorUsuarios = {
 
   /*
    * Función: Obtener
-   * Objetivo: Atender GET /api/usuarios/:id.
+   * Objetivo: GET /usuarios/:id — detalle de usuario con sus préstamos activos, vencidos,
+   *           multas pendientes y si puede pedir préstamos.
    * Entrada: req: petición HTTP (ya autenticada y validada); res: respuesta HTTP
    * Salida: Respuesta HTTP en formato JSON
    */
@@ -78,7 +80,14 @@ const ControladorUsuarios = {
     {
       throw ErrorHttp.NoEncontrado('Usuario no encontrado');
     }
-    res.json(usuario);
+    const situacion = await ModeloPrestamo.SituacionDeUsuario(usuario);
+    res.json({
+      ...usuario,
+      resumen: situacion.resumen,
+      condiciones: situacion.condiciones,
+      puede_prestar: situacion.puede_prestar,
+      activos: situacion.activos,
+    });
   },
 
   /*

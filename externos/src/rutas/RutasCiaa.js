@@ -39,5 +39,7 @@ RutasCiaa.use(VerificarClave(ENTORNO.CLAVES.CIAA, 'CIAA'));
 RutasCiaa.get('/alumnos', ManejarAsincrono(ControladorCiaa.Listar));
 RutasCiaa.get('/alumnos/:matricula', ManejarAsincrono(ControladorCiaa.Obtener));
 RutasCiaa.put('/alumnos/:matricula', ManejarAsincrono(ControladorCiaa.Actualizar));
+RutasCiaa.post('/avisos', ManejarAsincrono(ControladorCiaa.RecibirAviso));
+RutasCiaa.get('/avisos', ManejarAsincrono(ControladorCiaa.ListarAvisos));
 
 export { RutasCiaa };

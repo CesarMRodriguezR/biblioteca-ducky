@@ -115,6 +115,17 @@ export function PaginaCambioUsuario()
                 ]}
                 ayuda="Una cuenta inactiva no puede iniciar sesión; elige «Activo» para reactivarla."
               />
+              <Entrada
+                etiqueta="Teléfono celular"
+                type="tel"
+                inputMode="numeric"
+                maxLength={10}
+                placeholder="Ej. 8112345601"
+                value={controlador.form.Telefono}
+                onChange={controlador.Cambiar('Telefono')}
+                error={controlador.errores.Telefono}
+                ayuda="10 dígitos. Se usa para enviar el recibo del préstamo por WhatsApp."
+              />
             </div>
             <hr
               style={{

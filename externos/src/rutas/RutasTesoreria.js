@@ -44,5 +44,12 @@ RutasTesoreria.post(
   '/solicitudes/:folio/rechazar',
   ManejarAsincrono(ControladorTesoreria.Rechazar),
 );
+RutasTesoreria.post('/multas', ManejarAsincrono(ControladorTesoreria.RecibirMulta));
+RutasTesoreria.get('/multas', ManejarAsincrono(ControladorTesoreria.ListarMultas));
+RutasTesoreria.post(
+  '/multas/:referencia/pagar',
+  ManejarAsincrono(ControladorTesoreria.PagarMulta),
+);
+RutasTesoreria.get('/pagos', ManejarAsincrono(ControladorTesoreria.ListarPagos));
 
 export { RutasTesoreria };

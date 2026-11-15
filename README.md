@@ -16,11 +16,11 @@ Biblio no entra a las bases de datos externas: las consulta por HTTP.
 biblioteca-ducky/
 ├── database/
 │   ├── 01_schema.sql        24 tablas del diagrama + ajustes del prototipo, vista vw_catalogo
-│   └── 02_seed.sql          Perfiles, funciones, usuarios, 19 libros, préstamos, órdenes…
+│   └── 02_seed.sql          Perfiles, funciones, usuarios, 19 libros, préstamos, multas, chatbot…
 ├── externos/                Sistemas externos simulados (puerto 4000)
 │   ├── database/            ciaa_ducky, empleados_ducky y tesoreria_ducky (una BD por sistema)
 │   ├── src/                 /ciaa/api, /empleados/api y /tesoreria/api (modelos, controladores, rutas)
-│   ├── scripts/tesoreria.js Comando para aceptar o rechazar solicitudes de compra
+│   ├── scripts/tesoreria.js Comando para responder solicitudes de compra y cobrar multas
 │   └── pruebas/             Pruebas de las tres APIs
 ├── server/                  API (Modelo + Controlador)
 │   ├── src/servidor.js      Punto de entrada: escucha el puerto
@@ -31,8 +31,8 @@ biblioteca-ducky/
 │   ├── src/rutas/           URL → autenticación → permiso → validación → controlador
 │   ├── src/intermediarios/  autenticacion (JWT + funciones), Validar (zod), errores
 │   ├── src/validaciones/    Esquemas zod con mensajes del prototipo
-│   ├── src/utilidades/      ErrorHttp, fechas y listado en PDF
-│   └── pruebas/             22 pruebas de integración (node:test) con los externos simulados
+│   ├── src/utilidades/      ErrorHttp, fechas, reglas de préstamo y documentos en PDF
+│   └── pruebas/             33 pruebas de integración (node:test) con los externos simulados
 ├── web/src/
 │   ├── principal.jsx        Punto de entrada (monta las rutas en #raiz)
 │   ├── modelos/             Acceso a la API y reglas del dominio (estados, formatos)
@@ -80,7 +80,7 @@ cd ../server
 cp .env.example .env        # ajusta DB_PASSWORD y JWT_SECRET; EXT_* apuntan a externos/
 npm install
 npm run dev
-npm run db:reset && npm test   # reinicia la BD con la semilla y corre las 22 pruebas
+npm run db:reset && npm test   # reinicia la BD con la semilla y corre las 33 pruebas
 npm run lint                   # revisa el estándar de codificación (también en web/, mobile/ y externos/)
 
 # 4. Web  →  http://localhost:5173  (el proxy de Vite manda /api al puerto 3000)
@@ -106,12 +106,18 @@ Contraseña de todos: `Ducky2026!`
 
 | Usuario | Matrícula / nómina | Perfil | Qué ve |
 |---|---|---|---|
-| `felipe.rodriguez` | 1001133 | Administrador | Panel, Usuarios, Libros, Catálogo (todo) |
-| `catherine.ramirez` | 2004720 | Bibliotecario | Catálogo |
-| `javier.saavedra` | 1987345 | Profesor | Catálogo |
-| `marcela.guerra` | 3105843 | Alumno | Catálogo |
-| `cesar.rodriguez` | 2005872 | Colaborador | Catálogo |
+| `felipe.rodriguez` | 1001133 | Administrador | Todo: Panel, Usuarios, Libros, Catálogo, Préstamos, Devoluciones, Multas y adeudos, Asistente |
+| `catherine.ramirez` | 2004720 | Bibliotecario | Catálogo, Préstamos, Devoluciones, Multas y adeudos, Asistente |
+| `javier.saavedra` | 1987345 | Profesor | Catálogo y Asistente. Tiene un préstamo con las 3 renovaciones usadas y está en la lista de espera |
+| `marcela.guerra` | 3105843 | Alumno | Catálogo y Asistente. Tiene «Introduction to Algorithms», que no tiene copias libres |
+| `cesar.rodriguez` | 2005872 | Colaborador | Catálogo y Asistente. Está en la lista de espera |
+| `ana.lopez` | 3109921 | Alumno | Préstamo vencido y $110 en multas: no puede pedir libros |
+| `luis.perez` | 3111456 | Alumno | Préstamo vencido hace 10 días (vencidos, deudores, libro perdido) |
+| `daniela.cruz` | 3104410 | Alumno | Multa aún no enviada a Tesorería y sin teléfono (WhatsApp falla) |
 | `luis.moreno` | 3120558 | Alumno | Tiene 1 préstamo y $45 de multa (para probar bajas rechazadas) |
+
+Las fechas de los préstamos y multas de la semilla se calculan a partir del día en que se
+carga, así que siempre hay préstamos al corriente, vencidos y renovados.
 
 Los intentos fallidos no se cuentan; una cuenta solo deja de entrar si el administrador la marca
 como *Inactivo* en el cambio de datos.
@@ -124,16 +130,18 @@ su propia clave en `X-Clave-Api` y su propia base de datos).
 
 | Sistema | API | Qué toma o envía Biblio |
 |---|---|---|
-| CIAA (alumnos) | `GET /ciaa/api/alumnos?estatus=Inscrito` | Matrícula, nombre, apellidos y correo (el CIAA también entrega carrera, teléfono, etc., que Biblio ignora) |
-| Empleados (nómina) | `GET /empleados/api/empleados?estatus=Activo` | Nómina, nombre, apellidos, correo y tipo (Docente, Bibliotecario, Administrativo, Directivo) |
-| Tesorería | `POST /tesoreria/api/solicitudes` | Envía cada solicitud de compra; Tesorería la acepta o rechaza y avisa a `POST /api/tesoreria/notificaciones` |
+| CIAA (alumnos) | `GET /ciaa/api/alumnos?estatus=Inscrito` · `POST /ciaa/api/avisos` | Matrícula, nombre, apellidos, correo y teléfono (el CIAA también entrega carrera, semestre, etc., que Biblio ignora). Biblio le envía a Servicios Escolares la lista de alumnos deudores y los libros perdidos |
+| Empleados (nómina) | `GET /empleados/api/empleados?estatus=Activo` | Nómina, nombre, apellidos, correo, teléfono y tipo (Docente, Bibliotecario, Administrativo, Directivo) |
+| Tesorería | `POST /tesoreria/api/solicitudes` · `POST /tesoreria/api/multas` · `GET /tesoreria/api/pagos` | Envía cada solicitud de compra (Tesorería la acepta o rechaza y avisa a `POST /api/tesoreria/notificaciones`) y cada multa (Tesorería la cobra en caja y avisa a `POST /api/tesoreria/pagos`) |
 
 **Alta y baja de cuentas** (*Usuarios → Actualizar lista de usuarios*). La API consulta CIAA y
 Empleados y arma dos listas:
 
 - **Altas**: personas activas cuya matrícula o nómina no tiene cuenta. El usuario es
   `nombre.apellido` (si ya existe se agrega la inicial del segundo nombre, p. ej.
-  `cesarm.rodriguez`) y la contraseña inicial es la matrícula o nómina precedida de `000`
+  `cesarm.rodriguez`), el correo y el teléfono se copian del sistema de origen (el teléfono
+  sirve para enviar el recibo del préstamo por WhatsApp) y la contraseña inicial es la
+  matrícula o nómina precedida de `000`
   (`3105842` → `0003105842`). El rol se sugiere por tipo (alumno → Alumno, docente → Profesor,
   bibliotecario → Bibliotecario, administrativo → Colaborador) y el administrador lo puede
   cambiar. Los registros mal capturados (matrícula con letras, nombre vacío) se muestran como
@@ -169,6 +177,17 @@ Tesorería avisa a Biblio al momento; si Biblio estaba apagado, toma la respuest
 que se abren las solicitudes. En Biblio solo se registra después la recepción de los libros
 (*Recibida*), que agrega las copias al inventario.
 
+**Multas.** Toda multa que genera Biblio (devolución tardía, renovación de un préstamo vencido,
+daño o pérdida) se envía a Tesorería. Si Tesorería no responde, la multa queda *Pendiente de
+sincronizar* y se reenvía al abrir *Multas y adeudos → Pagos de Tesorería*. El pago se registra
+en Tesorería, que avisa a Biblio para marcar la multa como pagada:
+
+```bash
+cd externos
+npm run tesoreria -- multas Pendiente           # multas por cobrar
+npm run tesoreria -- pagar M-0004               # el lector pagó en caja
+```
+
 ## Perfiles y funciones
 
 Los permisos salen de **Perfiles → PerfilFuncion → Funciones**. La API revisa el
@@ -176,20 +195,31 @@ código de función en cada ruta, y la web y la app muestran u ocultan menús y
 botones con las mismas funciones, así que basta con cambiar la asignación
 (pantalla *Perfiles y funciones*) para cambiar lo que ve cada rol.
 
-Solo existen las tres funciones del prototipo:
+Las seis funciones del diagrama de funciones:
 
 | Función | Admin | Bibliotecario | Profesor | Alumno | Colaborador |
 |---|:-:|:-:|:-:|:-:|:-:|
 | gestionar_usuarios (Gestión de usuarios) | ✔ | | | | |
 | gestionar_libros (Gestión de libros) | ✔ | | | | |
 | buscar_libros (Búsqueda de libros) | ✔ | ✔ | ✔ | ✔ | ✔ |
+| prestar_libros (Préstamo de libros) | ✔ | ✔ | | | |
+| devolver_libros (Devolución de libros, multas y adeudos) | ✔ | ✔ | | | |
+| usar_asistente (Asistente Biblio) | ✔ | ✔ | ✔ | ✔ | ✔ |
 
-Alcance de esta entrega:
+Alcance:
 
-- *Gestión de usuarios*: alta, baja, cambio y consulta de usuarios, y gestión de perfiles.
+- *Gestión de usuarios*: alta, baja, cambio y consulta de usuarios (con su detalle de préstamos
+  y multas, y su teléfono para WhatsApp), y gestión de perfiles.
 - *Gestión de libros*: alta, baja, cambio y consulta de libros, solicitud de compra y listado.
 - *Búsqueda de libros*: búsqueda con filtros en web y móvil. El filtro elegido también ordena
   los resultados (filtro *Autor* → ordenados por autor; *Todos* → por título).
+- *Préstamo de libros*: condición del lector y del libro, registro, recibo (impreso, por correo
+  o por WhatsApp), reimpresión, renovación, préstamos de un usuario y lista de espera.
+- *Devolución de libros*: registro de devoluciones con multa por retraso, libros perdidos,
+  préstamos vencidos, multas por daño o pérdida, adeudos de un usuario, lista de alumnos
+  deudores para Servicios Escolares y pagos recibidos de Tesorería.
+- *Asistente Biblio*: preguntas frecuentes según las funciones del perfil; cada respuesta cita
+  el artefacto del proyecto del que se tomó (Propuesta de Negocio o la historia de usuario).
 
 El perfil Administrador está protegido: sus funciones no se pueden modificar.
 
@@ -210,16 +240,32 @@ El perfil Administrador está protegido: sus funciones no se pueden modificar.
 | BL01 | Catálogo: búsqueda con filtros (el filtro también ordena) y paginación de 6 | `/catalogo` |
 | GL06 | Vista previa del listado, impresión y PDF | `/catalogo?listado=1` |
 | GL05 | Ficha del libro (completa con ejemplares para quien gestiona libros, resumida por estado para los demás) | `/catalogo/:id` |
+| GU02 | Detalle de usuario con préstamos activos, vencidos, multas y si puede pedir libros | `/usuarios/:id` |
+| PL01 | Registrar préstamo (lector, libro y ejemplar, fechas; rechazos por adeudos o sin copias) | `/prestamos/registro` |
+| PL02 | Recibo de préstamo (vista previa, impresión, PDF, correo y WhatsApp) y reimpresión | `/prestamos/:id/recibo`, `/prestamos/recibos` |
+| PL03 | Renovar préstamo (con multa si estaba vencido; máximo por perfil) | `/prestamos/renovacion` |
+| PL04 | Préstamos de un usuario (activos e historial) | `/prestamos/usuario` |
+| PL05 | Lista de espera (agregar, quitar y prioridad al primero) | `/prestamos/lista-espera` |
+| DL01 | Registrar devolución (a tiempo, con multa, libro dañado, aviso de lista de espera) | `/devoluciones/registro` |
+| DL03 | Reporte de libro perdido (multa por reposición, aviso a Servicios Escolares y Tesorería) | `/devoluciones/perdido` |
+| DL05 | Préstamos vencidos por perfil o de un usuario | `/devoluciones/vencidos` |
+| DL02 | Generar multa por entrega extemporánea, daño o pérdida | `/multas/generar` |
+| DL04 | Multas y adeudos de un usuario | `/multas/adeudos` |
+| DL06 | Lista de alumnos deudores (vista previa, PDF y envío a Servicios Escolares) | `/multas/deudores` |
+| DL07 | Pagos de Tesorería (conectado y sin conexión) | `/multas/pagos` |
+| CB01 | Asistente Biblio con preguntas por perfil | `/asistente` |
+
+Los menús *Préstamos*, *Devoluciones* y *Multas y adeudos* muestran indicadores, accesos y los
+últimos movimientos. Los avisos de resultado (recibo enviado, lista enviada, PDF descargado…)
+se muestran dentro de la pantalla, como en el resto del sistema.
 
 **Móvil**: Inicio de sesión (con sus cuatro estados), Inicio (saludo, buscador,
 filtros y recomendados), Buscar (resultados y búsqueda sin filtro con carga de 6
 en 6), Detalle (códigos de copia para quien gestiona libros, conteo por
 estado para los demás) y Perfil.
 
-Préstamos, devoluciones, multas, lista de espera, políticas y chatbot quedan fuera de esta
-entrega: sus tablas siguen en la base de datos (para entregas futuras), pero no tienen rutas en
-la API ni pantallas. Los préstamos y multas de la semilla solo se usan para mostrar el estado de
-las copias y para impedir la baja de cuentas con pendientes.
+La app móvil conserva las pantallas del flujo "Teléfono" del prototipo (búsqueda y perfil);
+préstamos, devoluciones y el Asistente están en la web, que es donde los diseña el prototipo.
 
 ## Estados y reglas
 
@@ -230,6 +276,11 @@ las copias y para impedir la baja de cuentas con pendientes.
 - **Código de copia** (`EJ-00101`): no se guarda; se calcula con `id_libro × 100 + num_copia`, por eso cada libro admite hasta 99 copias.
 - **Solicitud de compra**: `Pendiente` (aún no llega a Tesorería) `→ En revision` (Tesorería la recibió) `→ Aprobada` o `Rechazada` (lo decide Tesorería, con motivo) `→ Recibida` (llegaron los libros; se agregan las copias).
 - **Ficha**: el ISBN no cambia después del alta; el número de copias solo aumenta (para reducir se da de baja una copia).
+- **Préstamo** (reglamento en `server/src/utilidades/ReglasCirculacion.js` y en la tabla `Politicas`): solo se prestan copias `Consulta Externa`; dura 5 días hábiles (10 para profesores), sin contar sábados ni domingos. El lector debe estar activo, sin multas pendientes, sin préstamos vencidos y con menos de 2 préstamos. Si el libro tiene lista de espera, solo se presta al primero de la lista. `Prestamos.Estado` guarda `Activo`, `Devuelto` o `Perdido`; *Vencido* y *Renovado* se calculan al mostrar.
+- **Renovación**: hasta 2 veces (3 para profesores). Si el préstamo ya estaba vencido, la nueva fecha se cuenta desde hoy y se genera la multa por los días de retraso.
+- **Multa**: $10.00 por día de retraso, $250.00 por daño y el precio de la última compra si el libro se pierde (la copia queda `Inactivo` con motivo `Perdido`). Una multa se paga completa en Tesorería.
+- **Lista de espera** (estatus del diccionario): `Pendiente` (en espera) · `Atendida` (se le prestó) · `Cancelada` (se quitó). No se envían notificaciones.
+- **Folios**: préstamo `PR-000231` y multa `M-0058` se calculan con el id; no se guardan.
 
 ## API
 
@@ -249,7 +300,13 @@ Todas las rutas van bajo `/api` y, salvo `POST /auth/login` y `GET /salud`, requ
 | Copias | `GET/POST /libros/:id/ejemplares` · `PUT /libros/:id/ejemplares/:n` · `POST /libros/:id/ejemplares/:n/baja` | gestionar_libros |
 | Editoriales, autores, temas | CRUD `/editoriales`, `/autores`, `/temas` | lectura: catálogo · escritura: gestionar_libros |
 | Compras | `GET /ordenes-compra` · `GET /ordenes-compra/solicitudes` · `POST /ordenes-compra` · `PATCH /ordenes-compra/:id/estatus` (solo `Recibida`) | gestionar_libros |
-| Aviso de Tesorería | `POST /tesoreria/notificaciones` (`{ folio, referencia, estatus, motivo }`) | clave `X-Clave-Integracion` (no usa sesión) |
+| Aviso de Tesorería | `POST /tesoreria/notificaciones` (`{ folio, referencia, estatus, motivo }`) · `POST /tesoreria/pagos` (`{ folio, referencia, monto, fecha }`) | clave `X-Clave-Integracion` (no usa sesión) |
+| Situación del lector | `GET /circulacion/lectores/:matricula` (préstamos, multas y condiciones) · `GET /prestamos/vencidos?perfil=&matricula=` | prestar_libros o devolver_libros |
+| Préstamos | `GET /prestamos/resumen` · `GET /prestamos/libros/:isbn` · `POST /prestamos` · `GET /prestamos/:id` · `GET /prestamos/:id/recibo.pdf` · `POST /prestamos/:id/renovacion` | prestar_libros |
+| Lista de espera | `GET /lista-espera?q=` · `POST /lista-espera` · `DELETE /lista-espera/:id` | prestar_libros |
+| Devoluciones | `GET /devoluciones/resumen` · `POST /devoluciones` · `POST /prestamos/:id/perdido` | devolver_libros |
+| Multas | `GET /multas/resumen` · `POST /multas` · `GET /multas/:id` · `GET /multas/:id/comprobante.pdf` · `GET /multas/deudores?periodo=` · `GET /multas/deudores.pdf` · `POST /multas/deudores/envio` · `GET /multas/pagos` | devolver_libros |
+| Asistente Biblio | `GET /asistente/preguntas` · `GET /asistente/preguntas/:id` | usar_asistente |
 
 Errores: `{ "error": "mensaje", "detalles": … }`. 400 trae un mensaje por campo
 (`[{ campo, mensaje }]`); 409 trae `detalles.codigo` (`ISBN_DUPLICADO`,
@@ -259,11 +316,16 @@ Errores: `{ "error": "mensaje", "detalles": … }`. 400 trae un mensaje por camp
 
 Todos están marcados con `[PROTOTIPO]` en `01_schema.sql`:
 
-- **Usuarios**: `Nombre_Completo` y `Correo` (`Nombre_Usuario` es el login del prototipo).
+- **Usuarios**: `Nombre_Completo`, `Correo` y `Telefono` (`Nombre_Usuario` es el login del
+  prototipo; el teléfono sirve para enviar el recibo por WhatsApp sin consultar las APIs).
 - **LibrosNuevos**: `Anio`, `Tema` y `Sinopsis`, porque la solicitud de compra los pide.
 - **OrdenesCompra**: estado `En revision` (la recibió Tesorería).
 - **Ejemplares**: `Motivo_Baja`, que distingue las copias retiradas por un motivo de las que se
   inactivaron junto con su libro (estas vuelven a `Disponible` al reactivarlo).
+- **Multas**: `Motivo` (entrega extemporánea, daño o pérdida), `Fecha_Multa` y
+  `Enviada_Tesoreria` (las que faltan enviar se reenvían al abrir Pagos de Tesorería).
+- **PreguntasChatbot**: `id_funcion`, la función que da acceso a cada pregunta (un perfil solo ve
+  las de sus funciones). **ContenidosChatbot.Respuesta** crece a 500 caracteres.
 
 Fuera de eso, `Ejemplares` sigue el diagrama (id_libro, num_copia, Estatus, Ubicacion); no hay
 tabla de bitácora ni contador de intentos fallidos.

@@ -26,12 +26,21 @@
 --   * Ejemplares: Motivo_Baja (Perdido, Robado, Danado u Obsoleto) en las copias
 --     retiradas una por una. Al inactivar un libro sus copias quedan 'Inactivo'
 --     sin motivo; al reactivarlo solo esas vuelven a 'Disponible'.
---   * Usuarios: Nombre_Completo y Correo. Nombre_Usuario es el usuario de
---     inicio de sesión (p. ej. ana.ramirez).
+--   * Usuarios: Nombre_Completo, Correo y Telefono. Nombre_Usuario es el usuario
+--     de inicio de sesión (p. ej. ana.ramirez). Correo y Telefono se copian de CIAA o
+--     Empleados al dar de alta la cuenta y sirven para enviar el recibo del préstamo
+--     por correo o WhatsApp sin consultar esos sistemas.
 --   * LibrosNuevos: Anio, Tema y Sinopsis (los pide la solicitud de compra).
 --   * OrdenesCompra: estado 'En revision' (ya la recibió Tesorería). El folio y
 --     el motivo de Tesorería no se guardan: se consultan a Tesorería con la
 --     referencia (id_orden).
+--   * Multas: Motivo (entrega extemporánea, daño o pérdida) y Fecha_Multa, que el
+--     prototipo muestra en cada multa, y Enviada_Tesoreria, para saber qué multas
+--     falta enviar a Tesorería aunque no responda (Pagos de Tesorería).
+--   * PreguntasChatbot: id_funcion. Cada pregunta del Asistente Biblio pertenece a una
+--     función; un usuario solo ve las preguntas de las funciones de su perfil.
+--   * ContenidosChatbot: Respuesta crece a VARCHAR(500) porque las respuestas del
+--     prototipo pasan de 150 caracteres.
 -- =====================================================================
 
 SET NAMES utf8mb4;
@@ -82,6 +91,7 @@ CREATE TABLE Usuarios (
   id_perfil           VARCHAR(13)  NOT NULL,
   Nombre_Completo     VARCHAR(150)  NOT NULL COMMENT '[PROTOTIPO]',
   Correo              VARCHAR(150)  NULL     COMMENT '[PROTOTIPO]',
+  Telefono            VARCHAR(15)   NULL     COMMENT '[PROTOTIPO] 10 dígitos, para WhatsApp',
   PRIMARY KEY (id_usuario),
   UNIQUE KEY uq_usuarios_matricula (Matricula_Nomina),
   UNIQUE KEY uq_usuarios_usuario (Nombre_Usuario),
@@ -217,6 +227,10 @@ CREATE TABLE Multas (
   id_usuario        VARCHAR(13)  NOT NULL,
   id_prestamo       VARCHAR(13)  NULL,
   Justificacion     VARCHAR(150)   NOT NULL,
+  Motivo            ENUM('Entrega extemporánea','Daño del libro','Pérdida del libro')
+                    NOT NULL DEFAULT 'Entrega extemporánea' COMMENT '[PROTOTIPO]',
+  Fecha_Multa       DATE           NOT NULL DEFAULT (CURRENT_DATE) COMMENT '[PROTOTIPO]',
+  Enviada_Tesoreria BOOLEAN        NOT NULL DEFAULT FALSE COMMENT '[PROTOTIPO]',
   PRIMARY KEY (id_multa),
   UNIQUE KEY uq_multas_prestamo (id_prestamo),
   KEY ix_multas_usuario (id_usuario),
@@ -310,8 +324,11 @@ CREATE TABLE Politicas (
 CREATE TABLE PreguntasChatbot (
   id_pregunta  VARCHAR(13)  NOT NULL,
   Pregunta     VARCHAR(150) NOT NULL,
+  id_funcion   VARCHAR(13)  NOT NULL COMMENT '[PROTOTIPO] Función que da acceso a la pregunta',
   PRIMARY KEY (id_pregunta),
-  FULLTEXT KEY ft_preguntas (Pregunta)
+  FULLTEXT KEY ft_preguntas (Pregunta),
+  CONSTRAINT fk_preguntas_funcion FOREIGN KEY (id_funcion)
+    REFERENCES Funciones (id_funcion) ON UPDATE CASCADE ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 CREATE TABLE FuentesChatbot (
@@ -322,7 +339,7 @@ CREATE TABLE FuentesChatbot (
 
 CREATE TABLE ContenidosChatbot (
   id_contenido  VARCHAR(13)  NOT NULL,
-  Respuesta     VARCHAR(150) NOT NULL,
+  Respuesta     VARCHAR(500) NOT NULL COMMENT '[PROTOTIPO] 150 en el diccionario',
   id_pregunta   VARCHAR(13)  NOT NULL,
   id_fuente     VARCHAR(13)  NOT NULL,
   PRIMARY KEY (id_contenido),

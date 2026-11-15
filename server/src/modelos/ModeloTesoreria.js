@@ -1,8 +1,8 @@
 /*
  * ******************************************************************
  * Nombre del programa: BD-SP02-GL01 · ModeloTesoreria.js
- * Función: Enviar las solicitudes de compra a Tesorería (sistema externo) y traer sus
- *          respuestas (aceptada o rechazada).
+ * Función: Enviar las solicitudes de compra y las multas a Tesorería (sistema externo) y
+ *          traer sus respuestas (aceptada o rechazada) y los pagos de multas.
  * Autor: Equipo CCJMops
  * Fecha: 27/10/2026
  * Entrada: Órdenes de compra de Biblio
@@ -33,12 +33,16 @@
  * (2) Biblio no decide la aprobación: solo Tesorería puede aprobar o rechazar.
  * (3) Biblio no guarda el folio ni el motivo: la orden se identifica en Tesorería por su
  *     referencia (id_orden) y esos datos se consultan a Tesorería cuando se muestran.
+ * (4) Multas: Biblio envía cada multa (referencia = id_multa); Tesorería la cobra en caja y
+ *     avisa a POST /api/tesoreria/pagos. SincronizarMultas reenvía las que no se enviaron y
+ *     aplica los pagos cuyo aviso no llegó.
  * ******************************************************************
  */
 
 import { ENTORNO } from '../configuracion/entorno.js';
 import { LlamarSistemaExterno } from '../utilidades/LlamarSistemaExterno.js';
 import { ModeloOrdenCompra } from './ModeloOrdenCompra.js';
+import { ModeloMulta } from './ModeloMulta.js';
 
 /*
  * Constante: SISTEMA_ORIGEN
@@ -182,6 +186,100 @@ const ModeloTesoreria = {
       }
       resumen.disponible = false;
     }
+    return resumen;
+  },
+
+  /*
+   * Función: EnviarMulta
+   * Objetivo: Enviar una multa a Tesorería para que la cobre y marcarla como enviada.
+   * Entrada: id_multa
+   * Salida: Promesa con la multa de Tesorería; lanza ErrorHttp 502 si Tesorería no responde
+   */
+  async EnviarMulta(id_multa)
+  {
+    const multa = await ModeloMulta.BuscarPorId(id_multa);
+    const recibida = await LlamarSistemaExterno(ENTORNO.EXTERNOS.TESORERIA, 'POST', '/multas', {
+      sistema_origen: SISTEMA_ORIGEN,
+      referencia: String(multa.id_multa),
+      matricula: multa.Matricula_Nomina,
+      lector: multa.Nombre_Completo,
+      motivo: multa.Motivo,
+      monto: multa.Cantidad_a_Pagar,
+      fecha: multa.Fecha_Multa,
+    });
+    await ModeloMulta.MarcarEnviada(multa.id_multa);
+    return recibida;
+  },
+
+  /*
+   * Función: IntentarEnviarMulta
+   * Objetivo: Enviar una multa recién generada; si Tesorería no responde, queda pendiente de
+   *           sincronizar.
+   * Entrada: multa (o null)
+   * Salida: Promesa con true si Tesorería la recibió
+   */
+  async IntentarEnviarMulta(multa)
+  {
+    if (!multa)
+    {
+      return false;
+    }
+    try
+    {
+      await ModeloTesoreria.EnviarMulta(multa.id_multa);
+      return true;
+    }
+    catch (error)
+    {
+      if (error.details?.codigo !== 'SISTEMA_EXTERNO')
+      {
+        throw error;
+      }
+      return false;
+    }
+  },
+
+  /*
+   * Función: SincronizarMultas
+   * Objetivo: Enviar las multas pendientes que Tesorería aún no tiene, aplicar los pagos cuyo
+   *           aviso no llegó y devolver los pagos registrados en Tesorería.
+   * Entrada: Ninguna
+   * Salida: Promesa con { disponible, enviadas, aplicados, pagos, pendientes }
+   */
+  async SincronizarMultas()
+  {
+    const resumen = { disponible: true, enviadas: 0, aplicados: 0, pagos: [], pendientes: [] };
+    try
+    {
+      for (const multa of await ModeloMulta.Pendientes({ sin_enviar: true }))
+      {
+        await ModeloTesoreria.EnviarMulta(multa.id_multa);
+        resumen.enviadas += 1;
+      }
+      const { datos } = await LlamarSistemaExterno(
+        ENTORNO.EXTERNOS.TESORERIA,
+        'GET',
+        `/pagos?sistema=${SISTEMA_ORIGEN}`,
+      );
+      for (const pago of datos)
+      {
+        const { cambio } = await ModeloMulta.MarcarPagada(
+          pago.Referencia,
+          pago.Fecha_Pago.slice(0, 10),
+        );
+        resumen.aplicados += cambio ? 1 : 0;
+      }
+      resumen.pagos = datos;
+    }
+    catch (error)
+    {
+      if (error.details?.codigo !== 'SISTEMA_EXTERNO')
+      {
+        throw error;
+      }
+      resumen.disponible = false;
+    }
+    resumen.pendientes = await ModeloMulta.Pendientes({ sin_enviar: true });
     return resumen;
   },
 };

@@ -8,41 +8,58 @@ USE biblioteca_ducky;
 -- Perfiles -----------------------------------------------------------
 INSERT INTO Perfiles (id_perfil, Nombre_Rol, Descripcion_Perfil) VALUES
   (1, 'Administrador', 'Acceso completo al sistema.'),
-  (2, 'Bibliotecario', 'Búsqueda de libros en el catálogo.'),
+  (2, 'Bibliotecario', 'Préstamos, devoluciones, multas y búsqueda de libros.'),
   (3, 'Profesor', 'Búsqueda de libros en el catálogo.'),
   (4, 'Alumno', 'Búsqueda de libros en el catálogo.'),
   (5, 'Colaborador', 'Búsqueda de libros en el catálogo.');
 
 -- Funciones. Nombre_Funcion es el código que revisa la API; la etiqueta
 -- visible va en Descripcion_Funcion con el formato 'Etiqueta: descripción'.
--- Solo las tres funciones del prototipo.
+-- Son las seis funciones del diagrama de funciones (una por módulo).
 INSERT INTO Funciones (id_funcion, Nombre_Funcion, Descripcion_Funcion) VALUES
   (1, 'gestionar_usuarios', 'Gestión de usuarios: Alta, baja, cambio y consulta de usuarios, y gestión de perfiles.'),
   (2, 'gestionar_libros', 'Gestión de libros: Alta, baja, cambio y consulta de libros, solicitud de compra y listado.'),
-  (3, 'buscar_libros', 'Búsqueda de libros: Buscar en el catálogo con filtros y ver el detalle de los libros.');
+  (3, 'buscar_libros', 'Búsqueda de libros: Buscar en el catálogo con filtros y ver el detalle de los libros.'),
+  (4, 'prestar_libros', 'Préstamo de libros: Registro, recibo y renovación de préstamos, y lista de espera.'),
+  (5, 'devolver_libros', 'Devolución de libros: Devoluciones, libros perdidos, multas, adeudos y pagos.'),
+  (6, 'usar_asistente', 'Asistente Biblio: Preguntas frecuentes sobre el sistema según el perfil.');
 
--- El Administrador tiene las tres; los demás perfiles (incluido Bibliotecario) solo buscan.
+-- El Administrador tiene todas; el Bibliotecario presta, recibe devoluciones y
+-- maneja multas; todos buscan libros y usan el Asistente Biblio.
 INSERT INTO PerfilFuncion (id_funcion, id_perfil) VALUES
   (1, 1),
   (2, 1),
   (3, 1),
+  (4, 1),
+  (5, 1),
+  (6, 1),
   (3, 2),
+  (4, 2),
+  (5, 2),
+  (6, 2),
   (3, 3),
+  (6, 3),
   (3, 4),
-  (3, 5);
+  (6, 4),
+  (3, 5),
+  (6, 5);
 
 -- Usuarios -----------------------------------------------------------
+-- Correo y Telefono son los de CIAA o Empleados (externos/database).
 SET @hash = '$2b$10$63TcTHQUM5MCxcb1X6BqGeYK3IEWv.Sb0af27V3uvvaBW1ugkPg56';
-INSERT INTO Usuarios (id_usuario, Nombre_Usuario, Contrasena_Usuario, Matricula_Nomina, id_perfil, Nombre_Completo, Correo, Estatus) VALUES
-  (1, 'felipe.rodriguez', @hash, '1001133', 1, 'Felipe Rodríguez', 'felipe.rodriguez@ducky.edu.mx', 'Activo'),
-  (2, 'catherine.ramirez', @hash, '2004720', 2, 'Catherine Ramírez', 'catherine.ramirez@ducky.edu.mx', 'Activo'),
-  (3, 'javier.saavedra', @hash, '1987345', 3, 'Javier Saavedra', 'javier.saavedra@ducky.edu.mx', 'Activo'),
-  (4, 'marcela.guerra', @hash, '3105843', 4, 'Marcela Guerra', 'marcela.guerra@ducky.edu.mx', 'Activo'),
-  (5, 'cesar.rodriguez', @hash, '2005872', 5, 'César Rodríguez', 'cesar.rodriguez@ducky.edu.mx', 'Activo'),
-  (6, 'diego.fuentes', @hash, '3098117', 4, 'Diego Alberto Fuentes Cano', 'diego.fuentes@ducky.edu.mx', 'Activo'),
-  (7, 'maria.ortiz', @hash, '3112390', 4, 'María Fernanda Ortiz Vega', 'maria.ortiz@ducky.edu.mx', 'Activo'),
-  (8, 'luis.moreno', @hash, '3120558', 4, 'Luis Ángel Moreno Ríos', 'luis.moreno@ducky.edu.mx', 'Activo'),
-  (9, 'hector.villarreal', @hash, '2005871', 5, 'Héctor Villarreal', 'hector.villarreal@ducky.edu.mx', 'Activo');
+INSERT INTO Usuarios (id_usuario, Nombre_Usuario, Contrasena_Usuario, Matricula_Nomina, id_perfil, Nombre_Completo, Correo, Telefono, Estatus) VALUES
+  (1, 'felipe.rodriguez', @hash, '1001133', 1, 'Felipe Rodríguez', 'felipe.rodriguez@ducky.edu.mx', '8113000001', 'Activo'),
+  (2, 'catherine.ramirez', @hash, '2004720', 2, 'Catherine Ramírez', 'catherine.ramirez@ducky.edu.mx', '8113000002', 'Activo'),
+  (3, 'javier.saavedra', @hash, '1987345', 3, 'Javier Saavedra', 'javier.saavedra@ducky.edu.mx', '8113000003', 'Activo'),
+  (4, 'marcela.guerra', @hash, '3105843', 4, 'Marcela Guerra', 'marcela.guerra@ducky.edu.mx', '8112345601', 'Activo'),
+  (5, 'cesar.rodriguez', @hash, '2005872', 5, 'César Rodríguez', 'cesar.rodriguez@ducky.edu.mx', '8113000004', 'Activo'),
+  (6, 'diego.fuentes', @hash, '3098117', 4, 'Diego Alberto Fuentes Cano', 'diego.fuentes@ducky.edu.mx', '8112345603', 'Activo'),
+  (7, 'maria.ortiz', @hash, '3112390', 4, 'María Fernanda Ortiz Vega', 'maria.ortiz@ducky.edu.mx', '8112345602', 'Activo'),
+  (8, 'luis.moreno', @hash, '3120558', 4, 'Luis Ángel Moreno Ríos', 'luis.moreno@ducky.edu.mx', '8112345604', 'Activo'),
+  (9, 'hector.villarreal', @hash, '2005871', 5, 'Héctor Villarreal', 'hector.villarreal@ducky.edu.mx', '8113000005', 'Activo'),
+  (10, 'ana.lopez', @hash, '3109921', 4, 'Ana López', 'ana.lopez@ducky.edu.mx', '8112345610', 'Activo'),
+  (11, 'luis.perez', @hash, '3111456', 4, 'Luis Pérez', 'luis.perez@ducky.edu.mx', '8112345611', 'Activo'),
+  (12, 'daniela.cruz', @hash, '3104410', 4, 'Daniela Cruz', 'daniela.cruz@ducky.edu.mx', NULL, 'Activo');
 
 -- Catálogo -----------------------------------------------------------
 INSERT INTO Editoriales (id_editorial, Nombre_Editorial, Pais) VALUES
@@ -151,7 +168,7 @@ INSERT INTO TemasLibros (id_libro, id_tema) VALUES
 INSERT INTO Ejemplares (id_libro, num_copia, Estatus, Ubicacion, Motivo_Baja) VALUES
   (1, 1, 'Disponible', 'P4-EB-N2-SComputación', NULL),
   (1, 2, 'Disponible', 'P4-EB-N2-SComputación', NULL),
-  (1, 3, 'Consulta Externa', 'P4-EB-N2-SComputación', NULL),
+  (1, 3, 'En préstamo', 'P4-EB-N2-SComputación', NULL),
   (1, 4, 'En préstamo', 'P4-EB-N2-SComputación', NULL),
   (1, 5, 'En préstamo', 'P4-EB-N2-SComputación', NULL),
   (2, 1, 'Disponible', 'P4-EB-N2-SComputación', NULL),
@@ -162,8 +179,8 @@ INSERT INTO Ejemplares (id_libro, num_copia, Estatus, Ubicacion, Motivo_Baja) VA
   (3, 2, 'En préstamo', 'P4-EQA76.73-N3-SComputación', NULL),
   (3, 3, 'Consulta Externa', 'P4-EQA76.73-N3-SComputación', NULL),
   (4, 1, 'En préstamo', 'P5-EQA76.76-N1-SComputación', NULL),
-  (4, 2, 'En préstamo', 'P5-EQA76.76-N1-SComputación', NULL),
-  (4, 3, 'En préstamo', 'P5-EQA76.76-N1-SComputación', NULL),
+  (4, 2, 'Consulta Externa', 'P5-EQA76.76-N1-SComputación', NULL),
+  (4, 3, 'Consulta Externa', 'P5-EQA76.76-N1-SComputación', NULL),
   (4, 4, 'Consulta Externa', 'P5-EQA76.76-N1-SComputación', NULL),
   (5, 1, 'Disponible', 'P4-ETK5105-N2-SRedes', NULL),
   (5, 2, 'Disponible', 'P4-ETK5105-N2-SRedes', NULL),
@@ -177,11 +194,11 @@ INSERT INTO Ejemplares (id_libro, num_copia, Estatus, Ubicacion, Motivo_Baja) VA
   (6, 4, 'Consulta Externa', 'P3-EQA303-N3-SMatemáticas', NULL),
   (6, 5, 'Consulta Externa', 'P3-EQA303-N3-SMatemáticas', NULL),
   (6, 6, 'En préstamo', 'P3-EQA303-N3-SMatemáticas', NULL),
-  (6, 7, 'En préstamo', 'P3-EQA303-N3-SMatemáticas', NULL),
+  (6, 7, 'Consulta Externa', 'P3-EQA303-N3-SMatemáticas', NULL),
   (6, 8, 'Consulta Externa', 'P3-EQA303-N3-SMatemáticas', NULL),
   (7, 1, 'Disponible', 'P4-EQA76.76-N2-SComputación', NULL),
   (7, 2, 'Consulta Externa', 'P4-EQA76.76-N2-SComputación', NULL),
-  (7, 3, 'En préstamo', 'P4-EQA76.76-N2-SComputación', NULL),
+  (7, 3, 'Consulta Externa', 'P4-EQA76.76-N2-SComputación', NULL),
   (8, 1, 'Disponible', 'P4-EQA76.73-N1-SComputación', NULL),
   (8, 2, 'Consulta Externa', 'P4-EQA76.73-N1-SComputación', NULL),
   (8, 3, 'Consulta Externa', 'P4-EQA76.73-N1-SComputación', NULL),
@@ -213,30 +230,73 @@ INSERT INTO Ejemplares (id_libro, num_copia, Estatus, Ubicacion, Motivo_Baja) VA
   (18, 2, 'Consulta Externa', 'P2-EQC23-N2-SFísica', NULL),
   (19, 1, 'Inactivo', 'P3-EQA303-N1-SMatemáticas', 'Obsoleto');
 
--- Préstamos activos de las copias marcadas 'En préstamo'
-INSERT INTO Prestamos (id_prestamo, Fecha_Prestamo, Fecha_Entrega_Programada, Estado, id_usuario, id_libro, num_copia) VALUES
-  (1, '2026-10-20', '2026-10-27', 'Activo', 8, 1, 4),
-  (2, '2026-10-19', '2026-10-26', 'Activo', 7, 1, 5),
-  (3, '2026-10-18', '2026-10-25', 'Activo', 4, 2, 2),
-  (4, '2026-10-17', '2026-10-24', 'Activo', 3, 3, 2),
-  (5, '2026-10-21', '2026-10-28', 'Activo', 5, 4, 1),
-  (6, '2026-10-20', '2026-10-27', 'Activo', 2, 4, 2),
-  (7, '2026-10-19', '2026-10-26', 'Activo', 7, 4, 3),
-  (8, '2026-10-18', '2026-10-25', 'Activo', 4, 5, 5),
-  (9, '2026-10-17', '2026-10-24', 'Activo', 3, 6, 6),
-  (10, '2026-10-21', '2026-10-28', 'Activo', 5, 6, 7),
-  (11, '2026-10-20', '2026-10-27', 'Activo', 2, 7, 3),
-  (12, '2026-10-19', '2026-10-26', 'Activo', 7, 11, 3),
-  (13, '2026-10-18', '2026-10-25', 'Activo', 4, 13, 3),
-  (14, '2026-10-17', '2026-10-24', 'Activo', 3, 16, 2),
-  (15, '2026-10-21', '2026-10-28', 'Activo', 5, 17, 1),
-  (16, '2026-10-20', '2026-10-27', 'Activo', 2, 17, 2);
+-- Circulación ---------------------------------------------------------
+-- Las fechas son relativas al día en que se carga la semilla, para que siempre
+-- haya préstamos al corriente, vencidos, renovados y multas recientes.
+SET @hoy = CURRENT_DATE;
 
--- Historial: préstamo devuelto con retraso y multa pendiente de luis.moreno
+-- Préstamos activos: uno por cada copia marcada 'En préstamo'.
+--   ana.lopez: un préstamo vencido y multas pendientes (no puede pedir otro).
+--   javier.saavedra: un préstamo con las 3 renovaciones de profesor ya usadas.
+--   luis.perez: préstamo vencido hace 10 días (aparece en vencidos y deudores).
+--   marcela.guerra: tiene «Introduction to Algorithms», que no tiene copias libres.
+--   daniela.cruz: no tiene teléfono registrado (el recibo no se puede enviar por WhatsApp).
 INSERT INTO Prestamos (id_prestamo, Fecha_Prestamo, Fecha_Entrega_Programada, Estado, id_usuario, id_libro, num_copia) VALUES
-  (17, '2026-09-01', '2026-09-08', 'Devuelto', 8, 12, 1);
-INSERT INTO Devoluciones (id_devolucion, id_prestamo, Fecha_Devolucion) VALUES (1, 17, '2026-09-12');
-INSERT INTO Multas (id_multa, Cantidad_a_Pagar, id_usuario, id_prestamo, Justificacion) VALUES (1, 45.00, 8, 17, 'Devolución con 4 día(s) de retraso y daño menor en la portada');
+  (1, DATE_SUB(@hoy, INTERVAL 2 DAY), DATE_ADD(@hoy, INTERVAL 5 DAY), 'Activo', 4, 4, 1),
+  (2, DATE_SUB(@hoy, INTERVAL 4 DAY), DATE_ADD(@hoy, INTERVAL 3 DAY), 'Activo', 4, 1, 3),
+  (3, DATE_SUB(@hoy, INTERVAL 11 DAY), DATE_SUB(@hoy, INTERVAL 4 DAY), 'Activo', 10, 11, 3),
+  (4, DATE_SUB(@hoy, INTERVAL 1 DAY), DATE_ADD(@hoy, INTERVAL 6 DAY), 'Activo', 10, 5, 5),
+  (5, DATE_SUB(@hoy, INTERVAL 40 DAY), DATE_ADD(@hoy, INTERVAL 12 DAY), 'Activo', 3, 6, 6),
+  (6, DATE_SUB(@hoy, INTERVAL 6 DAY), DATE_ADD(@hoy, INTERVAL 8 DAY), 'Activo', 3, 2, 2),
+  (7, DATE_SUB(@hoy, INTERVAL 17 DAY), DATE_SUB(@hoy, INTERVAL 10 DAY), 'Activo', 11, 16, 2),
+  (8, DATE_SUB(@hoy, INTERVAL 3 DAY), DATE_ADD(@hoy, INTERVAL 4 DAY), 'Activo', 8, 1, 4),
+  (9, DATE_SUB(@hoy, INTERVAL 5 DAY), DATE_ADD(@hoy, INTERVAL 2 DAY), 'Activo', 7, 1, 5),
+  (10, DATE_SUB(@hoy, INTERVAL 3 DAY), DATE_ADD(@hoy, INTERVAL 4 DAY), 'Activo', 7, 13, 3),
+  (11, DATE_SUB(@hoy, INTERVAL 2 DAY), DATE_ADD(@hoy, INTERVAL 5 DAY), 'Activo', 12, 3, 2),
+  (12, DATE_SUB(@hoy, INTERVAL 1 DAY), DATE_ADD(@hoy, INTERVAL 6 DAY), 'Activo', 12, 17, 1),
+  (13, DATE_SUB(@hoy, INTERVAL 2 DAY), DATE_ADD(@hoy, INTERVAL 5 DAY), 'Activo', 5, 17, 2);
+
+INSERT INTO Renovaciones (id_prestamo, num_prestamo, Fecha_Renovacion, Fecha_Previamente_Programada) VALUES
+  (5, 1, DATE_SUB(@hoy, INTERVAL 27 DAY), DATE_SUB(@hoy, INTERVAL 26 DAY)),
+  (5, 2, DATE_SUB(@hoy, INTERVAL 13 DAY), DATE_SUB(@hoy, INTERVAL 12 DAY)),
+  (5, 3, DATE_SUB(@hoy, INTERVAL 1 DAY), DATE_ADD(@hoy, INTERVAL 2 DAY));
+
+-- Historial: préstamos devueltos (a tiempo y con retraso).
+INSERT INTO Prestamos (id_prestamo, Fecha_Prestamo, Fecha_Entrega_Programada, Estado, id_usuario, id_libro, num_copia) VALUES
+  (14, DATE_SUB(@hoy, INTERVAL 40 DAY), DATE_SUB(@hoy, INTERVAL 33 DAY), 'Devuelto', 4, 5, 2),
+  (15, DATE_SUB(@hoy, INTERVAL 60 DAY), DATE_SUB(@hoy, INTERVAL 53 DAY), 'Devuelto', 4, 3, 1),
+  (16, DATE_SUB(@hoy, INTERVAL 30 DAY), DATE_SUB(@hoy, INTERVAL 23 DAY), 'Devuelto', 10, 2, 4),
+  (17, DATE_SUB(@hoy, INTERVAL 14 DAY), DATE_SUB(@hoy, INTERVAL 9 DAY), 'Devuelto', 10, 11, 2),
+  (18, DATE_SUB(@hoy, INTERVAL 60 DAY), DATE_SUB(@hoy, INTERVAL 53 DAY), 'Devuelto', 10, 4, 4),
+  (19, DATE_SUB(@hoy, INTERVAL 70 DAY), DATE_SUB(@hoy, INTERVAL 63 DAY), 'Devuelto', 8, 12, 1),
+  (20, DATE_SUB(@hoy, INTERVAL 25 DAY), DATE_SUB(@hoy, INTERVAL 18 DAY), 'Devuelto', 12, 14, 2),
+  (21, DATE_SUB(@hoy, INTERVAL 50 DAY), DATE_SUB(@hoy, INTERVAL 36 DAY), 'Devuelto', 3, 12, 2);
+
+INSERT INTO Devoluciones (id_devolucion, id_prestamo, Fecha_Devolucion) VALUES
+  (1, 14, DATE_SUB(@hoy, INTERVAL 34 DAY)),
+  (2, 15, DATE_SUB(@hoy, INTERVAL 51 DAY)),
+  (3, 16, DATE_SUB(@hoy, INTERVAL 19 DAY)),
+  (4, 17, DATE_SUB(@hoy, INTERVAL 2 DAY)),
+  (5, 18, DATE_SUB(@hoy, INTERVAL 53 DAY)),
+  (6, 19, DATE_SUB(@hoy, INTERVAL 59 DAY)),
+  (7, 20, DATE_SUB(@hoy, INTERVAL 16 DAY)),
+  (8, 21, DATE_SUB(@hoy, INTERVAL 37 DAY));
+
+-- Multas. Tesorería ya tiene las 1 a 5 (externos/database/03_tesoreria.sql) y
+-- registró el pago de la 2 y la 3. La 6 aún no se le envía: aparece como
+-- «Pendiente de sincronizar» en Pagos de Tesorería.
+INSERT INTO Multas (id_multa, Cantidad_a_Pagar, Fecha_Pagado, id_usuario, id_prestamo, Justificacion, Motivo, Fecha_Multa, Enviada_Tesoreria) VALUES
+  (1, 45.00, NULL, 8, 19, 'Devolución con 4 días de retraso y daño menor en la portada.', 'Entrega extemporánea', DATE_SUB(@hoy, INTERVAL 59 DAY), TRUE),
+  (2, 20.00, DATE_SUB(@hoy, INTERVAL 45 DAY), 4, 15, 'Devolución con 2 días de retraso.', 'Entrega extemporánea', DATE_SUB(@hoy, INTERVAL 51 DAY), TRUE),
+  (3, 250.00, DATE_SUB(@hoy, INTERVAL 50 DAY), 10, 18, 'El libro se devolvió con hojas rayadas en el capítulo 4.', 'Daño del libro', DATE_SUB(@hoy, INTERVAL 53 DAY), TRUE),
+  (4, 40.00, NULL, 10, 16, 'Devolución con 4 días de retraso.', 'Entrega extemporánea', DATE_SUB(@hoy, INTERVAL 19 DAY), TRUE),
+  (5, 70.00, NULL, 10, 17, 'Devolución con 7 días de retraso.', 'Entrega extemporánea', DATE_SUB(@hoy, INTERVAL 2 DAY), TRUE),
+  (6, 20.00, NULL, 12, 20, 'Devolución con 2 días de retraso.', 'Entrega extemporánea', DATE_SUB(@hoy, INTERVAL 16 DAY), FALSE);
+
+-- Lista de espera de «Introduction to Algorithms» (sus copias para llevar están prestadas).
+INSERT INTO ListaDeEspera (id_lista_espera, Fecha_Peticion, Estatus, id_usuario, id_libro) VALUES
+  (1, DATE_SUB(@hoy, INTERVAL 9 DAY), 'Pendiente', 3, 1),
+  (2, DATE_SUB(@hoy, INTERVAL 7 DAY), 'Pendiente', 5, 1);
 
 -- Solicitudes de compra ---------------------------------------------
 INSERT INTO LibrosNuevos (id_libro_nuevo, ISBN, Titulo, Autor, Editorial, Precio, Anio, Tema, Sinopsis) VALUES
@@ -254,29 +314,45 @@ INSERT INTO OrdenLibrosExistentes (id_orden, id_libro, Justificacion, Num_Ejempl
   (3, 4, 'Reposición por desgaste', 4),
   (4, 1, 'Lista de peticiones del periodo', 5);
 
--- Políticas -------------------------------------------------------------
+-- Políticas (reglamento de préstamo que aplica el sistema) --------------
 INSERT INTO Politicas (id_politica, Informacion) VALUES
-  (1, 'Las copias «Disponible» se consultan dentro de la biblioteca; solo las de «Consulta externa» se prestan a domicilio.'),
-  (2, 'El préstamo de un libro dura 7 días naturales.'),
-  (3, 'Cada préstamo puede renovarse hasta 2 veces, siempre que no esté vencido y nadie esté en lista de espera.'),
-  (4, 'Un usuario puede tener como máximo 3 préstamos activos.'),
-  (5, 'La multa por retraso es de $10.00 MXN por día. Con multas pendientes no se pueden solicitar préstamos.');
+  (1, 'Las copias «Disponible» se consultan dentro de la biblioteca; solo las de «Consulta Externa» se prestan a domicilio.'),
+  (2, 'El préstamo dura 5 días hábiles para alumnos y colaboradores y 10 para profesores, sin contar sábados ni domingos.'),
+  (3, 'Un préstamo se renueva hasta 2 veces (3 si es de un profesor). Si ya estaba vencido, se cobra la multa por los días de retraso.'),
+  (4, 'Para pedir un libro el lector debe estar activo, sin multas pendientes, sin préstamos vencidos y con menos de 2 préstamos.'),
+  (5, 'Multas: $10.00 por día de retraso, $250.00 por daño y el precio de la última compra si el libro se pierde.'),
+  (6, 'En la lista de espera tiene prioridad el primero que se registró; no se envían notificaciones.');
 
--- Chatbot ---------------------------------------------------------------
+-- Asistente Biblio ------------------------------------------------------
+-- Cada respuesta cita el artefacto del proyecto del que se tomó (Sprint Review).
 INSERT INTO FuentesChatbot (id_fuente, Fuente) VALUES
-  (1, 'Reglamento de la Biblioteca Ducky'),
-  (2, 'Manual de usuario del sistema Biblio');
+  (1, 'Propuesta de Negocio · Objetivo del proyecto'),
+  (2, 'Propuesta de Negocio · Alcance'),
+  (3, 'Propuesta de Negocio · Tecnología y hardware'),
+  (4, 'Historia de usuario BD-SP02-BL01 · Existencia y ubicación'),
+  (5, 'Historia de usuario BD-SP03-PL03 · Registro de préstamo'),
+  (6, 'Historia de usuario BD-SP03-DL01 · Registro de devolución'),
+  (7, 'Historia de usuario BD-SP01-GU02 · Usuarios y perfiles'),
+  (8, 'Historia de usuario BD-SP02-GL01 · Registrar libros y copias');
 
-INSERT INTO PreguntasChatbot (id_pregunta, Pregunta) VALUES
-  (1, '¿Cuántos días dura un préstamo?'),
-  (2, '¿Cuántas veces puedo renovar un préstamo?'),
-  (3, '¿Cuánto cuesta la multa por retraso?'),
-  (4, '¿Cómo me inscribo en la lista de espera de un libro?'),
-  (5, '¿Qué diferencia hay entre Disponible y Consulta externa?');
+-- id_funcion: 6 = todos los perfiles; 4 y 5 = préstamos y devoluciones
+-- (Bibliotecario y Administrador); 1 y 2 = solo el Administrador.
+INSERT INTO PreguntasChatbot (id_pregunta, Pregunta, id_funcion) VALUES
+  (1, '¿Cuál es el objetivo de Biblio?', 6),
+  (2, '¿Qué alcance tiene Biblio?', 6),
+  (3, '¿En qué plataformas puedo usar Biblio?', 6),
+  (4, '¿Cómo busco un libro?', 6),
+  (5, '¿Cómo registro un préstamo?', 4),
+  (6, '¿Cómo registro una devolución?', 5),
+  (7, '¿Cómo doy de alta a un usuario?', 1),
+  (8, '¿Cómo registro un libro nuevo?', 2);
 
 INSERT INTO ContenidosChatbot (id_contenido, Respuesta, id_pregunta, id_fuente) VALUES
-  (1, 'Un préstamo dura 7 días naturales a partir de la fecha en que recoges el libro.', 1, 1),
-  (2, 'Puedes renovar cada préstamo hasta 2 veces, si no está vencido y nadie lo tiene apartado.', 2, 1),
-  (3, 'La multa es de $10.00 MXN por cada día de retraso.', 3, 1),
-  (4, 'Busca el libro en el catálogo; si no hay copias para llevar, pulsa «Apartar» y te avisaremos cuando se libere una.', 4, 2),
-  (5, '«Disponible» se consulta dentro de la biblioteca; «Consulta externa» se puede llevar a casa en préstamo.', 5, 1);
+  (1, 'Biblio es el sistema de la Biblioteca de la Universidad Ducky. Su objetivo es gestionar en una plataforma web y móvil los usuarios, los libros, los préstamos, las multas y un asistente virtual, para reducir el tiempo de atención en un 50 % y mantener el catálogo 100 % actualizado.', 1, 1),
+  (2, 'Biblio cubre seis funciones: gestión de usuarios (autenticación, altas, bajas, cambios y perfiles), gestión de libros (fichas, copias, solicitudes de compra y listados), búsqueda de libros, préstamos (validación, recibo, renovación y lista de espera), devoluciones con multas y este Asistente Biblio.', 2, 2),
+  (3, 'Puedes usar Biblio en el sitio web desde una computadora o laptop, y en la aplicación móvil para iOS y Android. Las dos se conectan por HTTPS al mismo servidor en Google Cloud, así que ves la misma información en ambas.', 3, 3),
+  (4, 'Entra a Catálogo (en la web) o a Inicio y Buscar (en la app) y escribe el título, el autor, el tema, la editorial o el ISBN. El filtro que elijas también ordena los resultados. En la ficha ves cuántas copias hay disponibles y en qué pasillo están. Los préstamos se piden en el mostrador.', 4, 4),
+  (5, 'Ve a Préstamos → Registrar préstamo. Busca al lector por matrícula o número de nómina, después el libro por su ISBN y elige el ejemplar. El sistema revisa que el lector no tenga multas ni libros vencidos y que tenga menos de 2 préstamos, y calcula la devolución: 5 días hábiles para alumnos y colaboradores, y 10 para profesores. Luego entregas el recibo.', 5, 5),
+  (6, 'Ve a Devoluciones → Registrar devolución, busca al lector por matrícula o número de nómina y elige el préstamo. Al registrarla, la copia vuelve a estar disponible. Si se entrega después de la fecha, se genera una multa de $10.00 por día de retraso, y si hay lectores en la lista de espera el sistema te dice quién tiene prioridad.', 6, 6),
+  (7, 'Ve a Usuarios → Actualizar lista de usuarios. Biblio consulta las listas de CIAA (alumnos) y de Empleados y te muestra a quienes aún no tienen cuenta, con el rol sugerido. Revisa el rol de cada persona y confirma: el usuario es nombre.apellido y la contraseña inicial es 000 seguido de la matrícula o nómina.', 7, 7),
+  (8, 'Ve a Libros → Alta de libro y escribe primero el ISBN: si el libro ya existe verás su ficha, y si se pidió en una solicitud de compra se cargan sus datos. Completa título, autor, editorial, año, tema, sinopsis y precio, guarda la ficha y agrega los ejemplares con su ubicación.', 8, 8);

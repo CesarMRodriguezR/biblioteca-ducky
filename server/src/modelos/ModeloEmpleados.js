@@ -45,7 +45,7 @@ const ModeloEmpleados = {
    *           necesario.
    * Entrada: Ninguna
    * Salida: Promesa con [{ Origen, Tipo, Matricula_Nomina, Nombre, Segundo_Nombre,
-   *         Apellido_Paterno, Apellido_Materno, Correo }]
+   *         Apellido_Paterno, Apellido_Materno, Correo, Telefono }]
    */
   async ObtenerActivos()
   {
@@ -63,6 +63,7 @@ const ModeloEmpleados = {
       Apellido_Paterno: empleado.Apellido_Paterno ?? '',
       Apellido_Materno: empleado.Apellido_Materno ?? '',
       Correo: empleado.Correo_Institucional ?? null,
+      Telefono: empleado.Telefono ?? null,
     }));
   },
 };

@@ -1,7 +1,8 @@
 /*
  * ******************************************************************
  * Nombre del programa: API-FECHAS · fechas.js
- * Función: Operaciones con fechas en formato AAAA-MM-DD (hoy, sumar días, diferencia).
+ * Función: Operaciones con fechas en formato AAAA-MM-DD (hoy, sumar días, diferencia) y su
+ *          formato para mostrar (09/11/2026, Lunes 09/11/2026).
  * Autor: Equipo CCJMops
  * Fecha: 26/10/2026
  * Entrada: Fechas en texto o Date
@@ -20,6 +21,9 @@
  *     Formatear        Convertir un Date a texto AAAA-MM-DD
  *     SumarDias        Sumar días a una fecha
  *     DiferenciaDias   Días completos de b menos a (positivo si b es posterior)
+ *     DIAS_SEMANA      Nombres de los días de la semana
+ *     FechaCorta       Mostrar una fecha como DD/MM/AAAA
+ *     FechaLarga       Mostrar una fecha con su día de la semana
  * ******************************************************************
  */
 
@@ -83,4 +87,38 @@ function DiferenciaDias(a_iso, b_iso)
   return Math.round(ms / 86400000);
 }
 
-export { Hoy, Formatear, SumarDias, DiferenciaDias };
+/*
+ * Constante: DIAS_SEMANA
+ * Objetivo: Nombres de los días de la semana (0 = domingo, como Date.getDay).
+ */
+const DIAS_SEMANA = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+
+/*
+ * Función: FechaCorta
+ * Objetivo: Mostrar una fecha AAAA-MM-DD como DD/MM/AAAA.
+ * Entrada: fecha_iso
+ * Salida: Texto DD/MM/AAAA (— si no hay fecha)
+ */
+function FechaCorta(fecha_iso)
+{
+  if (!fecha_iso)
+  {
+    return '—';
+  }
+  const [anio, mes, dia] = fecha_iso.slice(0, 10).split('-');
+  return `${dia}/${mes}/${anio}`;
+}
+
+/*
+ * Función: FechaLarga
+ * Objetivo: Mostrar una fecha AAAA-MM-DD con su día de la semana.
+ * Entrada: fecha_iso
+ * Salida: Texto como «Lunes 09/11/2026»
+ */
+function FechaLarga(fecha_iso)
+{
+  const [anio, mes, dia] = fecha_iso.slice(0, 10).split('-').map(Number);
+  return `${DIAS_SEMANA[new Date(anio, mes - 1, dia).getDay()]} ${FechaCorta(fecha_iso)}`;
+}
+
+export { Hoy, Formatear, SumarDias, DiferenciaDias, FechaCorta, FechaLarga };

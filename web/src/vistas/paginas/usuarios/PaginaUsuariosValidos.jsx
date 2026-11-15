@@ -16,6 +16,7 @@
  * ******************************************************************
  * Contenido de listado:
  *     Componente              Objetivo
+ *     InsigniaPrestamos       Tono y texto de los préstamos activos de un usuario
  *     PaginaUsuariosValidos   BD-SP01-GU02 Consulta de usuarios válidos
  * ******************************************************************
  */
@@ -29,12 +30,38 @@
  * ******************************************************************
  */
 
-import { Link, useNavigate } from 'react-router-dom';
-import { UserCog } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { PenLine, UserRoundSearch } from 'lucide-react';
 import { useControladorUsuariosValidos } from '../../../controladores/ControladorUsuarios.js';
 import { ESTADOS_USUARIO, TONOS_PERFIL } from '../../../modelos/dominio.js';
 import { Pagina } from '../../plantillas/PlantillaAplicacion.jsx';
-import { AlertaError, Boton, Insignia, Paginacion, Tarjeta } from '../../componentes/interfaz.jsx';
+import {
+  AlertaError,
+  Boton,
+  BotonIcono,
+  Insignia,
+  Paginacion,
+  Tarjeta,
+} from '../../componentes/interfaz.jsx';
+
+/*
+ * Función: InsigniaPrestamos
+ * Objetivo: Tono y texto de los préstamos activos de un usuario («1 activo», «2 activos · 1
+ *           vencido» o «Sin préstamos»).
+ * Entrada: usuario
+ * Salida: [tono, texto]
+ */
+function InsigniaPrestamos({ Prestamos_Activos: activos, Prestamos_Vencidos: vencidos })
+{
+  if (!activos)
+  {
+    return ['neutro', 'Sin préstamos'];
+  }
+  const texto = `${activos} ${activos === 1 ? 'activo' : 'activos'}`;
+  return vencidos
+    ? ['error', `${texto} · ${vencidos} ${vencidos === 1 ? 'vencido' : 'vencidos'}`]
+    : ['informacion', texto];
+}
 
 /*
  * Componente: PaginaUsuariosValidos
@@ -96,19 +123,19 @@ export function PaginaUsuariosValidos()
               <th>Nombre</th>
               <th>Perfil</th>
               <th>Estado</th>
-              <th>Modificar perfil</th>
+              <th>Préstamos activos</th>
+              <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
             {controlador.usuarios.map((usuario) =>
             {
               const estado = ESTADOS_USUARIO[usuario.Estatus];
+              const [tono_prestamos, texto_prestamos] = InsigniaPrestamos(usuario);
               return (
                 <tr key={usuario.id_usuario}>
                   <td style={{ fontWeight: 700 }}>{usuario.Matricula_Nomina}</td>
-                  <td>
-                    <Link to={`/usuarios/${usuario.id_usuario}`}>{usuario.Nombre_Completo}</Link>
-                  </td>
+                  <td>{usuario.Nombre_Completo}</td>
                   <td>
                     <Insignia tono={TONOS_PERFIL[usuario.Nombre_Rol]}>
                       {usuario.Nombre_Rol}
@@ -118,21 +145,31 @@ export function PaginaUsuariosValidos()
                     <Insignia tono={estado.tono}>{estado.etiqueta}</Insignia>
                   </td>
                   <td>
-                    <Boton
-                      variante="secundario"
-                      chico
-                      icono={UserCog}
-                      onClick={() => navegar(`/usuarios/${usuario.id_usuario}/editar`)}
-                    >
-                      Modificar perfil
-                    </Boton>
+                    <Insignia tono={tono_prestamos}>{texto_prestamos}</Insignia>
+                  </td>
+                  <td>
+                    <div className="fila espacio-8">
+                      <Boton
+                        variante="secundario"
+                        chico
+                        icono={UserRoundSearch}
+                        onClick={() => navegar(`/usuarios/${usuario.id_usuario}`)}
+                      >
+                        Ver detalle
+                      </Boton>
+                      <BotonIcono
+                        icono={PenLine}
+                        etiqueta={`Modificar perfil de ${usuario.Nombre_Completo}`}
+                        onClick={() => navegar(`/usuarios/${usuario.id_usuario}/editar`)}
+                      />
+                    </div>
                   </td>
                 </tr>
               );
             })}
             {!controlador.cargando && controlador.usuarios.length === 0 && (
               <tr>
-                <td colSpan={5} className="tabla-vacia">
+                <td colSpan={6} className="tabla-vacia">
                   No hay ningún usuario registrado con esos datos.
                 </td>
               </tr>
@@ -143,7 +180,8 @@ export function PaginaUsuariosValidos()
 
       <div className="fila entre margen-arriba-16">
         <span className="texto-nota">
-          Mostrando {desde}–{hasta} de {controlador.total} usuarios
+          Mostrando {desde}–{hasta} de {controlador.total} usuarios · Los préstamos activos se
+          actualizan en tiempo real.
         </span>
         <Paginacion
           pagina={controlador.pagina}

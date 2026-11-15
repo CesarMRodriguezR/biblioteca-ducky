@@ -9,6 +9,12 @@
 --   * Paola Treviño tiene la matrícula capturada con una letra O (error).
 --   * Diego Fuentes egresó y Luis Moreno se dio de baja: ya no aparecen
 --     como inscritos, así que Biblio los propone para baja.
+--   * Ana López, Luis Pérez y Daniela Cruz ya tienen cuenta y se usan en los
+--     préstamos y multas de la semilla de Biblio (Daniela no tiene teléfono).
+--
+-- AvisosBiblioteca guarda lo que Biblio envía a Servicios Escolares: la lista
+-- de alumnos deudores del periodo de exámenes y los libros reportados como
+-- perdidos (POST /ciaa/api/avisos).
 -- =====================================================================
 SET NAMES utf8mb4;
 
@@ -73,4 +79,20 @@ INSERT INTO Alumnos
   ('3108890', 'Diego', NULL, 'Flores', 'Garza', 'diego.flores@ducky.edu.mx',
    NULL, '8112345608', '2005-12-01', 2, 3, 'Inscrito'),
   ('3089001', 'Rocío', NULL, 'Elizondo', 'Paz', 'rocio.elizondo@ducky.edu.mx',
-   NULL, '8112345609', '2003-04-22', 4, 9, 'Baja temporal');
+   NULL, '8112345609', '2003-04-22', 4, 9, 'Baja temporal'),
+  ('3109921', 'Ana', NULL, 'López', 'Garza', 'ana.lopez@ducky.edu.mx',
+   NULL, '8112345610', '2005-09-18', 1, 5, 'Inscrito'),
+  ('3111456', 'Luis', NULL, 'Pérez', 'Salinas', 'luis.perez@ducky.edu.mx',
+   NULL, '8112345611', '2005-03-27', 2, 5, 'Inscrito'),
+  ('3104410', 'Daniela', NULL, 'Cruz', 'Treviño', 'daniela.cruz@ducky.edu.mx',
+   NULL, NULL, '2004-10-05', 3, 7, 'Inscrito');
+
+CREATE TABLE AvisosBiblioteca (
+  id_aviso         INT UNSIGNED  NOT NULL AUTO_INCREMENT,
+  Tipo             ENUM('Lista de deudores','Libro perdido') NOT NULL,
+  Periodo          VARCHAR(80)   NULL COMMENT 'Periodo de exámenes (lista de deudores)',
+  Matricula        VARCHAR(20)   NULL COMMENT 'Alumno del libro perdido',
+  Detalle          TEXT          NOT NULL COMMENT 'JSON con los renglones o el libro',
+  Fecha_Recepcion  DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id_aviso)
+) ENGINE=InnoDB;
