@@ -68,7 +68,7 @@ INSERT INTO Empleados
    'SALJ750303AB3', '8113000003', 'Profesor de tiempo completo', 'Docente', 3,
    '2010-08-16', 36000.00, 'Activo'),
   ('2005872', 'César', NULL, 'Rodríguez', 'Mena', 'cesar.rodriguez@ducky.edu.mx',
-   'ROMC880404AB4', '8113000004', 'Auxiliar administrativo', 'Administrativo', 4,
+   'ROMC880404AB4', '8182755127', 'Auxiliar administrativo', 'Administrativo', 4,
    '2020-02-03', 16000.00, 'Activo'),
   ('2005871', 'Héctor', NULL, 'Villarreal', 'Cruz', 'hector.villarreal@ducky.edu.mx',
    'VICH850505AB5', '8113000005', 'Auxiliar administrativo', 'Administrativo', 4,
