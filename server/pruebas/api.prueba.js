@@ -919,23 +919,18 @@ test('CB01: el Asistente Biblio muestra preguntas según las funciones del perfi
   assert.equal(ajena.status, 404);
 });
 
-test('GU02: detalle de usuario con préstamos y teléfono para WhatsApp', async () =>
+test('GU02: detalle de usuario con préstamos y teléfono (de CIAA, no editable)', async () =>
 {
   const marcela = await Solicitar('GET', '/usuarios/4', { token: tokens.admin });
   assert.equal(marcela.data.Telefono, '8112345601');
   assert.equal(marcela.data.resumen.Prestamos_Activos, 1);
   assert.ok(Array.isArray(marcela.data.activos));
-  const invalido = await Solicitar('PUT', '/usuarios/4', {
-    token: tokens.admin,
-    body: { Telefono: '81-1234' },
-  });
-  assert.equal(invalido.status, 400);
-  assert.equal(invalido.data.detalles[0].mensaje, 'Debe tener 10 dígitos, sin espacios.');
-  const valido = await Solicitar('PUT', '/usuarios/4', {
+  const cambio = await Solicitar('PUT', '/usuarios/4', {
     token: tokens.admin,
     body: { Telefono: '8119998877' },
   });
-  assert.equal(valido.data.Telefono, '8119998877');
+  assert.equal(cambio.status, 400);
+  assert.equal(cambio.data.detalles[0].mensaje, 'Este dato no se puede modificar.');
   const lista = await Solicitar('GET', '/usuarios?q=3109921', { token: tokens.admin });
   assert.equal(lista.data.datos[0].Prestamos_Activos, 1);
 });

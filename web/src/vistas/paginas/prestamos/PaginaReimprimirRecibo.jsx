@@ -1,7 +1,8 @@
 /*
  * ******************************************************************
  * Nombre del programa: BD-SP03-PL02 · PaginaReimprimirRecibo.jsx
- * Función: Reimprimir el recibo de un préstamo activo del lector, con vista previa.
+ * Función: Reimprimir el recibo de un préstamo activo del lector y entregarlo impreso (con
+ *          vista previa), por correo o por WhatsApp.
  * Autor: Equipo CCJMops
  * Fecha: 15/11/2026
  * Entrada: Estado del controlador de la pantalla
@@ -33,7 +34,9 @@ import { ESTADOS_PRESTAMO, FechaCorta } from '../../../modelos/dominio.js';
 import { Pagina } from '../../plantillas/PlantillaAplicacion.jsx';
 import {
   Alerta,
+  AlertaError,
   Boton,
+  Cargando,
   EnlaceVolver,
   Insignia,
   Tarjeta,
@@ -41,13 +44,14 @@ import {
 import {
   BuscadorMatricula,
   DocumentoRecibo,
+  EntregaRecibo,
   ModalDocumento,
 } from '../../componentes/Circulacion.jsx';
 
 /*
  * Componente: PaginaReimprimirRecibo
- * Objetivo: BD-SP03-PL02 Reimpresión del recibo (búsqueda, préstamos activos, recibo reimpreso
- *           y lector sin préstamos activos).
+ * Objetivo: BD-SP03-PL02 Reimpresión del recibo (búsqueda, préstamos activos, recibo elegido
+ *           con sus tres medios de entrega y lector sin préstamos activos).
  * Uso: <PaginaReimprimirRecibo />
  */
 export function PaginaReimprimirRecibo()
@@ -112,7 +116,11 @@ export function PaginaReimprimirRecibo()
                   </td>
                   <td>
                     <Boton
-                      variante="secundario"
+                      variante={
+                        controlador.recibo?.id_prestamo === prestamo.id_prestamo
+                          ? 'primario'
+                          : 'secundario'
+                      }
                       chico
                       icono={Printer}
                       onClick={() => controlador.Reimprimir(prestamo)}
@@ -125,6 +133,20 @@ export function PaginaReimprimirRecibo()
             </tbody>
           </table>
         </Tarjeta>
+      )}
+      {controlador.cargando_recibo && <Cargando />}
+      <AlertaError error={controlador.error_recibo} />
+      {controlador.recibo && (
+        <>
+          <Tarjeta className="margen-arriba-16">
+            <DocumentoRecibo recibo={controlador.recibo} />
+          </Tarjeta>
+          <EntregaRecibo
+            al_imprimir={controlador.Imprimir}
+            al_enviar_correo={controlador.EnviarCorreo}
+            al_enviar_whatsapp={controlador.EnviarWhatsApp}
+          />
+        </>
       )}
       {controlador.aviso && (
         <div className="margen-arriba-16">

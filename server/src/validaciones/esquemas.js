@@ -194,7 +194,6 @@ const esquemas = {
     .object({
       Nombre_Completo: Requerido(150).optional(),
       Correo: z.string().trim().email('Correo inválido.').optional().nullable(),
-      Telefono: telefono,
       Contrasena_Usuario: z
         .union([contrasena_segura, z.literal('')])
         .optional()
@@ -203,10 +202,12 @@ const esquemas = {
       Estatus: z.enum(['Activo', 'Inactivo']).optional(),
       Matricula_Nomina: z.any().optional(),
       Nombre_Usuario: z.any().optional(),
+      Telefono: z.any().optional(),
     })
     .superRefine((datos, contexto) =>
     {
-      ['Matricula_Nomina', 'Nombre_Usuario'].forEach((campo) =>
+      // El teléfono viene de CIAA o Empleados: Biblio no lo modifica.
+      ['Matricula_Nomina', 'Nombre_Usuario', 'Telefono'].forEach((campo) =>
       {
         if (datos[campo] !== undefined)
         {

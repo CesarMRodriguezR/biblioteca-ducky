@@ -21,8 +21,9 @@
  *     useControladorMenuPrestamos       Menú Préstamos: indicadores y últimos préstamos
  *     useControladorRegistrarPrestamo   BD-SP03-PL01 Registrar préstamo
  *     useVistaRecibo                    Vista previa e impresión del recibo
+ *     useEntregaRecibo                  Enviar un recibo por correo o por WhatsApp
  *     useControladorRecibo              BD-SP03-PL02 Recibo de préstamo y su entrega
- *     useControladorReimprimir          BD-SP03-PL02 Reimprimir el recibo de un préstamo
+ *     useControladorReimprimir          BD-SP03-PL02 Reimprimir y entregar el recibo de un préstamo
  *     useControladorRenovar             BD-SP03-PL03 Renovar préstamo
  *     useControladorPrestamosUsuario    BD-SP03-PL04 Préstamos de un usuario
  *     useControladorListaEspera         BD-SP03-PL05 Lista de espera
@@ -344,25 +345,15 @@ export function useVistaRecibo(SetAviso, titulo_impreso)
 }
 
 /*
- * Hook: useControladorRecibo
- * Objetivo: BD-SP03-PL02 Recibo de préstamo: mostrarlo y entregarlo impreso, por correo o por
- *           WhatsApp (con el correo y el teléfono guardados en Biblio).
- * Entrada: Ninguna (id del préstamo en la ruta)
- * Salida: Objeto con el estado y las acciones de la pantalla
+ * Hook: useEntregaRecibo
+ * Objetivo: Enviar un recibo por correo o por WhatsApp (con el correo y el teléfono guardados en
+ *           Biblio) y avisar el resultado con SetAviso.
+ * Entrada: SetAviso
+ * Salida: Objeto { EnviarCorreo(recibo), EnviarWhatsApp(recibo) }
  */
-export function useControladorRecibo()
+function useEntregaRecibo(SetAviso)
 {
-  const { id } = useParams();
-  const navegar = useNavigate();
-  const { datos: recibo, error, cargando } = useCarga(() => ModeloPrestamo.Recibo(id), [id]);
-  const [aviso, SetAviso] = useState({
-    tipo: 'exito',
-    titulo: 'Recibo generado',
-    texto: 'El recibo está listo para imprimirse o enviarse al lector.',
-  });
-  const vista = useVistaRecibo(SetAviso, () => 'Recibo enviado a imprimir');
-
-  function EnviarCorreo()
+  function EnviarCorreo(recibo)
   {
     if (!recibo.Correo)
     {
@@ -377,11 +368,11 @@ export function useControladorRecibo()
     SetAviso({
       tipo: 'exito',
       titulo: 'Recibo enviado por correo',
-      texto: `Se abrió el correo con el recibo dirigido a ${recibo.Correo}.`,
+      texto: `Se abrió el correo con el recibo ${recibo.Folio} dirigido a ${recibo.Correo}.`,
     });
   }
 
-  function EnviarWhatsApp()
+  function EnviarWhatsApp(recibo)
   {
     if (!recibo.Telefono)
     {
@@ -389,8 +380,8 @@ export function useControladorRecibo()
         tipo: 'error',
         titulo: 'No se pudo enviar el recibo por WhatsApp',
         texto:
-          `${recibo.Nombre_Completo} no tiene teléfono registrado. El administrador puede ` +
-          'agregarlo en Usuarios → Modificar perfil; mientras, entrega el recibo impreso.',
+          `${recibo.Nombre_Completo} no tiene teléfono registrado en CIAA o Empleados. ` +
+          'Entrega el recibo impreso o por correo.',
       });
       return;
     }
@@ -398,9 +389,34 @@ export function useControladorRecibo()
     SetAviso({
       tipo: 'exito',
       titulo: 'Recibo enviado por WhatsApp',
-      texto: `Se abrió WhatsApp con el recibo para el ${TelefonoTexto(recibo.Telefono)}.`,
+      texto:
+        `Se abrió WhatsApp con el recibo ${recibo.Folio} para el ` +
+        `${TelefonoTexto(recibo.Telefono)}.`,
     });
   }
+
+  return { EnviarCorreo, EnviarWhatsApp };
+}
+
+/*
+ * Hook: useControladorRecibo
+ * Objetivo: BD-SP03-PL02 Recibo de préstamo: mostrarlo y entregarlo impreso, por correo o por
+ *           WhatsApp.
+ * Entrada: Ninguna (id del préstamo en la ruta)
+ * Salida: Objeto con el estado y las acciones de la pantalla
+ */
+export function useControladorRecibo()
+{
+  const { id } = useParams();
+  const navegar = useNavigate();
+  const { datos: recibo, error, cargando } = useCarga(() => ModeloPrestamo.Recibo(id), [id]);
+  const [aviso, SetAviso] = useState({
+    tipo: 'exito',
+    titulo: 'Recibo generado',
+    texto: 'El recibo está listo para imprimirse o enviarse al lector.',
+  });
+  const vista = useVistaRecibo(SetAviso, () => 'Recibo enviado a imprimir');
+  const entrega = useEntregaRecibo(SetAviso);
 
   return {
     recibo,
@@ -409,15 +425,16 @@ export function useControladorRecibo()
     aviso,
     vista,
     Imprimir: () => vista.Abrir(id, recibo),
-    EnviarCorreo,
-    EnviarWhatsApp,
+    EnviarCorreo: () => entrega.EnviarCorreo(recibo),
+    EnviarWhatsApp: () => entrega.EnviarWhatsApp(recibo),
     Volver: () => navegar('/prestamos'),
   };
 }
 
 /*
  * Hook: useControladorReimprimir
- * Objetivo: BD-SP03-PL02 Reimprimir el recibo de un préstamo activo del lector.
+ * Objetivo: BD-SP03-PL02 Reimprimir el recibo de un préstamo activo del lector y entregarlo
+ *           impreso, por correo o por WhatsApp, como al registrar el préstamo.
  * Entrada: Ninguna
  * Salida: Objeto con el estado y las acciones de la pantalla
  */
@@ -425,19 +442,50 @@ export function useControladorReimprimir()
 {
   const lector = useBusquedaLector();
   const [aviso, SetAviso] = useState(null);
-  const vista = useVistaRecibo(SetAviso, (recibo) => `Recibo ${recibo.Folio} reimpreso`);
+  const [recibo, SetRecibo] = useState(null);
+  const [error_recibo, SetErrorRecibo] = useState(null);
+  const [cargando_recibo, SetCargandoRecibo] = useState(false);
+  const vista = useVistaRecibo(SetAviso, (datos) => `Recibo ${datos.Folio} reimpreso`);
+  const entrega = useEntregaRecibo(SetAviso);
+
+  async function Elegir(prestamo)
+  {
+    SetAviso(null);
+    SetErrorRecibo(null);
+    SetCargandoRecibo(true);
+    try
+    {
+      SetRecibo(await ModeloPrestamo.Recibo(prestamo.id_prestamo));
+    }
+    catch (excepcion)
+    {
+      SetRecibo(null);
+      SetErrorRecibo(excepcion);
+    }
+    finally
+    {
+      SetCargandoRecibo(false);
+    }
+  }
 
   return {
     lector,
     activos: lector.situacion?.activos ?? [],
     aviso,
     vista,
+    recibo,
+    error_recibo,
+    cargando_recibo,
     Buscar: () =>
     {
       SetAviso(null);
+      SetRecibo(null);
       lector.Buscar();
     },
-    Reimprimir: (prestamo) => vista.Abrir(prestamo.id_prestamo),
+    Reimprimir: Elegir,
+    Imprimir: () => vista.Abrir(recibo.id_prestamo, recibo),
+    EnviarCorreo: () => entrega.EnviarCorreo(recibo),
+    EnviarWhatsApp: () => entrega.EnviarWhatsApp(recibo),
   };
 }
 

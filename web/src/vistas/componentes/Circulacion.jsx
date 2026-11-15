@@ -24,6 +24,7 @@
  *     TablaPendientes     Préstamos pendientes del lector con una acción por renglón
  *     ModalDocumento      Vista previa de impresión con Imprimir y Descargar PDF
  *     DocumentoRecibo     Recibo de préstamo para mostrar o imprimir
+ *     EntregaRecibo       Botones para imprimir el recibo o enviarlo por correo o WhatsApp
  *     DocumentoMulta      Comprobante de multa para imprimir
  *     DocumentoDeudores   Lista de alumnos deudores para imprimir
  * ******************************************************************
@@ -38,7 +39,7 @@
  * ******************************************************************
  */
 
-import { ArrowRight, Download, Printer } from 'lucide-react';
+import { ArrowRight, Download, Mail, MessageCircle, Printer } from 'lucide-react';
 import {
   ESTADOS_PRESTAMO,
   FechaCorta,
@@ -295,6 +296,32 @@ export function DocumentoRecibo({ recibo })
       </div>
       <p className="texto-nota margen-arriba-16">{recibo.Nota}</p>
     </>
+  );
+}
+
+/*
+ * Componente: EntregaRecibo
+ * Objetivo: Tarjeta con los medios de entrega del recibo: imprimir (medio predeterminado),
+ *           correo y WhatsApp.
+ * Uso: <EntregaRecibo al_imprimir={…} al_enviar_correo={…} al_enviar_whatsapp={…} />
+ */
+export function EntregaRecibo({ al_imprimir, al_enviar_correo, al_enviar_whatsapp })
+{
+  return (
+    <Tarjeta className="margen-arriba-16">
+      <h2 className="titulo-seccion">Entrega del recibo · Medio predeterminado: Imprimir</h2>
+      <div className="fila espacio-12 margen-arriba-16">
+        <Boton icono={Printer} onClick={al_imprimir}>
+          Imprimir
+        </Boton>
+        <Boton variante="secundario" icono={Mail} onClick={al_enviar_correo}>
+          Enviar por correo
+        </Boton>
+        <Boton variante="secundario" icono={MessageCircle} onClick={al_enviar_whatsapp}>
+          Enviar por WhatsApp
+        </Boton>
+      </div>
+    </Tarjeta>
   );
 }
 

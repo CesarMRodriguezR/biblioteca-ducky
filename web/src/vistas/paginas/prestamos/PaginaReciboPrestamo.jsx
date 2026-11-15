@@ -30,18 +30,14 @@
  * ******************************************************************
  */
 
-import { Mail, MessageCircle, Printer } from 'lucide-react';
 import { useControladorRecibo } from '../../../controladores/ControladorPrestamos.js';
 import { Pagina } from '../../plantillas/PlantillaAplicacion.jsx';
+import { Alerta, AlertaError, Cargando, EnlaceVolver, Tarjeta } from '../../componentes/interfaz.jsx';
 import {
-  Alerta,
-  AlertaError,
-  Boton,
-  Cargando,
-  EnlaceVolver,
-  Tarjeta,
-} from '../../componentes/interfaz.jsx';
-import { DocumentoRecibo, ModalDocumento } from '../../componentes/Circulacion.jsx';
+  DocumentoRecibo,
+  EntregaRecibo,
+  ModalDocumento,
+} from '../../componentes/Circulacion.jsx';
 
 /*
  * Componente: PaginaReciboPrestamo
@@ -63,20 +59,11 @@ export function PaginaReciboPrestamo()
           <Tarjeta>
             <DocumentoRecibo recibo={recibo} />
           </Tarjeta>
-          <Tarjeta className="margen-arriba-16">
-            <h2 className="titulo-seccion">Entrega del recibo · Medio predeterminado: Imprimir</h2>
-            <div className="fila espacio-12 margen-arriba-16">
-              <Boton icono={Printer} onClick={controlador.Imprimir}>
-                Imprimir
-              </Boton>
-              <Boton variante="secundario" icono={Mail} onClick={controlador.EnviarCorreo}>
-                Enviar por correo
-              </Boton>
-              <Boton variante="secundario" icono={MessageCircle} onClick={controlador.EnviarWhatsApp}>
-                Enviar por WhatsApp
-              </Boton>
-            </div>
-          </Tarjeta>
+          <EntregaRecibo
+            al_imprimir={controlador.Imprimir}
+            al_enviar_correo={controlador.EnviarCorreo}
+            al_enviar_whatsapp={controlador.EnviarWhatsApp}
+          />
           {controlador.aviso && (
             <div className="margen-arriba-16">
               <Alerta tipo={controlador.aviso.tipo} titulo={controlador.aviso.titulo}>

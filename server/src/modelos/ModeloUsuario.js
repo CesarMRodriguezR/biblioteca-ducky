@@ -269,13 +269,14 @@ const ModeloUsuario = {
   /*
    * Función: Actualizar
    * Objetivo: Cambio de datos. La matrícula y el usuario no se modifican (regla del prototipo);
-   *           solo perfil, nombre, correo, teléfono, estatus y contraseña.
+   *           solo perfil, nombre, correo, estatus y contraseña. El teléfono viene de CIAA o
+   *           Empleados y tampoco se modifica.
    * Entrada: id, datos
    * Salida: Promesa con el registro actualizado
    */
   async Actualizar(id, datos)
   {
-    const permitidos = ['Nombre_Completo', 'Correo', 'Telefono', 'id_perfil', 'Estatus'];
+    const permitidos = ['Nombre_Completo', 'Correo', 'id_perfil', 'Estatus'];
     const sets = [];
     const parametros = [];
     permitidos.forEach((campo) =>

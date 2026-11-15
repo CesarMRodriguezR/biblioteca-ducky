@@ -184,12 +184,7 @@ export function useControladorCambioUsuario()
   const navegar = useNavigate();
   const usuario = useCarga(() => ModeloUsuario.Obtener(id), [id]);
   const perfiles = useCarga(() => ModeloPerfil.Listar(), []);
-  const [form, SetForm] = useState({
-    id_perfil: '',
-    Estatus: '',
-    Telefono: '',
-    Contrasena_Usuario: '',
-  });
+  const [form, SetForm] = useState({ id_perfil: '', Estatus: '', Contrasena_Usuario: '' });
   const [errores, SetErrores] = useState({});
   const [resultado, SetResultado] = useState(null);
   const guardar = useAccion((cambios) => ModeloUsuario.Actualizar(id, cambios));
@@ -201,7 +196,6 @@ export function useControladorCambioUsuario()
       SetForm({
         id_perfil: String(usuario.datos.id_perfil),
         Estatus: usuario.datos.Estatus,
-        Telefono: usuario.datos.Telefono ?? '',
         Contrasena_Usuario: '',
       });
     }
@@ -227,22 +221,11 @@ export function useControladorCambioUsuario()
       });
       return;
     }
-    if (form.Telefono.trim() && !/^\d{10}$/.test(form.Telefono.trim()))
-    {
-      SetErrores({ Telefono: 'Debe tener 10 dígitos, sin espacios.' });
-      SetResultado({
-        tipo: 'error',
-        titulo: 'No se guardaron los cambios: el teléfono no es válido.',
-        texto: 'Se conserva la información anterior del usuario.',
-      });
-      return;
-    }
     try
     {
       const actualizado = await guardar.Ejecutar({
         id_perfil: form.id_perfil,
         Estatus: form.Estatus,
-        Telefono: form.Telefono.trim(),
         Contrasena_Usuario: form.Contrasena_Usuario || undefined,
       });
       usuario.SetDatos({ ...usuario.datos, ...actualizado });
