@@ -94,7 +94,7 @@ export function PaginaAdeudosUsuario()
   const { lector, situacion } = controlador;
 
   return (
-    <Pagina miga="Multas y adeudos · Consulta" titulo="Multas y adeudos del usuario" ancho={1100}>
+    <Pagina miga="Multas y adeudos · Consulta" titulo="Multas y adeudos del usuario">
       <EnlaceVolver to="/multas">Volver a Multas y adeudos</EnlaceVolver>
       <BuscadorMatricula
         ejemplo="Ej. 3109921"

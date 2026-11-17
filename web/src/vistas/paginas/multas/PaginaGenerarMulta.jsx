@@ -68,7 +68,7 @@ export function PaginaGenerarMulta()
       : null;
 
   return (
-    <Pagina miga="Multas y adeudos · Generar" titulo="Generar multa" ancho={1000}>
+    <Pagina miga="Multas y adeudos · Generar" titulo="Generar multa">
       <EnlaceVolver to="/multas">Volver a Multas y adeudos</EnlaceVolver>
       <BuscadorMatricula
         titulo="Préstamo"

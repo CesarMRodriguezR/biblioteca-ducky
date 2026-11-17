@@ -145,14 +145,14 @@ export function Encabezado({ miga, titulo })
 /*
  * Componente: Pagina
  * Objetivo: Encabezado y contenido de una pantalla.
- * Uso: <Pagina miga={…} titulo={…} ancho={…}>…</Pagina>
+ * Uso: <Pagina miga={…} titulo={…}>…</Pagina>
  */
-export function Pagina({ miga, titulo, children, ancho })
+export function Pagina({ miga, titulo, children })
 {
   return (
     <>
       <Encabezado miga={miga} titulo={titulo} />
-      <div className="contenido" style={ancho ? { maxWidth: ancho } : undefined}>
+      <div className="contenido">
         {children}
       </div>
     </>

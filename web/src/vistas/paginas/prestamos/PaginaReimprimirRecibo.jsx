@@ -61,7 +61,7 @@ export function PaginaReimprimirRecibo()
   const situacion = lector.situacion;
 
   return (
-    <Pagina miga="Préstamos · Recibo" titulo="Reimprimir recibo" ancho={1000}>
+    <Pagina miga="Préstamos · Recibo" titulo="Reimprimir recibo">
       <EnlaceVolver to="/prestamos">Volver a Préstamos</EnlaceVolver>
       <BuscadorMatricula
         titulo="Buscar préstamos activos del lector"

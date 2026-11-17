@@ -55,7 +55,7 @@ export function PaginaListaEspera()
   const prioridad = datos?.prioridad;
 
   return (
-    <Pagina miga="Préstamos · Lista de espera" titulo="Lista de espera" ancho={1000}>
+    <Pagina miga="Préstamos · Lista de espera" titulo="Lista de espera">
       <EnlaceVolver to="/prestamos">Volver a Préstamos</EnlaceVolver>
       <Tarjeta>
         <form

@@ -54,7 +54,7 @@ export function PaginaDeudores()
   const { lista, vista } = controlador;
 
   return (
-    <Pagina miga="Multas y adeudos · Alumnos deudores" titulo="Lista de alumnos deudores" ancho={1000}>
+    <Pagina miga="Multas y adeudos · Alumnos deudores" titulo="Lista de alumnos deudores">
       <EnlaceVolver to="/multas">Volver a Multas y adeudos</EnlaceVolver>
       <Tarjeta>
         <h2 className="titulo-seccion">Periodo de exámenes</h2>

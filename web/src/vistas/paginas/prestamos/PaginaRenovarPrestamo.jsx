@@ -54,7 +54,7 @@ export function PaginaRenovarPrestamo()
   const situacion = lector.situacion;
 
   return (
-    <Pagina miga="Préstamos · Renovación" titulo="Renovar préstamo" ancho={1000}>
+    <Pagina miga="Préstamos · Renovación" titulo="Renovar préstamo">
       <EnlaceVolver to="/prestamos">Volver a Préstamos</EnlaceVolver>
       <BuscadorMatricula
         titulo="Lector"

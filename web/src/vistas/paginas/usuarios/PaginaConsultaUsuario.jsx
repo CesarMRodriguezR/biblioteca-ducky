@@ -61,7 +61,7 @@ export function PaginaConsultaUsuario()
   const usuario = controlador.usuario;
 
   return (
-    <Pagina miga="Usuarios · Perfil" titulo="Consulta de usuario" ancho={980}>
+    <Pagina miga="Usuarios · Perfil" titulo="Consulta de usuario">
       <EnlaceVolver to="/usuarios">Volver a Usuarios</EnlaceVolver>
       <Tarjeta>
         <form

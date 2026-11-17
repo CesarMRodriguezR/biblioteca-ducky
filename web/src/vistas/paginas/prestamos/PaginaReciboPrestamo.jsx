@@ -56,7 +56,7 @@ export function PaginaReciboPrestamo()
   const { recibo, vista } = controlador;
 
   return (
-    <Pagina miga="Préstamos · Recibo" titulo="Recibo de préstamo" ancho={1000}>
+    <Pagina miga="Préstamos · Recibo" titulo="Recibo de préstamo">
       <EnlaceVolver to="/prestamos">Volver a Préstamos</EnlaceVolver>
       {controlador.cargando && <Cargando />}
       <AlertaError error={controlador.error} />

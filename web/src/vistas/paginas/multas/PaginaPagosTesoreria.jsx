@@ -54,7 +54,7 @@ export function PaginaPagosTesoreria()
   const pendientes = datos?.pendientes ?? [];
 
   return (
-    <Pagina miga="Multas y adeudos · Pagos" titulo="Pagos de Tesorería" ancho={1100}>
+    <Pagina miga="Multas y adeudos · Pagos" titulo="Pagos de Tesorería">
       <EnlaceVolver to="/multas">Volver a Multas y adeudos</EnlaceVolver>
       {controlador.cargando && !datos && <Cargando texto="Consultando a Tesorería…" />}
       <AlertaError error={controlador.error} />

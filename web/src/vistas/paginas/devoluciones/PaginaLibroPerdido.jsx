@@ -60,7 +60,7 @@ export function PaginaLibroPerdido()
   const situacion = lector.situacion;
 
   return (
-    <Pagina miga="Devoluciones · Libro perdido" titulo="Reporte de libro perdido" ancho={1000}>
+    <Pagina miga="Devoluciones · Libro perdido" titulo="Reporte de libro perdido">
       <EnlaceVolver to="/devoluciones">Volver a Devoluciones</EnlaceVolver>
       <BuscadorMatricula
         titulo="Préstamo reportado como perdido"

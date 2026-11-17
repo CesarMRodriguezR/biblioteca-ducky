@@ -143,7 +143,7 @@ export function PaginaRegistrarPrestamo()
   const fallas = situacion?.condiciones.filter((condicion) => !condicion.Cumple) ?? [];
 
   return (
-    <Pagina miga="Préstamos · Registro" titulo="Registrar préstamo" ancho={1000}>
+    <Pagina miga="Préstamos · Registro" titulo="Registrar préstamo">
       <EnlaceVolver to="/prestamos">Volver a Préstamos</EnlaceVolver>
 
       <BuscadorMatricula

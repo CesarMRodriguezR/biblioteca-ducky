@@ -93,7 +93,7 @@ export function PaginaPrestamosUsuario()
   const { lector, situacion } = controlador;
 
   return (
-    <Pagina miga="Préstamos · Consulta" titulo="Préstamos del usuario" ancho={1000}>
+    <Pagina miga="Préstamos · Consulta" titulo="Préstamos del usuario">
       <EnlaceVolver to="/prestamos">Volver a Préstamos</EnlaceVolver>
       <BuscadorMatricula
         valor={lector.matricula}

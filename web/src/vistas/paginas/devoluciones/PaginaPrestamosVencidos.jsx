@@ -62,7 +62,7 @@ export function PaginaPrestamosVencidos()
   const de_lector = Boolean(datos?.lector);
 
   return (
-    <Pagina miga="Devoluciones · Vencidos" titulo="Préstamos vencidos" ancho={1100}>
+    <Pagina miga="Devoluciones · Vencidos" titulo="Préstamos vencidos">
       <EnlaceVolver to="/devoluciones">Volver a Devoluciones</EnlaceVolver>
       <BuscadorMatricula
         titulo={`Al ${FechaLarga(HoyIso()).toLowerCase()}`}

@@ -52,7 +52,7 @@ export function PaginaCambioUsuario()
   const controlador = useControladorCambioUsuario();
 
   return (
-    <Pagina miga="Usuarios · Modificar" titulo="Cambio de datos de usuario" ancho={980}>
+    <Pagina miga="Usuarios · Modificar" titulo="Cambio de datos de usuario">
       <EnlaceVolver to="/usuarios">Volver a Usuarios</EnlaceVolver>
       {controlador.cargando && !controlador.usuario && <Cargando />}
       <AlertaError error={controlador.error_carga} />

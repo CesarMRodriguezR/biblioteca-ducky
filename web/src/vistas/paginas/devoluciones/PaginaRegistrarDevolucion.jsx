@@ -112,7 +112,7 @@ export function PaginaRegistrarDevolucion()
   const con_deterioro = ['Dañado', 'Incompleto'].includes(resultado?.condicion);
 
   return (
-    <Pagina miga="Devoluciones · Registro" titulo="Registrar devolución" ancho={1000}>
+    <Pagina miga="Devoluciones · Registro" titulo="Registrar devolución">
       <EnlaceVolver to="/devoluciones">Volver a Devoluciones</EnlaceVolver>
       <BuscadorMatricula
         titulo="Préstamo a devolver"

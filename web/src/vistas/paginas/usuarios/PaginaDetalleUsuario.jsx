@@ -66,7 +66,7 @@ export function PaginaDetalleUsuario()
   const fallas = usuario?.condiciones.filter((condicion) => !condicion.Cumple) ?? [];
 
   return (
-    <Pagina miga="Usuarios · Detalle" titulo="Detalle de usuario" ancho={1100}>
+    <Pagina miga="Usuarios · Detalle" titulo="Detalle de usuario">
       <EnlaceVolver to="/usuarios">Volver a Usuarios</EnlaceVolver>
       {controlador.cargando && !usuario && <Cargando />}
       <AlertaError error={controlador.error} />
