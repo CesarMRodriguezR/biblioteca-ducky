@@ -761,7 +761,13 @@ test('PL03: renovación hasta el máximo del perfil (profesor: 3)', async () =>
 
 test('PL05: lista de espera sin duplicados ni lectores que ya tienen el libro', async () =>
 {
-  const lista = await Solicitar('GET', '/lista-espera?q=Introduction', { token: tokens.biblio });
+  const por_titulo = await Solicitar('GET', '/lista-espera?q=Introduction', {
+    token: tokens.biblio,
+  });
+  assert.equal(por_titulo.status, 400);
+  const lista = await Solicitar('GET', '/lista-espera?q=978-0-262-03384-8', {
+    token: tokens.biblio,
+  });
   assert.equal(lista.data.prestables_libres, 0);
   assert.deepEqual(
     lista.data.lista.map((registro) => registro.Nombre_Completo),

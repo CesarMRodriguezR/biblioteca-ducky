@@ -69,7 +69,10 @@ export function PaginaLibroPerdido()
             ? `${seleccionado.Titulo} · Copia ${seleccionado.num_copia} · ` +
               `${seleccionado.Nombre_Completo} (${seleccionado.Nombre_Rol} · ` +
               `${seleccionado.Matricula_Nomina})`
-            : null
+            : situacion && controlador.pendientes.length
+              ? `${situacion.lector.Nombre_Completo} · ${situacion.lector.Nombre_Rol} · ` +
+                `${controlador.pendientes.length} ${controlador.pendientes.length === 1 ? 'préstamo pendiente' : 'préstamos pendientes'}`
+              : null
         }
         valor={lector.matricula}
         al_cambio={lector.SetMatricula}

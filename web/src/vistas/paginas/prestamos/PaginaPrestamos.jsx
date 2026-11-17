@@ -33,7 +33,7 @@
 
 import { CalendarCheck, Clock, FileText, ReceiptText, RefreshCw, UserRoundSearch } from 'lucide-react';
 import { useControladorMenuPrestamos } from '../../../controladores/ControladorPrestamos.js';
-import { ESTADOS_PRESTAMO, FechaCorta, FechaLarga, HoyIso } from '../../../modelos/dominio.js';
+import { ESTADOS_PRESTAMO, FechaCorta } from '../../../modelos/dominio.js';
 import { Pagina } from '../../plantillas/PlantillaAplicacion.jsx';
 import { AlertaError, Cargando, Insignia, Tarjeta } from '../../componentes/interfaz.jsx';
 import { TarjetaAccion, TarjetaIndicador } from '../../componentes/Circulacion.jsx';
@@ -92,10 +92,6 @@ export function PaginaPrestamos()
 
   return (
     <Pagina miga="Préstamos" titulo="Préstamos">
-      <p className="texto-secundario margen-abajo-16">
-        Hoy, {FechaLarga(HoyIso()).toLowerCase()} · Registra y da seguimiento a los préstamos del
-        mostrador
-      </p>
       <AlertaError error={controlador.error} />
       {controlador.cargando && !resumen && <Cargando />}
       {resumen && (

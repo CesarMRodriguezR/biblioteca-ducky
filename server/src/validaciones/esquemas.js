@@ -438,7 +438,7 @@ const esquemas = {
     matricula: matricula.optional(),
   }),
 
-  lista_espera_busqueda: z.object({ q: Requerido(150) }),
+  lista_espera_busqueda: z.object({ q: isbn }),
 
   lista_espera_agregar: z.object({ id_libro: id, matricula }),
 

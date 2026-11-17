@@ -189,7 +189,7 @@ const ControladorPrestamos = {
 
   /*
    * Función: ListaEspera
-   * Objetivo: GET /lista-espera?q= — lista de espera de un libro buscado por título o ISBN.
+   * Objetivo: GET /lista-espera?q= — lista de espera de un libro buscado por su ISBN.
    * Entrada: req: petición HTTP (ya autenticada y validada); res: respuesta HTTP
    * Salida: Respuesta HTTP en formato JSON
    */

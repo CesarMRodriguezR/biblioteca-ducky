@@ -68,12 +68,12 @@ export function PaginaListaEspera()
         >
           <div className="campo campo-buscador">
             <label className="campo-etiqueta" htmlFor="libro-espera">
-              Título o ISBN del libro
+              ISBN del libro
             </label>
             <input
               id="libro-espera"
               className="entrada"
-              placeholder="Ej. Introduction to Algorithms o 978-0-262-03384-8"
+              placeholder="Ej. 978-0-262-03384-8"
               value={controlador.texto}
               onChange={(evento) => controlador.SetTexto(evento.target.value)}
             />

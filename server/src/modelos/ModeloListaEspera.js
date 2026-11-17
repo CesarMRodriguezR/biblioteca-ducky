@@ -4,7 +4,7 @@
  * Función: Lista de espera de un libro: consulta, registro de un lector y baja de un lector.
  * Autor: Equipo CCJMops
  * Fecha: 15/11/2026
- * Entrada: Título o ISBN del libro y matrícula del lector
+ * Entrada: ISBN del libro y matrícula del lector
  * Salida: Libro con sus ejemplares para préstamo externo y su lista de espera
  * Nomenclatura: Variables en snake_case, funciones en CamelCase,
  *               constantes en SNAKE_CASE (mayúsculas completas),
@@ -43,23 +43,22 @@ import { ModeloPrestamo } from './ModeloPrestamo.js';
 const ModeloListaEspera = {
   /*
    * Función: BuscarLibro
-   * Objetivo: Encontrar un libro activo por ISBN o por título y devolver su lista de espera.
-   * Entrada: texto (título o ISBN)
+   * Objetivo: Encontrar un libro activo por su ISBN (con o sin guiones) y devolver su lista de
+   *           espera.
+   * Entrada: isbn
    * Salida: Promesa con la lista de espera del libro
    */
-  async BuscarLibro(texto)
+  async BuscarLibro(isbn)
   {
-    const limpio = String(texto).trim();
-    const es_isbn = /^[0-9-]{10,17}$/.test(limpio);
+    const limpio = String(isbn).trim();
     const [libro] = await Consultar(
       `SELECT id_libro FROM Libros
-        WHERE Estatus = 'Activo' AND ${es_isbn ? 'REPLACE(ISBN, \'-\', \'\') = ?' : 'Titulo LIKE ?'}
-        ORDER BY Titulo LIMIT 1`,
-      [es_isbn ? limpio.replace(/-/g, '') : `%${limpio}%`],
+        WHERE Estatus = 'Activo' AND REPLACE(ISBN, '-', '') = ?`,
+      [limpio.replace(/-/g, '')],
     );
     if (!libro)
     {
-      throw ErrorHttp.NoEncontrado(`No se encontró un libro activo con «${limpio}»`);
+      throw ErrorHttp.NoEncontrado(`No hay un libro activo con el ISBN ${limpio}`);
     }
     return ModeloListaEspera.DelLibro(libro.id_libro);
   },

@@ -676,8 +676,8 @@ export function useControladorPrestamosUsuario()
 
 /*
  * Hook: useControladorListaEspera
- * Objetivo: BD-SP03-PL05 Lista de espera: consultar la de un libro, agregar y quitar lectores
- *           y avisar quién tiene prioridad cuando hay un ejemplar disponible.
+ * Objetivo: BD-SP03-PL05 Lista de espera: consultar la de un libro por su ISBN, agregar y
+ *           quitar lectores y avisar quién tiene prioridad cuando hay un ejemplar disponible.
  * Entrada: Ninguna (acepta ?q= y ?matricula= en la dirección)
  * Salida: Objeto con el estado y las acciones de la pantalla
  */
@@ -703,7 +703,14 @@ export function useControladorListaEspera()
     if (!valor.trim())
     {
       SetDatos(null);
-      SetError({ message: 'Escribe el título o el ISBN del libro.' });
+      SetError({ message: 'Escribe el ISBN del libro.' });
+      return;
+    }
+    const digitos = valor.trim().replace(/-/g, '');
+    if (!/^\d+$/.test(digitos) || ![10, 13].includes(digitos.length))
+    {
+      SetDatos(null);
+      SetError({ message: 'El ISBN debe tener 10 o 13 dígitos (solo números y guiones).' });
       return;
     }
     SetBuscando(true);

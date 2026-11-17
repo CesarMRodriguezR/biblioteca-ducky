@@ -143,7 +143,7 @@ export const ModeloPrestamo = {
 export const ModeloListaEspera = {
   /*
    * Función: Buscar
-   * Objetivo: Pedir la lista de espera de un libro por título o ISBN.
+   * Objetivo: Pedir la lista de espera de un libro por su ISBN.
    * Entrada: texto
    * Salida: Promesa con la respuesta de la API
    */
