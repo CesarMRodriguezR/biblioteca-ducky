@@ -242,7 +242,7 @@ export function PaginaRegistrarPrestamo()
           <TablaCopias copias={libro.copias} />
         ) : (
           <Selector
-            className="margen-arriba-16"
+            className="margen-arriba-16 campo-mediano"
             etiqueta="Ejemplar"
             value={controlador.num_copia}
             onChange={(evento) => controlador.SetNumCopia(evento.target.value)}

@@ -1700,6 +1700,11 @@ button
   max-width: 320px;
 }
 
+.campo-mediano
+{
+  max-width: 360px;
+}
+
 .separador
 {
   border: 0;
