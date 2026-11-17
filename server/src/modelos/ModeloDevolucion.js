@@ -85,8 +85,9 @@ const ModeloDevolucion = {
     {
       const id_devolucion = await SiguienteId('Devoluciones', 'id_devolucion', conexion);
       await Consultar(
-        'INSERT INTO Devoluciones (id_devolucion, id_prestamo, Fecha_Devolucion) VALUES (?, ?, ?)',
-        [id_devolucion, id_prestamo, hoy],
+        `INSERT INTO Devoluciones (id_devolucion, id_prestamo, Fecha_Devolucion, Condicion_Libro)
+         VALUES (?, ?, ?, ?)`,
+        [id_devolucion, id_prestamo, hoy, condicion],
         conexion,
       );
       await Consultar(

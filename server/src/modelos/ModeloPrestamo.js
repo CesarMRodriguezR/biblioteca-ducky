@@ -418,7 +418,7 @@ const ModeloPrestamo = {
     {
       await Consultar(
         `INSERT INTO Renovaciones
-           (id_prestamo, num_prestamo, Fecha_Renovacion, Fecha_Previamente_Programada)
+           (id_prestamo, num_renovacion, Fecha_Renovacion, Fecha_Previamente_Programada)
          VALUES (?, ?, ?, ?)`,
         [id_prestamo, numero, hoy, prestamo.Fecha_Entrega_Programada],
         conexion,

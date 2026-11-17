@@ -29,9 +29,8 @@
  * Instrucciones de reutilización:
  * (1) Toda consulta es parametrizada (?); las operaciones que se hacen junto con otras (una
  *     devolución, una renovación) reciben la conexión de la transacción.
- * (2) Un préstamo solo puede ligarse a una multa (UNIQUE id_prestamo, cardinalidad 0..1 del
- *     diagrama): si ya tiene una, la nueva se guarda sin préstamo y su justificación cita el
- *     folio.
+ * (2) Un préstamo puede tener varias multas (cardinalidad 0..N): por ejemplo, una por retraso
+ *     y otra por daño del mismo préstamo.
  * (3) Una multa se paga completa en Tesorería; Biblio solo registra la fecha de pago.
  * ******************************************************************
  */
@@ -135,34 +134,18 @@ const ModeloMulta = {
 
   /*
    * Función: Crear
-   * Objetivo: Registrar una multa pendiente de pago. Si el préstamo ya tiene una multa, la
-   *           nueva queda sin préstamo y su justificación cita el folio.
+   * Objetivo: Registrar una multa pendiente de pago, ligada a su préstamo si lo tiene.
    * Entrada: { id_usuario, id_prestamo, monto, motivo, justificacion, fecha }, conexion
    * Salida: Promesa con la multa creada
    */
   async Crear({ id_usuario, id_prestamo, monto, motivo, justificacion, fecha }, conexion)
   {
-    let liga = id_prestamo ?? null;
-    let texto = justificacion;
-    if (liga)
-    {
-      const [ocupada] = await Consultar(
-        'SELECT id_multa FROM Multas WHERE id_prestamo = ?',
-        [liga],
-        conexion,
-      );
-      if (ocupada)
-      {
-        texto = `${FolioPrestamo(liga)} · ${justificacion}`.slice(0, 150);
-        liga = null;
-      }
-    }
     const id_multa = await SiguienteId('Multas', 'id_multa', conexion);
     await Consultar(
       `INSERT INTO Multas
          (id_multa, Cantidad_a_Pagar, id_usuario, id_prestamo, Justificacion, Motivo, Fecha_Multa)
        VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [id_multa, monto, id_usuario, liga, texto, motivo, fecha],
+      [id_multa, monto, id_usuario, id_prestamo ?? null, justificacion, motivo, fecha],
       conexion,
     );
     return ModeloMulta.BuscarPorId(id_multa, conexion);

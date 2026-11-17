@@ -256,7 +256,7 @@ INSERT INTO Prestamos (id_prestamo, Fecha_Prestamo, Fecha_Entrega_Programada, Es
   (12, DATE_SUB(@hoy, INTERVAL 1 DAY), DATE_ADD(@hoy, INTERVAL 6 DAY), 'Activo', 12, 17, 1),
   (13, DATE_SUB(@hoy, INTERVAL 2 DAY), DATE_ADD(@hoy, INTERVAL 5 DAY), 'Activo', 5, 17, 2);
 
-INSERT INTO Renovaciones (id_prestamo, num_prestamo, Fecha_Renovacion, Fecha_Previamente_Programada) VALUES
+INSERT INTO Renovaciones (id_prestamo, num_renovacion, Fecha_Renovacion, Fecha_Previamente_Programada) VALUES
   (5, 1, DATE_SUB(@hoy, INTERVAL 27 DAY), DATE_SUB(@hoy, INTERVAL 26 DAY)),
   (5, 2, DATE_SUB(@hoy, INTERVAL 13 DAY), DATE_SUB(@hoy, INTERVAL 12 DAY)),
   (5, 3, DATE_SUB(@hoy, INTERVAL 1 DAY), DATE_ADD(@hoy, INTERVAL 2 DAY));
@@ -273,16 +273,16 @@ INSERT INTO Prestamos (id_prestamo, Fecha_Prestamo, Fecha_Entrega_Programada, Es
   (21, DATE_SUB(@hoy, INTERVAL 50 DAY), DATE_SUB(@hoy, INTERVAL 36 DAY), 'Devuelto', 3, 12, 2),
   (22, DATE_SUB(@hoy, INTERVAL 20 DAY), DATE_SUB(@hoy, INTERVAL 13 DAY), 'Devuelto', 4, 5, 2);
 
-INSERT INTO Devoluciones (id_devolucion, id_prestamo, Fecha_Devolucion) VALUES
-  (1, 14, DATE_SUB(@hoy, INTERVAL 34 DAY)),
-  (2, 15, DATE_SUB(@hoy, INTERVAL 51 DAY)),
-  (3, 16, DATE_SUB(@hoy, INTERVAL 19 DAY)),
-  (4, 17, DATE_SUB(@hoy, INTERVAL 2 DAY)),
-  (5, 18, DATE_SUB(@hoy, INTERVAL 53 DAY)),
-  (6, 19, DATE_SUB(@hoy, INTERVAL 59 DAY)),
-  (7, 20, DATE_SUB(@hoy, INTERVAL 16 DAY)),
-  (8, 21, DATE_SUB(@hoy, INTERVAL 37 DAY)),
-  (9, 22, DATE_SUB(@hoy, INTERVAL 10 DAY));
+INSERT INTO Devoluciones (id_devolucion, id_prestamo, Fecha_Devolucion, Condicion_Libro) VALUES
+  (1, 14, DATE_SUB(@hoy, INTERVAL 34 DAY), 'Buen estado'),
+  (2, 15, DATE_SUB(@hoy, INTERVAL 51 DAY), 'Buen estado'),
+  (3, 16, DATE_SUB(@hoy, INTERVAL 19 DAY), 'Buen estado'),
+  (4, 17, DATE_SUB(@hoy, INTERVAL 2 DAY), 'Buen estado'),
+  (5, 18, DATE_SUB(@hoy, INTERVAL 53 DAY), 'Dañado'),
+  (6, 19, DATE_SUB(@hoy, INTERVAL 59 DAY), 'Dañado'),
+  (7, 20, DATE_SUB(@hoy, INTERVAL 16 DAY), 'Buen estado'),
+  (8, 21, DATE_SUB(@hoy, INTERVAL 37 DAY), 'Buen estado'),
+  (9, 22, DATE_SUB(@hoy, INTERVAL 10 DAY), 'Buen estado');
 
 -- Multas. Tesorería ya tiene las 1 a 5 y la 7 (externos/database/03_tesoreria.sql) y
 -- registró el pago de la 2, la 3 y la 7 (esta hace 2 días, para que se vea en el

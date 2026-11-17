@@ -9,8 +9,9 @@
 --   * Las llaves son VARCHAR(13), como en el diccionario de datos. No tienen
 --     AUTO_INCREMENT: la API asigna texto numérico ('1', '2'…), el mayor + 1
 --     (server/src/configuracion/conexion.js, SiguienteId).
---   * Las cardinalidades 0,1 del diagrama se aplican con índices UNIQUE
---     (Devoluciones.id_prestamo y Multas.id_prestamo).
+--   * La cardinalidad 0,1 de Devoluciones con Prestamos se aplica con un índice
+--     UNIQUE (Devoluciones.id_prestamo). Multas con Prestamos es 0,N: un préstamo
+--     puede tener varias multas (p. ej. retraso y daño).
 --   * Ejemplares, Renovaciones y las tablas puente usan llave compuesta,
 --     tal como están marcadas PK,FK en el diagrama.
 --
@@ -34,6 +35,8 @@
 --   * OrdenesCompra: estado 'En revision' (ya la recibió Tesorería). El folio y
 --     el motivo de Tesorería no se guardan: se consultan a Tesorería con la
 --     referencia (id_orden).
+--   * Devoluciones: Condicion_Libro (Buen estado, Dañado o Incompleto), la condición
+--     en que se recibió el libro.
 --   * Multas: Motivo (entrega extemporánea, daño o pérdida) y Fecha_Multa, que el
 --     prototipo muestra en cada multa, y Enviada_Tesoreria, para saber qué multas
 --     falta enviar a Tesorería aunque no responda (Pagos de Tesorería).
@@ -204,6 +207,8 @@ CREATE TABLE Devoluciones (
   id_devolucion     VARCHAR(13)  NOT NULL,
   id_prestamo       VARCHAR(13)  NOT NULL,
   Fecha_Devolucion  DATE         NOT NULL,
+  Condicion_Libro   ENUM('Buen estado','Dañado','Incompleto') NOT NULL DEFAULT 'Buen estado'
+                    COMMENT '[PROTOTIPO]',
   PRIMARY KEY (id_devolucion),
   UNIQUE KEY uq_devoluciones_prestamo (id_prestamo),
   CONSTRAINT fk_devoluciones_prestamo FOREIGN KEY (id_prestamo)
@@ -212,10 +217,10 @@ CREATE TABLE Devoluciones (
 
 CREATE TABLE Renovaciones (
   id_prestamo                    VARCHAR(13)  NOT NULL,
-  num_prestamo                   INT UNSIGNED NOT NULL COMMENT 'Número consecutivo de renovación',
+  num_renovacion                 INT UNSIGNED NOT NULL COMMENT 'Número consecutivo de renovación',
   Fecha_Renovacion               DATE         NOT NULL,
   Fecha_Previamente_Programada   DATE         NOT NULL,
-  PRIMARY KEY (id_prestamo, num_prestamo),
+  PRIMARY KEY (id_prestamo, num_renovacion),
   CONSTRAINT fk_renovaciones_prestamo FOREIGN KEY (id_prestamo)
     REFERENCES Prestamos (id_prestamo) ON UPDATE CASCADE ON DELETE CASCADE
 ) ENGINE=InnoDB;
@@ -232,7 +237,7 @@ CREATE TABLE Multas (
   Fecha_Multa       DATE           NOT NULL DEFAULT (CURRENT_DATE) COMMENT '[PROTOTIPO]',
   Enviada_Tesoreria BOOLEAN        NOT NULL DEFAULT FALSE COMMENT '[PROTOTIPO]',
   PRIMARY KEY (id_multa),
-  UNIQUE KEY uq_multas_prestamo (id_prestamo),
+  KEY ix_multas_prestamo (id_prestamo),
   KEY ix_multas_usuario (id_usuario),
   CONSTRAINT fk_multas_usuario FOREIGN KEY (id_usuario)
     REFERENCES Usuarios (id_usuario) ON UPDATE CASCADE ON DELETE RESTRICT,
