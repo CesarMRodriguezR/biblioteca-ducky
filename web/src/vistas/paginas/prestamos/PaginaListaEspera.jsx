@@ -204,24 +204,17 @@ export function PaginaListaEspera()
         <p className="texto-nota margen-arriba-16">
           {datos.lista.length} {datos.lista.length === 1 ? 'lector' : 'lectores'} en espera ·
           Cuando haya un ejemplar disponible, se le dará prioridad al lector que se registró primero
-          en la lista (no se envían notificaciones).
+          en la lista.
         </p>
       )}
 
       {prioridad && (
-        <>
-          <div className="margen-arriba-16">
-            <Alerta tipo="informacion" titulo={`Hay un ejemplar disponible de ${datos.libro.Titulo}`}>
-              {prioridad.Nombre_Completo} tiene prioridad porque fue el primero en registrarse en la
-              lista ({FechaCorta(prioridad.Fecha_Peticion)}).
-            </Alerta>
-          </div>
-          <div className="margen-arriba-16">
-            <Boton onClick={() => controlador.Prestar(prioridad)}>
-              Prestar a {prioridad.Nombre_Completo}
-            </Boton>
-          </div>
-        </>
+        <div className="margen-arriba-16">
+          <Alerta tipo="informacion" titulo={`Hay un ejemplar disponible de ${datos.libro.Titulo}`}>
+            {prioridad.Nombre_Completo} tiene prioridad porque fue el primero en registrarse en la
+            lista ({FechaCorta(prioridad.Fecha_Peticion)}).
+          </Alerta>
+        </div>
       )}
     </Pagina>
   );

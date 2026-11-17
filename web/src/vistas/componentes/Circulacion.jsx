@@ -41,7 +41,7 @@
  * ******************************************************************
  */
 
-import { ArrowRight, FileText, Mail, MessageCircle } from 'lucide-react';
+import { ArrowRight, Download, FileText, Mail, MessageCircle, Printer } from 'lucide-react';
 import {
   ESTADOS_PRESTAMO,
   FechaCorta,
@@ -216,8 +216,8 @@ export function TablaPendientes({ prestamos, etiqueta_accion, icono_accion, al_e
 
 /*
  * Componente: ModalDocumento
- * Objetivo: Vista previa de impresión de un documento con Imprimir y Guardar como PDF (el mismo
- *           patrón que la vista previa del listado de libros).
+ * Objetivo: Vista previa de impresión de un documento con Imprimir y Guardar como PDF (mismos
+ *           botones e íconos que la vista previa del listado de libros).
  * Uso: <ModalDocumento titulo={…} al_cerrar={…} al_imprimir={…} al_descargar={…}
  *        descargando={…} cargando={…} error={…}>…</ModalDocumento>
  */
@@ -238,10 +238,16 @@ export function ModalDocumento({
       al_cerrar={al_cerrar}
       acciones={
         <div className="fila espacio-8">
-          <Boton variante="secundario" chico onClick={al_imprimir} disabled={cargando}>
+          <Boton
+            variante="secundario"
+            chico
+            icono={Printer}
+            onClick={al_imprimir}
+            disabled={cargando}
+          >
             Imprimir
           </Boton>
-          <Boton chico onClick={al_descargar} disabled={cargando || descargando}>
+          <Boton chico icono={Download} onClick={al_descargar} disabled={cargando || descargando}>
             {descargando ? 'Generando…' : 'Guardar como PDF'}
           </Boton>
         </div>

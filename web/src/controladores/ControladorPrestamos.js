@@ -683,7 +683,6 @@ export function useControladorPrestamosUsuario()
  */
 export function useControladorListaEspera()
 {
-  const navegar = useNavigate();
   const [parametros] = useSearchParams();
   const [texto, SetTexto] = useState(parametros.get('q') ?? '');
   const [matricula, SetMatricula] = useState(parametros.get('matricula') ?? '');
@@ -822,10 +821,5 @@ export function useControladorListaEspera()
     Buscar: () => Buscar(),
     Agregar,
     Quitar,
-    Prestar: (registro) =>
-      navegar(
-        `/prestamos/registro?matricula=${registro.Matricula_Nomina}` +
-          `&isbn=${encodeURIComponent(datos.libro.ISBN)}`,
-      ),
   };
 }
