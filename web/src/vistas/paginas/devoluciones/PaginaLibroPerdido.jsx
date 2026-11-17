@@ -121,6 +121,18 @@ export function PaginaLibroPerdido()
               valor={`${FormatoMoneda(seleccionado.Precio)} MXN`}
             />
             <DatoEtiquetado etiqueta="Multa por reposición" valor={FormatoMoneda(seleccionado.Precio)} />
+            {controlador.multa_retraso > 0 && (
+              <>
+                <DatoEtiquetado
+                  etiqueta={`Multa por retraso (${seleccionado.Dias_Retraso} × $10.00)`}
+                  valor={FormatoMoneda(controlador.multa_retraso)}
+                />
+                <DatoEtiquetado
+                  etiqueta="Total a pagar"
+                  valor={FormatoMoneda(Number(seleccionado.Precio) + controlador.multa_retraso)}
+                />
+              </>
+            )}
           </div>
           <div className="margen-arriba-16">
             <Insignia tono="error">
@@ -157,6 +169,11 @@ export function PaginaLibroPerdido()
         {resultado && (
           <Boton icono={FileText} onClick={controlador.ImprimirMulta}>
             Imprimir multa
+          </Boton>
+        )}
+        {resultado?.multa_retraso && (
+          <Boton variante="secundario" icono={FileText} onClick={controlador.ImprimirMultaRetraso}>
+            Imprimir multa por retraso
           </Boton>
         )}
       </div>

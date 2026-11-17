@@ -845,6 +845,10 @@ test('DL02/DL03: multas por daño y pérdida; libro perdido avisa a Servicios Es
   const perdido = await Solicitar('POST', '/prestamos/7/perdido', { token: tokens.biblio });
   assert.equal(perdido.status, 200, JSON.stringify(perdido.data));
   assert.equal(perdido.data.multa.Cantidad_a_Pagar, 720); // precio de la última compra
+  // El préstamo 7 ya estaba vencido: también se cobra la multa por los días de retraso.
+  assert.equal(perdido.data.multa_retraso.Motivo, 'Entrega extemporánea');
+  assert.ok(perdido.data.multa_retraso.Cantidad_a_Pagar > 0);
+  assert.equal(perdido.data.multa_retraso.id_prestamo, '7');
   assert.equal(perdido.data.prestamo.Estado_Visible, 'Perdido');
   assert.equal(perdido.data.avisado_servicios, true);
   assert.equal(simulador.avisos.at(-1).tipo, 'Libro perdido');

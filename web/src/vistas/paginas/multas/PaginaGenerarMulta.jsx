@@ -101,7 +101,7 @@ export function PaginaGenerarMulta()
           <h2 className="margen-arriba-24">Préstamos pendientes</h2>
           <TablaPendientes
             prestamos={controlador.pendientes}
-            etiqueta_accion="Seleccionar"
+            etiqueta_accion="Generar multa"
             al_elegir={controlador.Elegir}
           />
         </>
@@ -133,6 +133,12 @@ export function PaginaGenerarMulta()
             />
             <DatoEtiquetado etiqueta="Fecha" valor={FechaCorta(HoyIso())} />
           </div>
+          {controlador.multa_retraso > 0 && (
+            <p className="texto-nota margen-arriba-12">
+              El préstamo está vencido: también se generará la multa por retraso de{' '}
+              {seleccionado.Dias_Retraso} × $10.00 = {FormatoMoneda(controlador.multa_retraso)}.
+            </p>
+          )}
           <AreaTexto
             className="margen-arriba-16"
             etiqueta="Justificación"

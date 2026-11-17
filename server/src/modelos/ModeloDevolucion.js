@@ -136,15 +136,18 @@ const ModeloDevolucion = {
   /*
    * Función: ReportarPerdido
    * Objetivo: Marcar un préstamo como perdido, retirar la copia y generar la multa por
-   *           reposición (precio de la última compra del libro).
+   *           reposición (precio de la última compra del libro). Si el préstamo ya estaba
+   *           vencido, genera también la multa por los días de retraso.
    * Entrada: id_prestamo, justificacion (opcional)
-   * Salida: Promesa con { prestamo, multa }
+   * Salida: Promesa con { prestamo, multa, multa_retraso } (multa_retraso es null si no hay
+   *         retraso)
    */
   async ReportarPerdido(id_prestamo, justificacion)
   {
     const prestamo = await PrestamoActivo(id_prestamo);
     const hoy = Hoy();
-    const multa = await EjecutarEnTransaccion(async (conexion) =>
+    const dias_retraso = prestamo.Dias_Retraso;
+    const multas = await EjecutarEnTransaccion(async (conexion) =>
     {
       await Consultar(
         'UPDATE Prestamos SET Estado = \'Perdido\' WHERE id_prestamo = ?',
@@ -157,7 +160,7 @@ const ModeloDevolucion = {
         [prestamo.id_libro, prestamo.num_copia],
         conexion,
       );
-      return ModeloMulta.Crear(
+      const multa = await ModeloMulta.Crear(
         {
           id_usuario: prestamo.id_usuario,
           id_prestamo,
@@ -170,8 +173,22 @@ const ModeloDevolucion = {
         },
         conexion,
       );
+      const multa_retraso = dias_retraso > 0
+        ? await ModeloMulta.Crear(
+          {
+            id_usuario: prestamo.id_usuario,
+            id_prestamo,
+            monto: dias_retraso * REGLAS.MULTA_POR_DIA,
+            motivo: 'Entrega extemporánea',
+            justificacion: `Libro perdido con ${dias_retraso} días de retraso.`,
+            fecha: hoy,
+          },
+          conexion,
+        )
+        : null;
+      return { multa, multa_retraso };
     });
-    return { prestamo: await ModeloPrestamo.BuscarPorId(id_prestamo), multa };
+    return { prestamo: await ModeloPrestamo.BuscarPorId(id_prestamo), ...multas };
   },
 
   /*

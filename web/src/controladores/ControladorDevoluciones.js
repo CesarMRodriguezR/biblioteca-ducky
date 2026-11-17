@@ -20,6 +20,7 @@
  *     Hook                                Objetivo
  *     REGLAS_MULTA                        Montos del reglamento para la vista previa de la multa
  *     TextoAlumnos                        Describir cuántos alumnos deudores se enviaron
+ *     TextoMultaRetraso                   Mencionar la multa por retraso de un libro perdido
  *     useVistaMulta                       Vista previa e impresión del recibo de multa
  *     useControladorMenuDevoluciones      Menú Devoluciones: indicadores y últimas devoluciones
  *     useControladorMenuMultas            Menú Multas y adeudos: indicadores y multas recientes
@@ -73,6 +74,20 @@ const REGLAS_MULTA = { MULTA_POR_DIA: 10, MULTA_POR_DANO: 250 };
 function TextoAlumnos(total)
 {
   return total === 1 ? 'el alumno deudor' : `los ${total} alumnos deudores`;
+}
+
+/*
+ * Función: TextoMultaRetraso
+ * Objetivo: Mencionar la multa por retraso que se genera junto con la de un libro perdido.
+ * Entrada: multa_retraso (o null)
+ * Salida: Texto (vacío si no hubo retraso)
+ */
+function TextoMultaRetraso(multa_retraso)
+{
+  return multa_retraso
+    ? ` y la multa ${multa_retraso.Folio} por ` +
+      `${FormatoMoneda(multa_retraso.Cantidad_a_Pagar)} por los días de retraso`
+    : '';
 }
 
 /*
@@ -263,6 +278,7 @@ export function useControladorLibroPerdido()
         texto:
           `Se generó la multa ${respuesta.multa.Folio} por ` +
           `${FormatoMoneda(respuesta.multa.Cantidad_a_Pagar)}` +
+          TextoMultaRetraso(respuesta.multa_retraso) +
           (avisados.length ? ` y se notificó a ${avisados.join(' y a ')}.` : '.') +
           (respuesta.enviada_tesoreria
             ? ''
@@ -300,9 +316,11 @@ export function useControladorLibroPerdido()
       SetResultado(null);
       SetAviso(null);
     },
+    multa_retraso: (seleccionado?.Dias_Retraso ?? 0) * REGLAS_MULTA.MULTA_POR_DIA,
     Reportar,
     Cancelar: () => SetSeleccionado(null),
     ImprimirMulta: () => vista.Abrir(resultado.multa.id_multa),
+    ImprimirMultaRetraso: () => vista.Abrir(resultado.multa_retraso.id_multa),
   };
 }
 
@@ -422,7 +440,9 @@ export function useControladorGenerarMulta()
           `Multa ${respuesta.multa.Folio} generada por ` +
           `${FormatoMoneda(respuesta.multa.Cantidad_a_Pagar)}`,
         texto:
-          `Se registró a nombre de ${respuesta.multa.Nombre_Completo}. Debe pagarla en Tesorería.` +
+          `Se registró a nombre de ${respuesta.multa.Nombre_Completo}` +
+          TextoMultaRetraso(respuesta.multa_retraso) +
+          '. Debe pagarse en Tesorería.' +
           (respuesta.enviada_tesoreria
             ? ''
             : ' Tesorería no respondió: la multa se enviará en cuanto vuelva la conexión.'),
@@ -456,6 +476,10 @@ export function useControladorGenerarMulta()
     justificacion,
     SetJustificacion,
     monto: MontoPrevio(),
+    multa_retraso:
+      motivo === 'Pérdida del libro' && seleccionado?.Estado === 'Activo'
+        ? seleccionado.Dias_Retraso * REGLAS_MULTA.MULTA_POR_DIA
+        : 0,
     errores,
     resultado,
     aviso,

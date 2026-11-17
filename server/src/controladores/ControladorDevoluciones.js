@@ -18,6 +18,7 @@
  * Contenido de listado:
  *     Módulo                    Objetivo
  *     AvisarPerdido             Avisar a Servicios Escolares que un alumno perdió un libro
+ *     EnviarMultas              Enviar a Tesorería las multas generadas en una operación
  *     EstadoPago                Estado de un pago según lo que aún debe el lector
  *     BuscarMulta               Obtener el recibo de una multa o responder 404
  *     RenglonesMulta            Renglones del recibo de multa
@@ -45,6 +46,25 @@ import { ErrorHttp } from '../utilidades/ErrorHttp.js';
 import { FechaCorta, Hoy } from '../utilidades/fechas.js';
 import { GenerarDocumentoPdf } from '../utilidades/GenerarDocumentoPdf.js';
 import { FolioMulta, FormatoMoneda } from '../utilidades/ReglasCirculacion.js';
+
+/*
+ * Función: EnviarMultas
+ * Objetivo: Enviar a Tesorería las multas generadas en una operación (las nulas se omiten).
+ * Entrada: multas: lista de multas o null
+ * Salida: Promesa con true si Tesorería recibió todas (false si no hubo multa o no respondió)
+ */
+async function EnviarMultas(multas)
+{
+  const generadas = multas.filter(Boolean);
+  if (!generadas.length)
+  {
+    return false;
+  }
+  const enviadas = await Promise.all(
+    generadas.map((multa) => ModeloTesoreria.IntentarEnviarMulta(multa)),
+  );
+  return enviadas.every(Boolean);
+}
 
 /*
  * Función: AvisarPerdido
@@ -189,15 +209,17 @@ const ControladorDevoluciones = {
   /*
    * Función: ReportarPerdido
    * Objetivo: POST /prestamos/:id/perdido — reportar un libro perdido: genera la multa por
-   *           reposición y avisa a Tesorería y a Servicios Escolares.
+   *           reposición (y la de retraso si ya estaba vencido) y avisa a Tesorería y a
+   *           Servicios Escolares.
    * Entrada: req: petición HTTP (ya autenticada y validada); res: respuesta HTTP
-   * Salida: Respuesta HTTP con { prestamo, multa, enviada_tesoreria, avisado_servicios }
+   * Salida: Respuesta HTTP con { prestamo, multa, multa_retraso, enviada_tesoreria,
+   *         avisado_servicios }
    */
   async ReportarPerdido(req, res)
   {
     const resultado = await ModeloDevolucion.ReportarPerdido(req.params.id);
     const [enviada_tesoreria, avisado_servicios] = await Promise.all([
-      ModeloTesoreria.IntentarEnviarMulta(resultado.multa),
+      EnviarMultas([resultado.multa, resultado.multa_retraso]),
       AvisarPerdido(resultado.prestamo, resultado.multa),
     ]);
     res.json({ ...resultado, enviada_tesoreria, avisado_servicios });
@@ -218,12 +240,13 @@ const ControladorDevoluciones = {
    * Función: GenerarMulta
    * Objetivo: POST /multas — generar la multa de un préstamo (extemporánea, daño o pérdida).
    * Entrada: req: petición HTTP (ya autenticada y validada); res: respuesta HTTP
-   * Salida: 201 con { prestamo, multa, enviada_tesoreria }
+   * Salida: 201 con { prestamo, multa, multa_retraso (solo por pérdida de un préstamo vencido),
+   *         enviada_tesoreria }
    */
   async GenerarMulta(req, res)
   {
     const resultado = await ModeloDevolucion.GenerarMulta(req.body);
-    const enviada_tesoreria = await ModeloTesoreria.IntentarEnviarMulta(resultado.multa);
+    const enviada_tesoreria = await EnviarMultas([resultado.multa, resultado.multa_retraso]);
     res.status(201).json({ ...resultado, enviada_tesoreria });
   },
 
