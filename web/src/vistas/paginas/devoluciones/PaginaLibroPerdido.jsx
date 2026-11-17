@@ -159,7 +159,7 @@ export function PaginaLibroPerdido()
 
       {vista.abierta && (
         <ModalDocumento
-          titulo="Vista previa de la multa"
+          titulo="Vista previa del recibo de multa"
           al_cerrar={vista.Cerrar}
           al_imprimir={vista.Imprimir}
           al_descargar={vista.Descargar}

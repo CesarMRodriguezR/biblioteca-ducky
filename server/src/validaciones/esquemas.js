@@ -444,7 +444,7 @@ const esquemas = {
 
   devolucion_crear: z.object({
     id_prestamo: id,
-    condicion: z.enum(['Buen estado', 'Dañado']).default('Buen estado'),
+    condicion: z.enum(['Buen estado', 'Dañado', 'Incompleto']).default('Buen estado'),
   }),
 
   multa_crear: z.object({

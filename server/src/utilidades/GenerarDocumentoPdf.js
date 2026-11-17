@@ -5,7 +5,7 @@
  *          multa y lista de alumnos deudores) con el mismo formato que el listado de libros.
  * Autor: Equipo CCJMops
  * Fecha: 15/11/2026
- * Entrada: Título, datos etiquetados, tabla opcional y notas
+ * Entrada: Título, datos etiquetados o renglones, tabla opcional y notas
  * Salida: PDFDocument listo para enviar con pipe()
  * Nomenclatura: Variables en snake_case, funciones en CamelCase,
  *               constantes en SNAKE_CASE (mayúsculas completas),
@@ -26,8 +26,10 @@
  * ******************************************************************
  * Instrucciones de reutilización:
  * (1) Funciones de apoyo sin acceso a la base de datos; se pueden usar en cualquier capa.
- * (2) Los datos se acomodan en tres columnas; la tabla reparte el ancho de la hoja según el
- *     ancho relativo de cada columna.
+ * (2) Los datos se acomodan en tres columnas y los renglones (recibos) en dos: etiqueta y
+ *     valor. La tabla reparte el ancho de la hoja según el ancho relativo de cada columna.
+ * (3) Con «seccion» y «folio» el encabezado sigue el formato de los recibos del prototipo:
+ *     sección en versalitas, título, y a la derecha quién lo generó y el folio.
  * ******************************************************************
  */
 
@@ -46,13 +48,25 @@ const COLORES = {
 
 /*
  * Función: GenerarDocumentoPdf
- * Objetivo: Dibujar un documento con encabezado, datos etiquetados en tres columnas, una tabla
- *           opcional, notas y el pie con el número de página.
- * Entrada: { titulo, subtitulo, generado, datos: [[etiqueta, valor]], tabla: { columnas:
- *          [{ titulo, ancho }], filas: [[...]] }, notas: [texto] }
+ * Objetivo: Dibujar un documento con encabezado, datos etiquetados en tres columnas o
+ *           renglones de etiqueta y valor, una tabla opcional, notas y el pie con el número de
+ *           página.
+ * Entrada: { titulo, seccion, subtitulo, generado, folio, datos: [[etiqueta, valor]],
+ *          renglones: [[etiqueta, valor, resaltado]], tabla: { columnas: [{ titulo, ancho }],
+ *          filas: [[...]] }, notas: [texto] }
  * Salida: PDFDocument listo para enviar con pipe()
  */
-function GenerarDocumentoPdf({ titulo, subtitulo, generado, datos = [], tabla, notas = [] })
+function GenerarDocumentoPdf({
+  titulo,
+  seccion,
+  subtitulo,
+  generado,
+  folio,
+  datos = [],
+  renglones = [],
+  tabla,
+  notas = [],
+})
 {
   const documento = new PDFDocument({
     size: 'LETTER',
@@ -65,18 +79,40 @@ function GenerarDocumentoPdf({ titulo, subtitulo, generado, datos = [], tabla, n
   const ancho = derecha - izquierda;
   const limite_inferior = documento.page.height - documento.page.margins.bottom - 24;
 
-  documento
-    .font('Helvetica-Bold')
-    .fontSize(11)
-    .fillColor(COLORES.azul)
-    .text('Biblio · Universidad Ducky', izquierda, 48);
+  if (seccion)
+  {
+    documento
+      .font('Helvetica-Bold')
+      .fontSize(8)
+      .fillColor(COLORES.suave)
+      .text(seccion.toUpperCase(), izquierda, 54, { characterSpacing: 1.2 });
+  }
+  else
+  {
+    documento
+      .font('Helvetica-Bold')
+      .fontSize(11)
+      .fillColor(COLORES.azul)
+      .text('Biblio · Universidad Ducky', izquierda, 48);
+  }
   if (generado)
   {
     documento
       .font('Helvetica')
       .fontSize(9)
       .fillColor(COLORES.suave)
-      .text(generado, izquierda, 50, { width: ancho, align: 'right' });
+      .text(generado, izquierda, folio ? 72 : 50, {
+        width: ancho,
+        align: 'right',
+      });
+  }
+  if (folio)
+  {
+    documento
+      .font('Helvetica-Bold')
+      .fontSize(9)
+      .fillColor(COLORES.texto)
+      .text(`Folio: ${folio}`, izquierda, 85, { width: ancho, align: 'right' });
   }
   documento.font('Helvetica-Bold').fontSize(18).fillColor(COLORES.texto).text(titulo, izquierda, 70);
   let posicion_y = documento.y + 2;
@@ -94,9 +130,37 @@ function GenerarDocumentoPdf({ titulo, subtitulo, generado, datos = [], tabla, n
     .moveTo(izquierda, posicion_y)
     .lineTo(derecha, posicion_y)
     .lineWidth(1)
-    .strokeColor(COLORES.texto)
+    .strokeColor(seccion ? COLORES.azul : COLORES.texto)
     .stroke();
   posicion_y += 14;
+
+  // Renglones de etiqueta y valor (recibos)
+  const ancho_etiqueta = ancho * 0.3;
+  renglones.forEach(([etiqueta, valor, resaltado]) =>
+  {
+    documento.font('Helvetica').fontSize(10);
+    const alto =
+      documento.heightOfString(String(valor ?? '—'), { width: ancho - ancho_etiqueta - 12 }) + 14;
+    documento.fillColor(COLORES.texto).text(etiqueta, izquierda + 6, posicion_y + 7, {
+      width: ancho_etiqueta - 12,
+    });
+    documento
+      .font(resaltado ? 'Helvetica-Bold' : 'Helvetica')
+      .text(String(valor ?? '—'), izquierda + ancho_etiqueta, posicion_y + 7, {
+        width: ancho - ancho_etiqueta - 12,
+      });
+    posicion_y += alto;
+    documento
+      .moveTo(izquierda, posicion_y)
+      .lineTo(derecha, posicion_y)
+      .lineWidth(0.5)
+      .strokeColor(COLORES.linea)
+      .stroke();
+  });
+  if (renglones.length)
+  {
+    posicion_y += 14;
+  }
 
   // Datos etiquetados en tres columnas
   const ancho_dato = ancho / 3;

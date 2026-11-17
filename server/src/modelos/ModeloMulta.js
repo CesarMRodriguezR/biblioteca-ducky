@@ -53,7 +53,7 @@ const CONSULTA_BASE = `
   SELECT m.id_multa, m.Cantidad_a_Pagar, m.Fecha_Pagado, m.id_usuario, m.id_prestamo,
          m.Justificacion, m.Motivo, m.Fecha_Multa, m.Enviada_Tesoreria,
          u.Nombre_Completo, u.Matricula_Nomina, u.Estatus AS Estatus_Usuario, p.Nombre_Rol,
-         l.Titulo, l.ISBN, pr.num_copia
+         l.Titulo, l.ISBN, l.Precio, pr.num_copia
     FROM Multas m
     JOIN Usuarios u ON u.id_usuario = m.id_usuario
     JOIN Perfiles p ON p.id_perfil = u.id_perfil

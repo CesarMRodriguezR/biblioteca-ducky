@@ -1,7 +1,7 @@
 /*
  * ******************************************************************
  * Nombre del programa: BD-SP03-PL04 · PaginaPrestamosUsuario.jsx
- * Función: Préstamos activos e historial de un usuario.
+ * Función: Préstamos activos e historial de un usuario, con el historial filtrado por estado.
  * Autor: Equipo CCJMops
  * Fecha: 15/11/2026
  * Entrada: Estado del controlador de la pantalla
@@ -89,7 +89,8 @@ function TablaPrestamos({ prestamos })
  */
 export function PaginaPrestamosUsuario()
 {
-  const { lector, situacion } = useControladorPrestamosUsuario();
+  const controlador = useControladorPrestamosUsuario();
+  const { lector, situacion } = controlador;
 
   return (
     <Pagina miga="Préstamos · Consulta" titulo="Préstamos del usuario" ancho={1000}>
@@ -135,7 +136,27 @@ export function PaginaPrestamosUsuario()
       {situacion && situacion.historial.length > 0 && (
         <>
           <h2 className="margen-arriba-24 margen-abajo-16">Historial</h2>
-          <TablaPrestamos prestamos={situacion.historial} />
+          <div className="filtros margen-abajo-16">
+            {controlador.filtros.map((opcion) => (
+              <button
+                key={opcion.valor}
+                type="button"
+                className={`filtro ${controlador.filtro === opcion.valor ? 'filtro-activo' : ''}`}
+                onClick={() => controlador.SetFiltro(opcion.valor)}
+              >
+                {opcion.etiqueta}
+              </button>
+            ))}
+          </div>
+          {controlador.historial.length ? (
+            <TablaPrestamos prestamos={controlador.historial} />
+          ) : (
+            <Tarjeta>
+              <div className="tabla-vacia">
+                No hay préstamos con estado «{controlador.filtro}» en el historial.
+              </div>
+            </Tarjeta>
+          )}
         </>
       )}
     </Pagina>

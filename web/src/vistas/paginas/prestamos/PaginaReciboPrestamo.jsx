@@ -32,7 +32,13 @@
 
 import { useControladorRecibo } from '../../../controladores/ControladorPrestamos.js';
 import { Pagina } from '../../plantillas/PlantillaAplicacion.jsx';
-import { Alerta, AlertaError, Cargando, EnlaceVolver, Tarjeta } from '../../componentes/interfaz.jsx';
+import {
+  Alerta,
+  AlertaError,
+  Cargando,
+  EnlaceVolver,
+  Tarjeta,
+} from '../../componentes/interfaz.jsx';
 import {
   DocumentoRecibo,
   EntregaRecibo,
@@ -57,9 +63,10 @@ export function PaginaReciboPrestamo()
       {recibo && (
         <>
           <Tarjeta>
-            <DocumentoRecibo recibo={recibo} />
+            <DocumentoRecibo recibo={recibo} medio={controlador.medio} />
           </Tarjeta>
           <EntregaRecibo
+            medio={controlador.medio}
             al_imprimir={controlador.Imprimir}
             al_enviar_correo={controlador.EnviarCorreo}
             al_enviar_whatsapp={controlador.EnviarWhatsApp}
@@ -83,7 +90,7 @@ export function PaginaReciboPrestamo()
           cargando={vista.cargando}
           error={vista.error}
         >
-          {vista.datos && <DocumentoRecibo recibo={vista.datos} />}
+          {vista.datos && <DocumentoRecibo recibo={vista.datos} medio={controlador.medio} />}
         </ModalDocumento>
       )}
     </Pagina>

@@ -19,7 +19,8 @@
  *     Módulo                    Objetivo
  *     AvisarPerdido             Avisar a Servicios Escolares que un alumno perdió un libro
  *     EstadoPago                Estado de un pago según lo que aún debe el lector
- *     BuscarMulta               Obtener una multa o responder 404
+ *     BuscarMulta               Obtener el recibo de una multa o responder 404
+ *     RenglonesMulta            Renglones del recibo de multa
  *     ControladorDevoluciones   Manejadores de devoluciones, multas y pagos
  * ******************************************************************
  */
@@ -100,18 +101,60 @@ function EstadoPago(deuda)
 
 /*
  * Función: BuscarMulta
- * Objetivo: Obtener una multa o responder 404.
- * Entrada: id_multa
- * Salida: Promesa con la multa
+ * Objetivo: Obtener el recibo de una multa o responder 404; «Atendió» es quien lo entrega.
+ * Entrada: id_multa, usuario (sesión)
+ * Salida: Promesa con la multa, Atendio y la nota del recibo
  */
-async function BuscarMulta(id_multa)
+async function BuscarMulta(id_multa, usuario)
 {
   const multa = await ModeloMulta.BuscarPorId(id_multa);
   if (!multa)
   {
     throw ErrorHttp.NoEncontrado('No existe una multa con ese folio.');
   }
-  return multa;
+  return {
+    ...multa,
+    Atendio: usuario.Nombre_Completo,
+    Nota: multa.Fecha_Pagado
+      ? `La multa se pagó en Tesorería el ${FechaCorta(multa.Fecha_Pagado)}.`
+      : `La multa se registró a nombre de ${multa.Nombre_Completo}. El pago se realiza en ` +
+        'Tesorería.',
+  };
+}
+
+/*
+ * Función: RenglonesMulta
+ * Objetivo: Renglones del recibo de multa (los mismos que muestra la web).
+ * Entrada: multa (de BuscarMulta)
+ * Salida: Arreglo de [etiqueta, valor, resaltado]
+ */
+function RenglonesMulta(multa)
+{
+  const perdida = multa.Motivo === 'Pérdida del libro';
+  return [
+    ['Folio de multa', multa.Folio],
+    ['Lector', multa.Nombre_Completo],
+    [multa.Nombre_Rol === 'Alumno' ? 'Matrícula' : 'Matrícula / Nómina', multa.Matricula_Nomina],
+    ['Perfil', multa.Nombre_Rol],
+    ...(multa.Titulo
+      ? [
+        ['Libro', multa.Titulo, true],
+        ['Copia', `Copia ${multa.num_copia}${perdida ? ' · marcada como Perdida' : ''}`],
+      ]
+      : []),
+    ['Motivo', multa.Motivo],
+    ...(perdida ? [] : [['Justificación', multa.Justificacion]]),
+    ['Fecha', FechaCorta(multa.Fecha_Multa)],
+    ...(perdida && multa.Precio
+      ? [['Precio de última compra', `${FormatoMoneda(multa.Precio)} MXN`]]
+      : []),
+    ['Monto de la multa', `${FormatoMoneda(multa.Cantidad_a_Pagar)} MXN`, true],
+    [
+      'Estado',
+      multa.Fecha_Pagado ? `Pagada el ${FechaCorta(multa.Fecha_Pagado)}` : 'Pendiente de pago',
+    ],
+    ['Atendió', multa.Atendio],
+  ];
 }
 
 /*
@@ -192,7 +235,7 @@ const ControladorDevoluciones = {
    */
   async ObtenerMulta(req, res)
   {
-    res.json(await BuscarMulta(req.params.id));
+    res.json(await BuscarMulta(req.params.id, req.usuario));
   },
 
   /*
@@ -203,29 +246,16 @@ const ControladorDevoluciones = {
    */
   async MultaPdf(req, res)
   {
-    const multa = await BuscarMulta(req.params.id);
+    const multa = await BuscarMulta(req.params.id, req.usuario);
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `inline; filename="Multa_${multa.Folio}.pdf"`);
     GenerarDocumentoPdf({
-      titulo: `Multa ${multa.Folio}`,
-      subtitulo: `${multa.Motivo} · ${multa.Estado}`,
-      generado: `Generado por ${req.usuario.Nombre_Completo}`,
-      datos: [
-        ['Lector', multa.Nombre_Completo],
-        ['Matrícula', multa.Matricula_Nomina],
-        ['Perfil', multa.Nombre_Rol],
-        ['Motivo', multa.Motivo],
-        ['Monto de la multa', FormatoMoneda(multa.Cantidad_a_Pagar)],
-        ['Fecha', FechaCorta(multa.Fecha_Multa)],
-        ['Préstamo', multa.Folio_Prestamo ?? '—'],
-        ['Libro', multa.Titulo ? `${multa.Titulo} · Copia ${multa.num_copia}` : '—'],
-        ['Fecha de pago', FechaCorta(multa.Fecha_Pagado)],
-      ],
-      notas: [
-        `Justificación: ${multa.Justificacion}`,
-        'La multa se paga en Tesorería; el pago se refleja en Biblio en cuanto Tesorería lo ' +
-          'registra.',
-      ],
+      titulo: 'Recibo de multa',
+      seccion: 'Biblioteca · Multas',
+      generado: `Generado el ${FechaCorta(multa.Fecha_Multa)} · ${multa.Atendio}`,
+      folio: multa.Folio,
+      renglones: RenglonesMulta(multa),
+      notas: [multa.Nota],
     }).pipe(res);
   },
 

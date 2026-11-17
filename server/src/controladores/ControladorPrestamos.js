@@ -39,7 +39,7 @@ import { ModeloPrestamo } from '../modelos/ModeloPrestamo.js';
 import { ModeloListaEspera } from '../modelos/ModeloListaEspera.js';
 import { ModeloTesoreria } from '../modelos/ModeloTesoreria.js';
 import { ErrorHttp } from '../utilidades/ErrorHttp.js';
-import { FechaLarga } from '../utilidades/fechas.js';
+import { FechaCorta, FechaLarga } from '../utilidades/fechas.js';
 import { GenerarDocumentoPdf } from '../utilidades/GenerarDocumentoPdf.js';
 import { FormatoMoneda, REGLAS, TextoUbicacion } from '../utilidades/ReglasCirculacion.js';
 
@@ -138,17 +138,24 @@ const ControladorPrestamos = {
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `inline; filename="Recibo_${recibo.Folio}.pdf"`);
     GenerarDocumentoPdf({
-      titulo: `Recibo de préstamo No. ${recibo.Folio}`,
-      subtitulo: `Estado: ${recibo.Estado_Visible}`,
-      datos: [
+      titulo: 'Recibo de préstamo',
+      seccion: 'Biblioteca · Préstamos',
+      generado: `Generado el ${FechaCorta(recibo.Fecha_Prestamo)} · ${recibo.Atendio}`,
+      folio: recibo.Folio,
+      renglones: [
         ['Lector', recibo.Nombre_Completo],
-        ['Matrícula', recibo.Matricula_Nomina],
+        [
+          recibo.Nombre_Rol === 'Alumno' ? 'Matrícula' : 'Matrícula / Nómina',
+          recibo.Matricula_Nomina,
+        ],
         ['Perfil', recibo.Nombre_Rol],
-        ['Libro prestado', recibo.Titulo],
-        ['Copia', `Copia ${recibo.num_copia} · ISBN ${recibo.ISBN}`],
+        ['Libro', recibo.Titulo, true],
+        ['Copia', `Copia ${recibo.num_copia} · Consulta Externa`],
+        ['ISBN', recibo.ISBN],
         ['Ubicación', TextoUbicacion(recibo.ubicacion)],
         ['Fecha de préstamo', FechaLarga(recibo.Fecha_Prestamo)],
         ['Fecha de devolución', FechaLarga(recibo.Fecha_Entrega_Programada)],
+        ['Entrega del recibo', 'Impreso'],
         ['Atendió', recibo.Atendio],
       ],
       notas: [recibo.Nota],

@@ -2,7 +2,7 @@
  * ******************************************************************
  * Nombre del programa: BD-SP03-DL01 · PaginaRegistrarDevolucion.jsx
  * Función: Registrar la devolución de un préstamo: préstamos pendientes del lector, retraso,
- *          multa y aviso de la lista de espera.
+ *          condición del libro, multa y lista de espera del libro.
  * Autor: Equipo CCJMops
  * Fecha: 15/11/2026
  * Entrada: Estado del controlador de la pantalla
@@ -17,6 +17,7 @@
  * ******************************************************************
  * Contenido de listado:
  *     Componente                  Objetivo
+ *     TablaEspera                 Lectores en la lista de espera del libro
  *     PaginaRegistrarDevolucion   BD-SP03-DL01 Registrar devolución
  * ******************************************************************
  */
@@ -54,6 +55,49 @@ import {
 } from '../../componentes/Circulacion.jsx';
 
 /*
+ * Componente: TablaEspera
+ * Objetivo: Lectores en la lista de espera del libro que se devuelve, en orden de petición.
+ * Uso: <TablaEspera lectores={…} />
+ */
+function TablaEspera({ lectores })
+{
+  return (
+    <>
+      <h2 className="margen-arriba-24 margen-abajo-16">
+        Lista de espera de este libro · {lectores.length}{' '}
+        {lectores.length === 1 ? 'lector' : 'lectores'}
+      </h2>
+      <Tarjeta relleno={false} className="tabla-envoltura">
+        <table className="tabla">
+          <thead>
+            <tr>
+              <th>Lector</th>
+              <th>Matrícula / Nómina</th>
+              <th>Perfil</th>
+              <th>Fecha de petición</th>
+              <th>Estatus</th>
+            </tr>
+          </thead>
+          <tbody>
+            {lectores.map((registro) => (
+              <tr key={registro.id_lista_espera}>
+                <td style={{ fontWeight: 700 }}>{registro.Nombre_Completo}</td>
+                <td>{registro.Matricula_Nomina}</td>
+                <td>{registro.Nombre_Rol}</td>
+                <td>{FechaCorta(registro.Fecha_Peticion)}</td>
+                <td>
+                  <Insignia tono="advertencia">En espera</Insignia>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </Tarjeta>
+    </>
+  );
+}
+
+/*
  * Componente: PaginaRegistrarDevolucion
  * Objetivo: BD-SP03-DL01 Registrar devolución (a tiempo, extemporánea con multa, usuario no
  *           registrado y lector sin préstamos pendientes).
@@ -65,6 +109,7 @@ export function PaginaRegistrarDevolucion()
   const { lector, seleccionado, resultado, vista } = controlador;
   const situacion = lector.situacion;
   const retraso = seleccionado?.Dias_Retraso ?? 0;
+  const con_deterioro = ['Dañado', 'Incompleto'].includes(resultado?.condicion);
 
   return (
     <Pagina miga="Devoluciones · Registro" titulo="Registrar devolución" ancho={1000}>
@@ -171,25 +216,21 @@ export function PaginaRegistrarDevolucion()
               </Alerta>
             )}
           </div>
-          {resultado.condicion === 'Dañado' && (
+          {con_deterioro && (
             <div className="margen-arriba-16">
-              <Alerta tipo="advertencia" titulo="El libro se recibió dañado">
+              <Alerta
+                tipo="advertencia"
+                titulo={`El libro se recibió ${resultado.condicion.toLowerCase()}`}
+              >
                 Genera la multa por daño con su justificación en Multas y adeudos.
               </Alerta>
             </div>
           )}
-          {resultado.lista_espera.total > 0 && (
-            <div className="margen-arriba-16">
-              <Alerta
-                tipo="informacion"
-                titulo={`Hay ${resultado.lista_espera.total} ${resultado.lista_espera.total === 1 ? 'lector' : 'lectores'} en la lista de espera de este libro`}
-              >
-                {resultado.lista_espera.primero} tiene prioridad porque fue el primero en
-                registrarse.
-              </Alerta>
-            </div>
-          )}
         </>
+      )}
+
+      {seleccionado && controlador.espera.length > 0 && (
+        <TablaEspera lectores={controlador.espera} />
       )}
 
       <div className="fila espacio-12 margen-arriba-24">
@@ -214,12 +255,12 @@ export function PaginaRegistrarDevolucion()
                 Ver multa
               </Boton>
             )}
-            {resultado.condicion === 'Dañado' && (
+            {con_deterioro && (
               <Boton variante="secundario" icono={CircleAlert} onClick={controlador.MultaPorDano}>
                 Generar multa por daño
               </Boton>
             )}
-            {resultado.lista_espera.total > 0 && controlador.puede_prestar && (
+            {controlador.espera.length > 0 && controlador.puede_prestar && (
               <Boton variante="texto" icono={Clock} onClick={controlador.VerListaEspera}>
                 Ver lista de espera
               </Boton>
@@ -233,7 +274,7 @@ export function PaginaRegistrarDevolucion()
 
       {vista.abierta && (
         <ModalDocumento
-          titulo="Vista previa de la multa"
+          titulo="Vista previa del recibo de multa"
           al_cerrar={vista.Cerrar}
           al_imprimir={vista.Imprimir}
           al_descargar={vista.Descargar}

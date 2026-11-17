@@ -55,6 +55,8 @@ import {
   EnlaceCorreo,
   EnlaceWhatsApp,
   FechaCorta,
+  FILTROS_HISTORIAL,
+  MEDIOS_ENTREGA,
   TelefonoTexto,
   TextoRecibo,
 } from '../modelos/dominio.js';
@@ -140,8 +142,9 @@ export function useControladorMenuPrestamos()
 
 /*
  * Hook: useControladorRegistrarPrestamo
- * Objetivo: BD-SP03-PL01 Registrar préstamo: lector, libro y ejemplar, fechas, validación y
- *           resultado (exitoso, lector con adeudos, libro sin ejemplares o datos incompletos).
+ * Objetivo: BD-SP03-PL01 Registrar préstamo: lector, libro y ejemplar, fechas, medio de entrega
+ *           del recibo, validación y resultado (exitoso, lector con adeudos, libro sin
+ *           ejemplares o datos incompletos). Generar recibo lo entrega por el medio elegido.
  * Entrada: Ninguna (acepta ?matricula= e ?isbn= en la dirección)
  * Salida: Objeto con el estado y las acciones de la pantalla
  */
@@ -160,6 +163,11 @@ export function useControladorRegistrarPrestamo()
   const [resultado, SetResultado] = useState(null);
   const [enviando, SetEnviando] = useState(false);
   const [rechazo, SetRechazo] = useState(null);
+  const [medio, SetMedio] = useState('Imprimir');
+  const [recibo, SetRecibo] = useState(null);
+  const [generando, SetGenerando] = useState(false);
+  const vista = useVistaRecibo(SetAviso, () => 'Recibo enviado a imprimir');
+  const entrega = useEntregaRecibo(SetAviso);
 
   async function BuscarLibro(valor = isbn)
   {
@@ -263,6 +271,37 @@ export function useControladorRegistrarPrestamo()
     }
   }
 
+  async function GenerarRecibo()
+  {
+    SetAviso(null);
+    SetGenerando(true);
+    try
+    {
+      const datos = recibo ?? (await ModeloPrestamo.Recibo(resultado.prestamo.id_prestamo));
+      SetRecibo(datos);
+      if (medio === 'Correo')
+      {
+        entrega.EnviarCorreo(datos);
+      }
+      else if (medio === 'WhatsApp')
+      {
+        entrega.EnviarWhatsApp(datos);
+      }
+      else
+      {
+        vista.Abrir(datos.id_prestamo, datos);
+      }
+    }
+    catch (excepcion)
+    {
+      SetAviso({ tipo: 'error', titulo: excepcion.message, texto: null });
+    }
+    finally
+    {
+      SetGenerando(false);
+    }
+  }
+
   function Reiniciar()
   {
     lector.Limpiar();
@@ -274,6 +313,8 @@ export function useControladorRegistrarPrestamo()
     SetAviso(null);
     SetResultado(null);
     SetRechazo(null);
+    SetMedio('Imprimir');
+    SetRecibo(null);
   }
 
   const situacion = lector.situacion;
@@ -303,7 +344,12 @@ export function useControladorRegistrarPrestamo()
     aviso,
     resultado,
     enviando,
+    medio,
+    SetMedio,
+    vista,
+    generando,
     Registrar,
+    GenerarRecibo,
     Reiniciar,
     Cancelar: () => navegar('/prestamos'),
     VerAdeudos: () =>
@@ -313,7 +359,6 @@ export function useControladorRegistrarPrestamo()
         `/prestamos/lista-espera?q=${encodeURIComponent(libro?.ISBN ?? '')}` +
           `&matricula=${situacion?.lector.Matricula_Nomina ?? ''}`,
       ),
-    IrAlRecibo: () => navegar(`/prestamos/${resultado.prestamo.id_prestamo}/recibo`),
   };
 }
 
@@ -364,7 +409,13 @@ function useEntregaRecibo(SetAviso)
       });
       return;
     }
-    window.open(EnlaceCorreo(recibo.Correo, `Recibo de préstamo ${recibo.Folio}`, TextoRecibo(recibo)));
+    window.open(
+      EnlaceCorreo(
+        recibo.Correo,
+        `Recibo de préstamo ${recibo.Folio}`,
+        TextoRecibo(recibo, MEDIOS_ENTREGA.Correo),
+      ),
+    );
     SetAviso({
       tipo: 'exito',
       titulo: 'Recibo enviado por correo',
@@ -385,7 +436,11 @@ function useEntregaRecibo(SetAviso)
       });
       return;
     }
-    window.open(EnlaceWhatsApp(recibo.Telefono, TextoRecibo(recibo)), '_blank', 'noopener');
+    window.open(
+      EnlaceWhatsApp(recibo.Telefono, TextoRecibo(recibo, MEDIOS_ENTREGA.WhatsApp)),
+      '_blank',
+      'noopener',
+    );
     SetAviso({
       tipo: 'exito',
       titulo: 'Recibo enviado por WhatsApp',
@@ -415,6 +470,7 @@ export function useControladorRecibo()
     titulo: 'Recibo generado',
     texto: 'El recibo está listo para imprimirse o enviarse al lector.',
   });
+  const [medio, SetMedio] = useState('Imprimir');
   const vista = useVistaRecibo(SetAviso, () => 'Recibo enviado a imprimir');
   const entrega = useEntregaRecibo(SetAviso);
 
@@ -424,9 +480,22 @@ export function useControladorRecibo()
     cargando,
     aviso,
     vista,
-    Imprimir: () => vista.Abrir(id, recibo),
-    EnviarCorreo: () => entrega.EnviarCorreo(recibo),
-    EnviarWhatsApp: () => entrega.EnviarWhatsApp(recibo),
+    medio,
+    Imprimir: () =>
+    {
+      SetMedio('Imprimir');
+      vista.Abrir(id, recibo);
+    },
+    EnviarCorreo: () =>
+    {
+      SetMedio('Correo');
+      entrega.EnviarCorreo(recibo);
+    },
+    EnviarWhatsApp: () =>
+    {
+      SetMedio('WhatsApp');
+      entrega.EnviarWhatsApp(recibo);
+    },
     Volver: () => navegar('/prestamos'),
   };
 }
@@ -445,12 +514,14 @@ export function useControladorReimprimir()
   const [recibo, SetRecibo] = useState(null);
   const [error_recibo, SetErrorRecibo] = useState(null);
   const [cargando_recibo, SetCargandoRecibo] = useState(false);
+  const [medio, SetMedio] = useState('Imprimir');
   const vista = useVistaRecibo(SetAviso, (datos) => `Recibo ${datos.Folio} reimpreso`);
   const entrega = useEntregaRecibo(SetAviso);
 
   async function Elegir(prestamo)
   {
     SetAviso(null);
+    SetMedio('Imprimir');
     SetErrorRecibo(null);
     SetCargandoRecibo(true);
     try
@@ -482,10 +553,23 @@ export function useControladorReimprimir()
       SetRecibo(null);
       lector.Buscar();
     },
+    medio,
     Reimprimir: Elegir,
-    Imprimir: () => vista.Abrir(recibo.id_prestamo, recibo),
-    EnviarCorreo: () => entrega.EnviarCorreo(recibo),
-    EnviarWhatsApp: () => entrega.EnviarWhatsApp(recibo),
+    Imprimir: () =>
+    {
+      SetMedio('Imprimir');
+      vista.Abrir(recibo.id_prestamo, recibo);
+    },
+    EnviarCorreo: () =>
+    {
+      SetMedio('Correo');
+      entrega.EnviarCorreo(recibo);
+    },
+    EnviarWhatsApp: () =>
+    {
+      SetMedio('WhatsApp');
+      entrega.EnviarWhatsApp(recibo);
+    },
   };
 }
 
@@ -560,7 +644,8 @@ export function useControladorRenovar()
 
 /*
  * Hook: useControladorPrestamosUsuario
- * Objetivo: BD-SP03-PL04 Préstamos activos e historial de un usuario.
+ * Objetivo: BD-SP03-PL04 Préstamos activos e historial de un usuario, con el historial filtrado
+ *           por estado (todos, devuelto o devuelto con retraso).
  * Entrada: Ninguna (acepta ?matricula= en la dirección)
  * Salida: Objeto con el estado y las acciones de la pantalla
  */
@@ -568,7 +653,25 @@ export function useControladorPrestamosUsuario()
 {
   const [parametros] = useSearchParams();
   const lector = useBusquedaLector(parametros.get('matricula') ?? '');
-  return { lector, situacion: lector.situacion };
+  const [filtro, SetFiltro] = useState('');
+  const historial = (lector.situacion?.historial ?? []).filter(
+    (prestamo) => !filtro || prestamo.Estado_Visible === filtro,
+  );
+  return {
+    lector: {
+      ...lector,
+      Buscar: () =>
+      {
+        SetFiltro('');
+        lector.Buscar();
+      },
+    },
+    situacion: lector.situacion,
+    filtros: FILTROS_HISTORIAL,
+    filtro,
+    SetFiltro,
+    historial,
+  };
 }
 
 /*

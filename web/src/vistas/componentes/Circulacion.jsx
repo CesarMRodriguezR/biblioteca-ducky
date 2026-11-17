@@ -22,10 +22,12 @@
  *     TarjetaAccion       Acceso a una función con ícono, texto y flecha
  *     BuscadorMatricula   Tarjeta para buscar a un lector por matrícula o nómina
  *     TablaPendientes     Préstamos pendientes del lector con una acción por renglón
- *     ModalDocumento      Vista previa de impresión con Imprimir y Descargar PDF
+ *     ModalDocumento      Vista previa de impresión con Imprimir y Guardar como PDF
+ *     EncabezadoDocumento Sección, título, quién lo generó y folio de un recibo
+ *     RenglonesDocumento  Renglones de etiqueta y valor de un recibo
  *     DocumentoRecibo     Recibo de préstamo para mostrar o imprimir
- *     EntregaRecibo       Botones para imprimir el recibo o enviarlo por correo o WhatsApp
- *     DocumentoMulta      Comprobante de multa para imprimir
+ *     EntregaRecibo       Medios de entrega del recibo: imprimir, correo o WhatsApp
+ *     DocumentoMulta      Recibo de multa para imprimir
  *     DocumentoDeudores   Lista de alumnos deudores para imprimir
  * ******************************************************************
  */
@@ -39,15 +41,16 @@
  * ******************************************************************
  */
 
-import { ArrowRight, Download, Mail, MessageCircle, Printer } from 'lucide-react';
+import { ArrowRight, FileText, Mail, MessageCircle } from 'lucide-react';
 import {
   ESTADOS_PRESTAMO,
   FechaCorta,
   FechaLarga,
   FormatoMoneda,
+  MEDIOS_ENTREGA,
   UbicacionTexto,
 } from '../../modelos/dominio.js';
-import { AlertaError, Boton, Cargando, DatoEtiquetado, Insignia, Modal, Tarjeta } from './interfaz.jsx';
+import { AlertaError, Boton, Cargando, Insignia, Modal, Tarjeta } from './interfaz.jsx';
 
 /*
  * Componente: TarjetaIndicador
@@ -211,7 +214,7 @@ export function TablaPendientes({ prestamos, etiqueta_accion, al_elegir, elegido
 
 /*
  * Componente: ModalDocumento
- * Objetivo: Vista previa de impresión de un documento con Imprimir y Descargar PDF (el mismo
+ * Objetivo: Vista previa de impresión de un documento con Imprimir y Guardar como PDF (el mismo
  *           patrón que la vista previa del listado de libros).
  * Uso: <ModalDocumento titulo={…} al_cerrar={…} al_imprimir={…} al_descargar={…}
  *        descargando={…} cargando={…} error={…}>…</ModalDocumento>
@@ -233,17 +236,11 @@ export function ModalDocumento({
       al_cerrar={al_cerrar}
       acciones={
         <div className="fila espacio-8">
-          <Boton
-            variante="secundario"
-            chico
-            icono={Download}
-            onClick={al_descargar}
-            disabled={cargando || descargando}
-          >
-            {descargando ? 'Generando…' : 'Descargar PDF'}
-          </Boton>
-          <Boton chico icono={Printer} onClick={al_imprimir} disabled={cargando}>
+          <Boton variante="secundario" chico onClick={al_imprimir} disabled={cargando}>
             Imprimir
+          </Boton>
+          <Boton chico onClick={al_descargar} disabled={cargando || descargando}>
+            {descargando ? 'Generando…' : 'Guardar como PDF'}
           </Boton>
         </div>
       }
@@ -256,45 +253,80 @@ export function ModalDocumento({
 }
 
 /*
+ * Componente: EncabezadoDocumento
+ * Objetivo: Encabezado de un recibo: sección, título y, a la derecha, quién lo generó y el folio.
+ * Uso: <EncabezadoDocumento seccion={…} titulo={…} generado={…} folio={…} />
+ */
+export function EncabezadoDocumento({ seccion, titulo, generado, folio })
+{
+  return (
+    <div className="documento-encabezado">
+      <div>
+        <div className="documento-seccion">{seccion}</div>
+        <h3 className="documento-titulo">{titulo}</h3>
+      </div>
+      <div className="documento-generado">
+        <div>{generado}</div>
+        <div>
+          <strong>Folio:</strong> {folio}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/*
+ * Componente: RenglonesDocumento
+ * Objetivo: Renglones de etiqueta y valor de un recibo; el tercer elemento resalta el valor.
+ * Uso: <RenglonesDocumento renglones={[[etiqueta, valor, resaltado]]} />
+ */
+export function RenglonesDocumento({ renglones })
+{
+  return (
+    <table className="documento-renglones">
+      <tbody>
+        {renglones.map(([etiqueta, valor, resaltado]) => (
+          <tr key={etiqueta}>
+            <th scope="row">{etiqueta}</th>
+            <td style={resaltado ? { fontWeight: 700 } : undefined}>{valor ?? '—'}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+/*
  * Componente: DocumentoRecibo
  * Objetivo: Recibo de préstamo (BD-SP03-PL02) para mostrar en pantalla o imprimir.
- * Uso: <DocumentoRecibo recibo={…} />
+ * Uso: <DocumentoRecibo recibo={…} medio={…} />
  */
-export function DocumentoRecibo({ recibo })
+export function DocumentoRecibo({ recibo, medio = 'Imprimir' })
 {
   return (
     <>
-      <div className="fila entre">
-        <div>
-          <h3>Biblio · Universidad Ducky</h3>
-          <p className="texto-nota margen-arriba-4">Recibo de préstamo No. {recibo.Folio}</p>
-        </div>
-        {recibo.Estado === 'Activo' ? (
-          <Insignia tono="advertencia">En préstamo</Insignia>
-        ) : (
-          <Insignia tono={ESTADOS_PRESTAMO[recibo.Estado_Visible] ?? 'neutro'}>
-            {recibo.Estado_Visible}
-          </Insignia>
-        )}
-      </div>
-      <div className="rejilla-3 margen-arriba-16">
-        <DatoEtiquetado etiqueta="Lector" valor={recibo.Nombre_Completo} />
-        <DatoEtiquetado etiqueta="Matrícula" valor={recibo.Matricula_Nomina} />
-        <DatoEtiquetado etiqueta="Perfil" valor={recibo.Nombre_Rol} />
-        <DatoEtiquetado etiqueta="Libro prestado" valor={recibo.Titulo} />
-        <DatoEtiquetado etiqueta="Copia" valor={`Copia ${recibo.num_copia} · ISBN ${recibo.ISBN}`} />
-        <DatoEtiquetado
-          etiqueta="Ubicación"
-          valor={UbicacionTexto(recibo.ubicacion ?? {}, null) || '—'}
-        />
-        <DatoEtiquetado etiqueta="Fecha de préstamo" valor={FechaLarga(recibo.Fecha_Prestamo)} />
-        <DatoEtiquetado
-          etiqueta="Fecha de devolución"
-          valor={FechaLarga(recibo.Fecha_Entrega_Programada)}
-        />
-        <DatoEtiquetado etiqueta="Atendió" valor={recibo.Atendio} />
-      </div>
-      <p className="texto-nota margen-arriba-16">{recibo.Nota}</p>
+      <EncabezadoDocumento
+        seccion="Biblioteca · Préstamos"
+        titulo="Recibo de préstamo"
+        generado={`Generado el ${FechaCorta(recibo.Fecha_Prestamo)} · ${recibo.Atendio}`}
+        folio={recibo.Folio}
+      />
+      <RenglonesDocumento
+        renglones={[
+          ['Lector', recibo.Nombre_Completo],
+          [recibo.Nombre_Rol === 'Alumno' ? 'Matrícula' : 'Matrícula / Nómina', recibo.Matricula_Nomina],
+          ['Perfil', recibo.Nombre_Rol],
+          ['Libro', recibo.Titulo, true],
+          ['Copia', `Copia ${recibo.num_copia} · Consulta Externa`],
+          ['ISBN', recibo.ISBN],
+          ['Ubicación', UbicacionTexto(recibo.ubicacion ?? {}, null) || '—'],
+          ['Fecha de préstamo', FechaLarga(recibo.Fecha_Prestamo)],
+          ['Fecha de devolución', FechaLarga(recibo.Fecha_Entrega_Programada)],
+          ['Entrega del recibo', MEDIOS_ENTREGA[medio]],
+          ['Atendió', recibo.Atendio],
+        ]}
+      />
+      <p className="texto-nota margen-arriba-12">{recibo.Nota}</p>
     </>
   );
 }
@@ -302,22 +334,31 @@ export function DocumentoRecibo({ recibo })
 /*
  * Componente: EntregaRecibo
  * Objetivo: Tarjeta con los medios de entrega del recibo: imprimir (medio predeterminado),
- *           correo y WhatsApp.
- * Uso: <EntregaRecibo al_imprimir={…} al_enviar_correo={…} al_enviar_whatsapp={…} />
+ *           correo y WhatsApp. El medio elegido se marca como botón principal.
+ * Uso: <EntregaRecibo titulo={…} medio={…} al_imprimir={…} al_enviar_correo={…}
+ *        al_enviar_whatsapp={…} />
  */
-export function EntregaRecibo({ al_imprimir, al_enviar_correo, al_enviar_whatsapp })
+export function EntregaRecibo({
+  titulo = 'Entrega del recibo',
+  medio = 'Imprimir',
+  al_imprimir,
+  al_enviar_correo,
+  al_enviar_whatsapp,
+})
 {
+  const Variante = (opcion) => (medio === opcion ? 'primario' : 'secundario');
   return (
     <Tarjeta className="margen-arriba-16">
-      <h2 className="titulo-seccion">Entrega del recibo · Medio predeterminado: Imprimir</h2>
+      <h2 className="titulo-seccion">{titulo}</h2>
+      <p className="texto-nota margen-arriba-4">Medio predeterminado: Imprimir</p>
       <div className="fila espacio-12 margen-arriba-16">
-        <Boton icono={Printer} onClick={al_imprimir}>
+        <Boton variante={Variante('Imprimir')} icono={FileText} onClick={al_imprimir}>
           Imprimir
         </Boton>
-        <Boton variante="secundario" icono={Mail} onClick={al_enviar_correo}>
+        <Boton variante={Variante('Correo')} icono={Mail} onClick={al_enviar_correo}>
           Enviar por correo
         </Boton>
-        <Boton variante="secundario" icono={MessageCircle} onClick={al_enviar_whatsapp}>
+        <Boton variante={Variante('WhatsApp')} icono={MessageCircle} onClick={al_enviar_whatsapp}>
           Enviar por WhatsApp
         </Boton>
       </div>
@@ -327,40 +368,47 @@ export function EntregaRecibo({ al_imprimir, al_enviar_correo, al_enviar_whatsap
 
 /*
  * Componente: DocumentoMulta
- * Objetivo: Comprobante de una multa (BD-SP03-DL02) para imprimir.
+ * Objetivo: Recibo de una multa (BD-SP03-DL02 y DL03) para mostrar o imprimir.
  * Uso: <DocumentoMulta multa={…} />
  */
 export function DocumentoMulta({ multa })
 {
+  const perdida = multa.Motivo === 'Pérdida del libro';
   return (
     <>
-      <div className="fila entre">
-        <div>
-          <h3>Biblio · Universidad Ducky</h3>
-          <p className="texto-nota margen-arriba-4">Multa {multa.Folio}</p>
-        </div>
-        <Insignia tono={multa.Estado === 'Pagada' ? 'exito' : 'advertencia'}>
-          {multa.Estado}
-        </Insignia>
-      </div>
-      <div className="rejilla-3 margen-arriba-16">
-        <DatoEtiquetado etiqueta="Lector" valor={multa.Nombre_Completo} />
-        <DatoEtiquetado etiqueta="Matrícula" valor={multa.Matricula_Nomina} />
-        <DatoEtiquetado etiqueta="Perfil" valor={multa.Nombre_Rol} />
-        <DatoEtiquetado etiqueta="Motivo" valor={multa.Motivo} />
-        <DatoEtiquetado etiqueta="Monto de la multa" valor={FormatoMoneda(multa.Cantidad_a_Pagar)} />
-        <DatoEtiquetado etiqueta="Fecha" valor={FechaCorta(multa.Fecha_Multa)} />
-        <DatoEtiquetado etiqueta="Préstamo" valor={multa.Folio_Prestamo ?? '—'} />
-        <DatoEtiquetado
-          etiqueta="Libro"
-          valor={multa.Titulo ? `${multa.Titulo} · Copia ${multa.num_copia}` : '—'}
-        />
-        <DatoEtiquetado etiqueta="Fecha de pago" valor={FechaCorta(multa.Fecha_Pagado)} />
-      </div>
-      <p className="texto-nota margen-arriba-16">Justificación: {multa.Justificacion}</p>
-      <p className="texto-nota margen-arriba-8">
-        La multa se paga en Tesorería; el pago se refleja en Biblio en cuanto Tesorería lo registra.
-      </p>
+      <EncabezadoDocumento
+        seccion="Biblioteca · Multas"
+        titulo="Recibo de multa"
+        generado={`Generado el ${FechaCorta(multa.Fecha_Multa)} · ${multa.Atendio}`}
+        folio={multa.Folio}
+      />
+      <RenglonesDocumento
+        renglones={[
+          ['Folio de multa', multa.Folio],
+          ['Lector', multa.Nombre_Completo],
+          [multa.Nombre_Rol === 'Alumno' ? 'Matrícula' : 'Matrícula / Nómina', multa.Matricula_Nomina],
+          ['Perfil', multa.Nombre_Rol],
+          ...(multa.Titulo
+            ? [
+              ['Libro', multa.Titulo, true],
+              ['Copia', `Copia ${multa.num_copia}${perdida ? ' · marcada como Perdida' : ''}`],
+            ]
+            : []),
+          ['Motivo', multa.Motivo],
+          ...(perdida ? [] : [['Justificación', multa.Justificacion]]),
+          ['Fecha', FechaCorta(multa.Fecha_Multa)],
+          ...(perdida && multa.Precio
+            ? [['Precio de última compra', `${FormatoMoneda(multa.Precio)} MXN`]]
+            : []),
+          ['Monto de la multa', `${FormatoMoneda(multa.Cantidad_a_Pagar)} MXN`, true],
+          [
+            'Estado',
+            multa.Fecha_Pagado ? `Pagada el ${FechaCorta(multa.Fecha_Pagado)}` : 'Pendiente de pago',
+          ],
+          ['Atendió', multa.Atendio],
+        ]}
+      />
+      <p className="texto-nota margen-arriba-12">{multa.Nota}</p>
     </>
   );
 }

@@ -42,10 +42,11 @@ import { BuscadorMatricula } from '../../componentes/Circulacion.jsx';
 
 /*
  * Componente: TablaMultas
- * Objetivo: Multas con motivo, préstamo, fecha, monto, fecha de pago y estado.
- * Uso: <TablaMultas multas={…} />
+ * Objetivo: Multas con motivo, préstamo, monto y estado; las pendientes muestran la fecha de la
+ *           multa y las pagadas la fecha de pago.
+ * Uso: <TablaMultas multas={…} pagadas />
  */
-function TablaMultas({ multas })
+function TablaMultas({ multas, pagadas = false })
 {
   return (
     <Tarjeta relleno={false} className="tabla-envoltura">
@@ -55,9 +56,9 @@ function TablaMultas({ multas })
             <th>Folio</th>
             <th>Motivo</th>
             <th>Préstamo</th>
-            <th>Fecha</th>
+            {!pagadas && <th>Fecha</th>}
             <th>Monto</th>
-            <th>Fecha pagado</th>
+            {pagadas && <th>Fecha pagado</th>}
             <th>Estado</th>
           </tr>
         </thead>
@@ -67,9 +68,9 @@ function TablaMultas({ multas })
               <td style={{ fontWeight: 700 }}>{multa.Folio}</td>
               <td>{multa.Motivo}</td>
               <td>{multa.Folio_Prestamo ?? '—'}</td>
-              <td>{FechaCorta(multa.Fecha_Multa)}</td>
+              {!pagadas && <td>{FechaCorta(multa.Fecha_Multa)}</td>}
               <td>{FormatoMoneda(multa.Cantidad_a_Pagar)}</td>
-              <td>{FechaCorta(multa.Fecha_Pagado)}</td>
+              {pagadas && <td>{FechaCorta(multa.Fecha_Pagado)}</td>}
               <td>
                 <Insignia tono={ESTADOS_MULTA[multa.Estado]}>{multa.Estado}</Insignia>
               </td>
@@ -131,11 +132,11 @@ export function PaginaAdeudosUsuario()
 
       {situacion && controlador.con_adeudos && (
         <>
-          <h2 className="margen-arriba-24 margen-abajo-16">Multas</h2>
-          {controlador.multas.length ? (
-            <TablaMultas multas={controlador.multas} />
+          <h2 className="margen-arriba-24 margen-abajo-16">Multas pendientes</h2>
+          {controlador.pendientes.length ? (
+            <TablaMultas multas={controlador.pendientes} />
           ) : (
-            <p className="texto-nota">No tiene multas registradas.</p>
+            <p className="texto-nota">No tiene multas pendientes.</p>
           )}
           {controlador.sin_devolver.length > 0 && (
             <>
@@ -170,6 +171,12 @@ export function PaginaAdeudosUsuario()
               </Tarjeta>
             </>
           )}
+          {controlador.pagadas.length > 0 && (
+            <>
+              <h2 className="margen-arriba-24 margen-abajo-16">Historial de multas pagadas</h2>
+              <TablaMultas multas={controlador.pagadas} pagadas />
+            </>
+          )}
         </>
       )}
 
@@ -183,7 +190,7 @@ export function PaginaAdeudosUsuario()
           {controlador.pagadas.length > 0 && (
             <>
               <h2 className="margen-arriba-24 margen-abajo-16">Historial de multas pagadas</h2>
-              <TablaMultas multas={controlador.pagadas} />
+              <TablaMultas multas={controlador.pagadas} pagadas />
             </>
           )}
         </>

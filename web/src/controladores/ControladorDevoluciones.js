@@ -19,7 +19,8 @@
  * Contenido de listado:
  *     Hook                                Objetivo
  *     REGLAS_MULTA                        Montos del reglamento para la vista previa de la multa
- *     useVistaMulta                       Vista previa e impresión del comprobante de multa
+ *     TextoAlumnos                        Describir cuántos alumnos deudores se enviaron
+ *     useVistaMulta                       Vista previa e impresión del recibo de multa
  *     useControladorMenuDevoluciones      Menú Devoluciones: indicadores y últimas devoluciones
  *     useControladorMenuMultas            Menú Multas y adeudos: indicadores y multas recientes
  *     useControladorRegistrarDevolucion   BD-SP03-DL01 Registrar devolución
@@ -49,8 +50,13 @@ import { useSesion } from './ControladorSesion.jsx';
 import { useCarga } from './HooksAsincronos.js';
 import { useVistaPrevia } from './HooksDocumentos.js';
 import { useBusquedaLector } from './ControladorPrestamos.js';
-import { ModeloDevolucion, ModeloMulta, ModeloPrestamo } from '../modelos/ModelosCirculacion.js';
-import { FormatoMoneda, PERIODOS_EXAMEN } from '../modelos/dominio.js';
+import {
+  ModeloDevolucion,
+  ModeloListaEspera,
+  ModeloMulta,
+  ModeloPrestamo,
+} from '../modelos/ModelosCirculacion.js';
+import { EnPeriodo, FormatoMoneda, PERIODOS_EXAMEN, PERIODOS_PAGO } from '../modelos/dominio.js';
 
 /*
  * Constante: REGLAS_MULTA
@@ -59,8 +65,19 @@ import { FormatoMoneda, PERIODOS_EXAMEN } from '../modelos/dominio.js';
 const REGLAS_MULTA = { MULTA_POR_DIA: 10, MULTA_POR_DANO: 250 };
 
 /*
+ * Función: TextoAlumnos
+ * Objetivo: Describir cuántos alumnos deudores se enviaron («los 3 alumnos deudores»).
+ * Entrada: total
+ * Salida: Texto
+ */
+function TextoAlumnos(total)
+{
+  return total === 1 ? 'el alumno deudor' : `los ${total} alumnos deudores`;
+}
+
+/*
  * Hook: useVistaMulta
- * Objetivo: Vista previa del comprobante de una multa con impresión y PDF.
+ * Objetivo: Vista previa del recibo de una multa con impresión y PDF.
  * Entrada: SetAviso
  * Salida: Objeto de useVistaPrevia
  */
@@ -74,13 +91,13 @@ function useVistaMulta(SetAviso)
       SetAviso({
         tipo: 'exito',
         titulo: 'Multa enviada a imprimir',
-        texto: `El comprobante de la multa ${multa.Folio} se mandó a la impresora.`,
+        texto: `El recibo de la multa ${multa.Folio} se mandó a la impresora.`,
       }),
     al_descargar: (multa) =>
       SetAviso({
         tipo: 'exito',
         titulo: 'PDF descargado',
-        texto: `El comprobante de la multa ${multa.Folio} se guardó como PDF.`,
+        texto: `El recibo de la multa ${multa.Folio} se guardó como PDF.`,
       }),
   });
 }
@@ -114,7 +131,7 @@ export function useControladorMenuMultas()
 /*
  * Hook: useControladorRegistrarDevolucion
  * Objetivo: BD-SP03-DL01 Registrar devolución: préstamos pendientes del lector, días de
- *           retraso, multa y aviso de la lista de espera.
+ *           retraso, condición del libro, multa y lista de espera del libro.
  * Entrada: Ninguna
  * Salida: Objeto con el estado y las acciones de la pantalla
  */
@@ -128,7 +145,25 @@ export function useControladorRegistrarDevolucion()
   const [resultado, SetResultado] = useState(null);
   const [aviso, SetAviso] = useState(null);
   const [enviando, SetEnviando] = useState(false);
+  const [espera, SetEspera] = useState([]);
   const vista = useVistaMulta(SetAviso);
+
+  async function Elegir(prestamo)
+  {
+    SetSeleccionado(prestamo);
+    SetCondicion('Buen estado');
+    SetResultado(null);
+    SetAviso(null);
+    SetEspera([]);
+    try
+    {
+      SetEspera((await ModeloListaEspera.Buscar(prestamo.ISBN)).lista);
+    }
+    catch
+    {
+      // Sin lista de espera que mostrar: la devolución se registra igual.
+    }
+  }
 
   async function Registrar()
   {
@@ -157,12 +192,14 @@ export function useControladorRegistrarDevolucion()
     SetCondicion('Buen estado');
     SetResultado(null);
     SetAviso(null);
+    SetEspera([]);
   }
 
   return {
     lector,
     pendientes: lector.situacion?.activos ?? [],
     seleccionado,
+    espera,
     condicion,
     SetCondicion,
     resultado,
@@ -177,17 +214,11 @@ export function useControladorRegistrarDevolucion()
       SetAviso(null);
       lector.Buscar();
     },
-    Elegir: (prestamo) =>
-    {
-      SetSeleccionado(prestamo);
-      SetCondicion('Buen estado');
-      SetResultado(null);
-      SetAviso(null);
-    },
+    Elegir,
     Registrar,
     Reiniciar,
     Cancelar: () => SetSeleccionado(null),
-    VerMulta: () => vista.Abrir(resultado.multa.id_multa, resultado.multa),
+    VerMulta: () => vista.Abrir(resultado.multa.id_multa),
     VerListaEspera: () =>
       navegar(`/prestamos/lista-espera?q=${encodeURIComponent(seleccionado.ISBN)}`),
     MultaPorDano: () =>
@@ -271,7 +302,7 @@ export function useControladorLibroPerdido()
     },
     Reportar,
     Cancelar: () => SetSeleccionado(null),
-    ImprimirMulta: () => vista.Abrir(resultado.multa.id_multa, resultado.multa),
+    ImprimirMulta: () => vista.Abrir(resultado.multa.id_multa),
   };
 }
 
@@ -447,13 +478,14 @@ export function useControladorGenerarMulta()
     },
     Generar,
     Cancelar: () => navegar('/multas'),
-    ImprimirMulta: () => vista.Abrir(resultado.multa.id_multa, resultado.multa),
+    ImprimirMulta: () => vista.Abrir(resultado.multa.id_multa),
   };
 }
 
 /*
  * Hook: useControladorAdeudos
- * Objetivo: BD-SP03-DL04 Multas y libros sin devolver de un usuario.
+ * Objetivo: BD-SP03-DL04 Multas pendientes, libros sin devolver e historial de multas pagadas
+ *           de un usuario.
  * Entrada: Ninguna (acepta ?matricula= en la dirección)
  * Salida: Objeto con el estado y las acciones de la pantalla
  */
@@ -470,7 +502,7 @@ export function useControladorAdeudos()
     situacion: inactivo ? null : situacion,
     inactivo,
     con_adeudos: pendientes.length > 0 || sin_devolver.length > 0,
-    multas: situacion?.multas ?? [],
+    pendientes,
     pagadas: situacion?.multas.filter((multa) => multa.Estado === 'Pagada') ?? [],
     sin_devolver,
   };
@@ -539,7 +571,10 @@ export function useControladorDeudores()
       SetAviso({
         tipo: 'exito',
         titulo: 'Lista enviada a Servicios Escolares',
-        texto: 'Ya pueden consultar la lista de alumnos deudores.',
+        texto:
+          `Se enviaron ${TextoAlumnos(lista.datos.length)} del periodo de ` +
+          `${lista.periodo.split(' · ')[0]}. No podrán presentar exámenes hasta liquidar sus ` +
+          'adeudos.',
       });
     }
     catch (excepcion)
@@ -578,12 +613,34 @@ export function useControladorDeudores()
 
 /*
  * Hook: useControladorPagos
- * Objetivo: BD-SP03-DL07 Pagos recibidos de Tesorería y multas pendientes de sincronizar.
+ * Objetivo: BD-SP03-DL07 Pagos recibidos de Tesorería y multas pendientes de sincronizar,
+ *           filtrados por periodo (últimos 7 días al abrir) y por matrícula o nómina. Las
+ *           multas pendientes de sincronizar se muestran siempre, sin importar el periodo.
  * Entrada: Ninguna
- * Salida: Objeto { datos, error, cargando, Reintentar }
+ * Salida: Objeto con el estado y las acciones de la pantalla
  */
 export function useControladorPagos()
 {
   const { datos, error, cargando, Recargar } = useCarga(() => ModeloMulta.Pagos(), []);
-  return { datos, error, cargando, Reintentar: Recargar };
+  const [periodo, SetPeriodo] = useState('semana');
+  const [texto, SetTexto] = useState('');
+  const [matricula, SetMatricula] = useState('');
+  const Coincide = (valor) => !matricula || String(valor) === matricula;
+  return {
+    datos,
+    error,
+    cargando,
+    periodos: PERIODOS_PAGO,
+    periodo,
+    SetPeriodo,
+    texto,
+    SetTexto,
+    matricula,
+    pagos: (datos?.pagos ?? []).filter(
+      (pago) => EnPeriodo(pago.Fecha_Pago, periodo) && Coincide(pago.Matricula),
+    ),
+    pendientes: (datos?.pendientes ?? []).filter((multa) => Coincide(multa.Matricula_Nomina)),
+    Buscar: () => SetMatricula(texto.trim()),
+    Reintentar: Recargar,
+  };
 }

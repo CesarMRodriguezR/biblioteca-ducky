@@ -1721,6 +1721,85 @@ button
   padding: 8px 4px;
 }
 
+.documento-encabezado
+{
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--azul-principal);
+}
+
+.documento-seccion
+{
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--texto-secundario);
+}
+
+.documento-titulo
+{
+  font-family: var(--fuente-titulos);
+  font-size: 22px;
+  line-height: 30px;
+  margin-top: 2px;
+}
+
+.documento-generado
+{
+  font-size: 12px;
+  line-height: 18px;
+  text-align: right;
+  color: var(--texto-secundario);
+}
+
+.documento-generado strong
+{
+  color: var(--texto-principal);
+}
+
+.documento-renglones
+{
+  width: 100%;
+  margin-top: 16px;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.documento-renglones th,
+.documento-renglones td
+{
+  padding: 7px 6px;
+  border-bottom: 1px solid var(--linea-divisoria);
+  text-align: left;
+  vertical-align: top;
+  color: var(--texto-principal);
+}
+
+.documento-renglones th
+{
+  width: 30%;
+  font-weight: 400;
+}
+
+.margen-arriba-12
+{
+  margin-top: 12px;
+}
+
+.fila-filtros-pagos
+{
+  flex-wrap: wrap;
+}
+
+.fila-filtros-pagos .entrada
+{
+  width: 300px;
+}
+
 .chat
 {
   display: flex;

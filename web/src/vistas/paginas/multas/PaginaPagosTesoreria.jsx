@@ -1,7 +1,8 @@
 /*
  * ******************************************************************
  * Nombre del programa: BD-SP03-DL07 · PaginaPagosTesoreria.jsx
- * Función: Pagos de multas recibidos de Tesorería y multas pendientes de sincronizar.
+ * Función: Pagos de multas recibidos de Tesorería (filtrados por periodo y matrícula) y multas
+ *          pendientes de sincronizar.
  * Autor: Equipo CCJMops
  * Fecha: 15/11/2026
  * Entrada: Estado del controlador de la pantalla
@@ -49,7 +50,7 @@ import {
 export function PaginaPagosTesoreria()
 {
   const controlador = useControladorPagos();
-  const { datos } = controlador;
+  const { datos, pagos } = controlador;
   const pendientes = datos?.pendientes ?? [];
 
   return (
@@ -58,7 +59,7 @@ export function PaginaPagosTesoreria()
       {controlador.cargando && !datos && <Cargando texto="Consultando a Tesorería…" />}
       <AlertaError error={controlador.error} />
       {datos && datos.disponible && (
-        <Alerta tipo="exito" titulo="Conectado con Tesorería">
+        <Alerta tipo="informacion" titulo="Conectado con Tesorería">
           Los pagos se reciben automáticamente en cuanto Tesorería los registra. Las multas pagadas
           se marcan solas y el lector sale de la lista de deudores.
           {datos.enviadas > 0 &&
@@ -75,6 +76,40 @@ export function PaginaPagosTesoreria()
       )}
 
       {datos && (
+        <div className="fila entre espacio-12 margen-arriba-16 fila-filtros-pagos">
+          <div className="filtros">
+            {controlador.periodos.map((opcion) => (
+              <button
+                key={opcion.valor}
+                type="button"
+                className={`filtro ${controlador.periodo === opcion.valor ? 'filtro-activo' : ''}`}
+                onClick={() => controlador.SetPeriodo(opcion.valor)}
+              >
+                {opcion.etiqueta}
+              </button>
+            ))}
+          </div>
+          <form
+            className="fila espacio-12"
+            onSubmit={(evento) =>
+            {
+              evento.preventDefault();
+              controlador.Buscar();
+            }}
+          >
+            <input
+              className="entrada"
+              aria-label="Buscar por matrícula o no. de nómina"
+              placeholder="Buscar por matrícula o no. de nómina"
+              value={controlador.texto}
+              onChange={(evento) => controlador.SetTexto(evento.target.value)}
+            />
+            <Boton type="submit">Buscar</Boton>
+          </form>
+        </div>
+      )}
+
+      {datos && (
         <Tarjeta relleno={false} className="tabla-envoltura margen-arriba-16">
           <table className="tabla">
             <thead>
@@ -87,7 +122,7 @@ export function PaginaPagosTesoreria()
               </tr>
             </thead>
             <tbody>
-              {pendientes.map((multa) => (
+              {controlador.pendientes.map((multa) => (
                 <tr key={`pendiente-${multa.id_multa}`}>
                   <td style={{ fontWeight: 700 }}>{multa.Folio} · envío de multa</td>
                   <td>
@@ -100,7 +135,7 @@ export function PaginaPagosTesoreria()
                   </td>
                 </tr>
               ))}
-              {datos.pagos.map((pago) => (
+              {pagos.map((pago) => (
                 <tr key={pago.Folio}>
                   <td style={{ fontWeight: 700 }}>
                     {pago.Folio}
@@ -122,10 +157,14 @@ export function PaginaPagosTesoreria()
                   </td>
                 </tr>
               ))}
-              {!pendientes.length && !datos.pagos.length && (
+              {!controlador.pendientes.length && !pagos.length && (
                 <tr>
                   <td colSpan={5} className="tabla-vacia">
-                    Tesorería todavía no ha registrado pagos de multas.
+                    {controlador.matricula
+                      ? `No hay pagos de ${controlador.matricula} en este periodo.`
+                      : datos.pagos.length
+                        ? 'No hay pagos en este periodo.'
+                        : 'Tesorería todavía no ha registrado pagos de multas.'}
                   </td>
                 </tr>
               )}

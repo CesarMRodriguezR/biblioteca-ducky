@@ -28,8 +28,8 @@
  * Instrucciones de reutilización:
  * (1) Al devolverse, la copia regresa a «Consulta Externa» (solo esas se prestan). Si se
  *     pierde, queda «Inactivo» con Motivo_Baja «Perdido» y el préstamo queda «Perdido».
- * (2) La multa por daño no se genera aquí: si el libro llega dañado, el bibliotecario la
- *     genera en Multas y adeudos con su justificación.
+ * (2) La multa por daño no se genera aquí: si el libro llega dañado o incompleto, el
+ *     bibliotecario la genera en Multas y adeudos con su justificación.
  * ******************************************************************
  */
 
@@ -44,7 +44,7 @@ import { ModeloMulta } from './ModeloMulta.js';
  * Constante: CONDICIONES
  * Objetivo: Condición del libro al recibirlo.
  */
-const CONDICIONES = ['Buen estado', 'Dañado'];
+const CONDICIONES = ['Buen estado', 'Dañado', 'Incompleto'];
 
 /*
  * Función: PrestamoActivo

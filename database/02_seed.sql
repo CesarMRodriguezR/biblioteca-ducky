@@ -270,7 +270,8 @@ INSERT INTO Prestamos (id_prestamo, Fecha_Prestamo, Fecha_Entrega_Programada, Es
   (18, DATE_SUB(@hoy, INTERVAL 60 DAY), DATE_SUB(@hoy, INTERVAL 53 DAY), 'Devuelto', 10, 4, 4),
   (19, DATE_SUB(@hoy, INTERVAL 70 DAY), DATE_SUB(@hoy, INTERVAL 63 DAY), 'Devuelto', 8, 12, 1),
   (20, DATE_SUB(@hoy, INTERVAL 25 DAY), DATE_SUB(@hoy, INTERVAL 18 DAY), 'Devuelto', 12, 14, 2),
-  (21, DATE_SUB(@hoy, INTERVAL 50 DAY), DATE_SUB(@hoy, INTERVAL 36 DAY), 'Devuelto', 3, 12, 2);
+  (21, DATE_SUB(@hoy, INTERVAL 50 DAY), DATE_SUB(@hoy, INTERVAL 36 DAY), 'Devuelto', 3, 12, 2),
+  (22, DATE_SUB(@hoy, INTERVAL 20 DAY), DATE_SUB(@hoy, INTERVAL 13 DAY), 'Devuelto', 4, 5, 2);
 
 INSERT INTO Devoluciones (id_devolucion, id_prestamo, Fecha_Devolucion) VALUES
   (1, 14, DATE_SUB(@hoy, INTERVAL 34 DAY)),
@@ -280,18 +281,21 @@ INSERT INTO Devoluciones (id_devolucion, id_prestamo, Fecha_Devolucion) VALUES
   (5, 18, DATE_SUB(@hoy, INTERVAL 53 DAY)),
   (6, 19, DATE_SUB(@hoy, INTERVAL 59 DAY)),
   (7, 20, DATE_SUB(@hoy, INTERVAL 16 DAY)),
-  (8, 21, DATE_SUB(@hoy, INTERVAL 37 DAY));
+  (8, 21, DATE_SUB(@hoy, INTERVAL 37 DAY)),
+  (9, 22, DATE_SUB(@hoy, INTERVAL 10 DAY));
 
--- Multas. Tesorería ya tiene las 1 a 5 (externos/database/03_tesoreria.sql) y
--- registró el pago de la 2 y la 3. La 6 aún no se le envía: aparece como
--- «Pendiente de sincronizar» en Pagos de Tesorería.
+-- Multas. Tesorería ya tiene las 1 a 5 y la 7 (externos/database/03_tesoreria.sql) y
+-- registró el pago de la 2, la 3 y la 7 (esta hace 2 días, para que se vea en el
+-- filtro «Últimos 7 días» de Pagos de Tesorería). La 6 aún no se le envía: aparece
+-- como «Pendiente de sincronizar» en Pagos de Tesorería.
 INSERT INTO Multas (id_multa, Cantidad_a_Pagar, Fecha_Pagado, id_usuario, id_prestamo, Justificacion, Motivo, Fecha_Multa, Enviada_Tesoreria) VALUES
   (1, 45.00, NULL, 8, 19, 'Devolución con 4 días de retraso y daño menor en la portada.', 'Entrega extemporánea', DATE_SUB(@hoy, INTERVAL 59 DAY), TRUE),
   (2, 20.00, DATE_SUB(@hoy, INTERVAL 45 DAY), 4, 15, 'Devolución con 2 días de retraso.', 'Entrega extemporánea', DATE_SUB(@hoy, INTERVAL 51 DAY), TRUE),
   (3, 250.00, DATE_SUB(@hoy, INTERVAL 50 DAY), 10, 18, 'El libro se devolvió con hojas rayadas en el capítulo 4.', 'Daño del libro', DATE_SUB(@hoy, INTERVAL 53 DAY), TRUE),
   (4, 40.00, NULL, 10, 16, 'Devolución con 4 días de retraso.', 'Entrega extemporánea', DATE_SUB(@hoy, INTERVAL 19 DAY), TRUE),
   (5, 70.00, NULL, 10, 17, 'Devolución con 7 días de retraso.', 'Entrega extemporánea', DATE_SUB(@hoy, INTERVAL 2 DAY), TRUE),
-  (6, 20.00, NULL, 12, 20, 'Devolución con 2 días de retraso.', 'Entrega extemporánea', DATE_SUB(@hoy, INTERVAL 16 DAY), FALSE);
+  (6, 20.00, NULL, 12, 20, 'Devolución con 2 días de retraso.', 'Entrega extemporánea', DATE_SUB(@hoy, INTERVAL 16 DAY), FALSE),
+  (7, 30.00, DATE_SUB(@hoy, INTERVAL 2 DAY), 4, 22, 'Devolución con 3 días de retraso.', 'Entrega extemporánea', DATE_SUB(@hoy, INTERVAL 10 DAY), TRUE);
 
 -- Lista de espera de «Introduction to Algorithms» (sus copias para llevar están prestadas).
 INSERT INTO ListaDeEspera (id_lista_espera, Fecha_Peticion, Estatus, id_usuario, id_libro) VALUES

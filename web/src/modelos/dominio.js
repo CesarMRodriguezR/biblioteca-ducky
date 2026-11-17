@@ -41,7 +41,11 @@
  *     CONDICIONES_LIBRO     Condición del libro al recibirlo
  *     PERIODOS_EXAMEN       Periodos de exámenes de la lista de deudores
  *     FILTROS_PERFIL        Filtros por perfil de los préstamos vencidos
+ *     FILTROS_HISTORIAL     Filtros del historial de préstamos de un usuario
+ *     PERIODOS_PAGO         Filtros por periodo de los pagos de Tesorería
+ *     MEDIOS_ENTREGA        Medios de entrega del recibo de préstamo
  *     HoyIso                Fecha local de hoy en formato AAAA-MM-DD
+ *     EnPeriodo             Saber si una fecha cae en un periodo de PERIODOS_PAGO
  *     FechaCorta            Mostrar una fecha como DD/MM/AAAA
  *     FechaLarga            Mostrar una fecha con su día de la semana
  *     FolioMulta            Folio visible de una multa (M-0058)
@@ -388,6 +392,7 @@ export const MOTIVOS_MULTA = [
 export const CONDICIONES_LIBRO = [
   { valor: 'Buen estado', etiqueta: 'Buen estado' },
   { valor: 'Dañado', etiqueta: 'Dañado' },
+  { valor: 'Incompleto', etiqueta: 'Incompleto' },
 ];
 
 /*
@@ -413,6 +418,37 @@ export const FILTROS_PERFIL = [
 ];
 
 /*
+ * Constante: FILTROS_HISTORIAL
+ * Objetivo: Filtros del historial de préstamos de un usuario (valor = Estado_Visible).
+ */
+export const FILTROS_HISTORIAL = [
+  { valor: '', etiqueta: 'Todos' },
+  { valor: 'Devuelto', etiqueta: 'Devuelto' },
+  { valor: 'Devuelto con retraso', etiqueta: 'Devuelto con retraso' },
+];
+
+/*
+ * Constante: PERIODOS_PAGO
+ * Objetivo: Filtros por periodo de los pagos de Tesorería (los aplica EnPeriodo).
+ */
+export const PERIODOS_PAGO = [
+  { valor: 'hoy', etiqueta: 'Hoy' },
+  { valor: 'semana', etiqueta: 'Últimos 7 días' },
+  { valor: 'mes', etiqueta: 'Este mes' },
+  { valor: 'todos', etiqueta: 'Todos' },
+];
+
+/*
+ * Constante: MEDIOS_ENTREGA
+ * Objetivo: Medios de entrega del recibo de préstamo; Imprimir es el predeterminado.
+ */
+export const MEDIOS_ENTREGA = {
+  Imprimir: 'Impreso',
+  Correo: 'Correo electrónico',
+  WhatsApp: 'WhatsApp',
+};
+
+/*
  * Constante: DIAS_SEMANA
  * Objetivo: Nombres de los días de la semana (0 = domingo, como Date.getDay).
  */
@@ -430,6 +466,36 @@ export function HoyIso()
   const mes = String(hoy.getMonth() + 1).padStart(2, '0');
   const dia = String(hoy.getDate()).padStart(2, '0');
   return `${hoy.getFullYear()}-${mes}-${dia}`;
+}
+
+/*
+ * Función: EnPeriodo
+ * Objetivo: Saber si una fecha (AAAA-MM-DD, con o sin hora) cae en un periodo de
+ *           PERIODOS_PAGO, contado desde hoy.
+ * Entrada: fecha, periodo (valor de PERIODOS_PAGO)
+ * Salida: true si la fecha está en el periodo
+ */
+export function EnPeriodo(fecha, periodo)
+{
+  const dia = String(fecha ?? '').slice(0, 10);
+  const hoy = HoyIso();
+  if (periodo === 'hoy')
+  {
+    return dia === hoy;
+  }
+  if (periodo === 'semana')
+  {
+    const inicio = new Date(`${hoy}T00:00:00`);
+    inicio.setDate(inicio.getDate() - 6);
+    const mes = String(inicio.getMonth() + 1).padStart(2, '0');
+    const desde = `${inicio.getFullYear()}-${mes}-${String(inicio.getDate()).padStart(2, '0')}`;
+    return dia >= desde && dia <= hoy;
+  }
+  if (periodo === 'mes')
+  {
+    return dia.slice(0, 7) === hoy.slice(0, 7);
+  }
+  return true;
 }
 
 /*
@@ -518,10 +584,10 @@ export function IndicacionAdeudos(resumen)
 /*
  * Función: TextoRecibo
  * Objetivo: Texto del recibo de préstamo para enviarlo por correo o WhatsApp.
- * Entrada: recibo
+ * Entrada: recibo, medio (texto de MEDIOS_ENTREGA)
  * Salida: Texto con los datos del préstamo
  */
-export function TextoRecibo(recibo)
+export function TextoRecibo(recibo, medio)
 {
   return [
     `Biblio · Universidad Ducky — Recibo de préstamo ${recibo.Folio}`,
@@ -530,6 +596,7 @@ export function TextoRecibo(recibo)
     `Ubicación: ${UbicacionTexto(recibo.ubicacion ?? {}, null) || '—'}`,
     `Fecha de préstamo: ${FechaLarga(recibo.Fecha_Prestamo)}`,
     `Fecha de devolución: ${FechaLarga(recibo.Fecha_Entrega_Programada)}`,
+    `Entrega del recibo: ${medio}`,
     `Atendió: ${recibo.Atendio}`,
     recibo.Nota,
   ].join('\n');

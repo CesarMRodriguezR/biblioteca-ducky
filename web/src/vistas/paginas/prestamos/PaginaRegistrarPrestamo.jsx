@@ -1,7 +1,8 @@
 /*
  * ******************************************************************
  * Nombre del programa: BD-SP03-PL01 · PaginaRegistrarPrestamo.jsx
- * Función: Registrar préstamo: lector, libro y ejemplar, fechas del préstamo y resultado.
+ * Función: Registrar préstamo: lector, libro y ejemplar, fechas del préstamo, medio de entrega
+ *          del recibo, resultado y vista previa del recibo.
  * Autor: Equipo CCJMops
  * Fecha: 15/11/2026
  * Entrada: Estado del controlador de la pantalla
@@ -52,7 +53,12 @@ import {
   Selector,
   Tarjeta,
 } from '../../componentes/interfaz.jsx';
-import { BuscadorMatricula } from '../../componentes/Circulacion.jsx';
+import {
+  BuscadorMatricula,
+  DocumentoRecibo,
+  EntregaRecibo,
+  ModalDocumento,
+} from '../../componentes/Circulacion.jsx';
 
 /*
  * Componente: TablaCondiciones
@@ -126,7 +132,7 @@ function TablaCopias({ copias })
 /*
  * Componente: PaginaRegistrarPrestamo
  * Objetivo: BD-SP03-PL01 Registrar préstamo (formulario, lector con adeudos, libro sin
- *           ejemplares, datos incompletos y registro exitoso).
+ *           ejemplares, datos incompletos, registro exitoso y vista previa del recibo).
  * Uso: <PaginaRegistrarPrestamo />
  */
 export function PaginaRegistrarPrestamo()
@@ -188,10 +194,7 @@ export function PaginaRegistrarPrestamo()
 
       <Tarjeta className="margen-arriba-16">
         <h2 className="titulo-seccion">2. Libro y ejemplar</h2>
-        <p className="texto-nota margen-arriba-4">
-          Busca el libro por su ISBN y elige el ejemplar. Solo se prestan copias con estatus
-          Consulta Externa.
-        </p>
+        <p className="texto-nota margen-arriba-4">Busca el libro por su ISBN y elige el ejemplar</p>
         <form
           className="fila espacio-12 fila-buscador margen-arriba-16"
           onSubmit={(evento) =>
@@ -307,13 +310,13 @@ export function PaginaRegistrarPrestamo()
         )}
       </Tarjeta>
 
-      {controlador.aviso && (
-        <div className="margen-arriba-16">
-          <Alerta tipo={controlador.aviso.tipo} titulo={controlador.aviso.titulo}>
-            {controlador.aviso.texto}
-          </Alerta>
-        </div>
-      )}
+      <EntregaRecibo
+        titulo="4. Entrega del recibo"
+        medio={controlador.medio}
+        al_imprimir={() => controlador.SetMedio('Imprimir')}
+        al_enviar_correo={() => controlador.SetMedio('Correo')}
+        al_enviar_whatsapp={() => controlador.SetMedio('WhatsApp')}
+      />
 
       {rechazo === 'lector' && situacion && (
         <div className="margen-arriba-16">
@@ -347,13 +350,25 @@ export function PaginaRegistrarPrestamo()
         </div>
       )}
 
+      {controlador.aviso && (
+        <div className="margen-arriba-16">
+          <Alerta tipo={controlador.aviso.tipo} titulo={controlador.aviso.titulo}>
+            {controlador.aviso.texto}
+          </Alerta>
+        </div>
+      )}
+
       <div className="fila espacio-12 margen-arriba-24">
         {registrado && (
           <>
-            <Boton icono={FileText} onClick={controlador.IrAlRecibo}>
-              Continuar al recibo
+            <Boton
+              icono={FileText}
+              onClick={controlador.GenerarRecibo}
+              disabled={controlador.generando}
+            >
+              {controlador.generando ? 'Generando…' : 'Generar recibo'}
             </Boton>
-            <Boton variante="texto" onClick={controlador.Reiniciar}>
+            <Boton variante="secundario" onClick={controlador.Reiniciar}>
               Registrar otro préstamo
             </Boton>
           </>
@@ -389,6 +404,22 @@ export function PaginaRegistrarPrestamo()
           </>
         )}
       </div>
+
+      {controlador.vista.abierta && (
+        <ModalDocumento
+          titulo="Vista previa del recibo"
+          al_cerrar={controlador.vista.Cerrar}
+          al_imprimir={controlador.vista.Imprimir}
+          al_descargar={controlador.vista.Descargar}
+          descargando={controlador.vista.descargando}
+          cargando={controlador.vista.cargando}
+          error={controlador.vista.error}
+        >
+          {controlador.vista.datos && (
+            <DocumentoRecibo recibo={controlador.vista.datos} medio={controlador.medio} />
+          )}
+        </ModalDocumento>
+      )}
     </Pagina>
   );
 }

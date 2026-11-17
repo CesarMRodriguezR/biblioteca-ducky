@@ -103,8 +103,9 @@ INSERT INTO Renglones (id_solicitud, Numero, Titulo, ISBN, Editorial, Cantidad, 
   (1, 1, 'Sistemas operativos modernos', '978-607-442-046-3', 'Pearson', 4, 980.00),
   (2, 1, 'El lenguaje de programación C', '978-0-13-110362-7', 'Prentice Hall', 6, 650.00);
 
--- Multas de Biblio que Tesorería ya recibió (coinciden con las multas 1 a 5 de
--- la semilla de Biblio; la 6 aún no se envía). Las 2 y 3 ya se pagaron.
+-- Multas de Biblio que Tesorería ya recibió (coinciden con las multas 1 a 5 y 7 de
+-- la semilla de Biblio; la 6 aún no se envía). Las 2, 3 y 7 ya se pagaron; la 7
+-- hace 2 días, para que se vea en el filtro «Últimos 7 días» de Biblio.
 SET @hoy = CURRENT_DATE;
 INSERT INTO Multas
   (id_multa, Referencia, Matricula, Lector, Motivo, Monto, Fecha_Multa, Estatus) VALUES
@@ -117,10 +118,14 @@ INSERT INTO Multas
   (4, '4', '3109921', 'Ana López', 'Entrega extemporánea', 40.00,
    DATE_SUB(@hoy, INTERVAL 19 DAY), 'Pendiente'),
   (5, '5', '3109921', 'Ana López', 'Entrega extemporánea', 70.00,
-   DATE_SUB(@hoy, INTERVAL 2 DAY), 'Pendiente');
+   DATE_SUB(@hoy, INTERVAL 2 DAY), 'Pendiente'),
+  (6, '7', '3105843', 'Marcela Guerra', 'Entrega extemporánea', 30.00,
+   DATE_SUB(@hoy, INTERVAL 10 DAY), 'Pagada');
 
 INSERT INTO Pagos (id_pago, Folio, id_multa, Monto, Fecha_Pago, Notificado) VALUES
   (1, CONCAT('TES-', DATE_FORMAT(DATE_SUB(@hoy, INTERVAL 50 DAY), '%Y-%m'), '-0001'), 3, 250.00,
    TIMESTAMP(DATE_SUB(@hoy, INTERVAL 50 DAY), '11:20:00'), TRUE),
   (2, CONCAT('TES-', DATE_FORMAT(DATE_SUB(@hoy, INTERVAL 45 DAY), '%Y-%m'), '-0002'), 2, 20.00,
-   TIMESTAMP(DATE_SUB(@hoy, INTERVAL 45 DAY), '17:02:00'), TRUE);
+   TIMESTAMP(DATE_SUB(@hoy, INTERVAL 45 DAY), '17:02:00'), TRUE),
+  (3, CONCAT('TES-', DATE_FORMAT(DATE_SUB(@hoy, INTERVAL 2 DAY), '%Y-%m'), '-0003'), 6, 30.00,
+   TIMESTAMP(DATE_SUB(@hoy, INTERVAL 2 DAY), '17:02:00'), TRUE);

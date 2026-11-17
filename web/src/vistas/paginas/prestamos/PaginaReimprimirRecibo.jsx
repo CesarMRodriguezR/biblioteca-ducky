@@ -139,9 +139,10 @@ export function PaginaReimprimirRecibo()
       {controlador.recibo && (
         <>
           <Tarjeta className="margen-arriba-16">
-            <DocumentoRecibo recibo={controlador.recibo} />
+            <DocumentoRecibo recibo={controlador.recibo} medio={controlador.medio} />
           </Tarjeta>
           <EntregaRecibo
+            medio={controlador.medio}
             al_imprimir={controlador.Imprimir}
             al_enviar_correo={controlador.EnviarCorreo}
             al_enviar_whatsapp={controlador.EnviarWhatsApp}
@@ -165,7 +166,7 @@ export function PaginaReimprimirRecibo()
           cargando={vista.cargando}
           error={vista.error}
         >
-          {vista.datos && <DocumentoRecibo recibo={vista.datos} />}
+          {vista.datos && <DocumentoRecibo recibo={vista.datos} medio={controlador.medio} />}
         </ModalDocumento>
       )}
     </Pagina>
