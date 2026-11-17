@@ -150,6 +150,7 @@ export function PaginaRegistrarDevolucion()
           <TablaPendientes
             prestamos={controlador.pendientes}
             etiqueta_accion="Devolver"
+            icono_accion={RefreshCw}
             al_elegir={controlador.Elegir}
           />
         </>
@@ -265,7 +266,7 @@ export function PaginaRegistrarDevolucion()
                 Ver lista de espera
               </Boton>
             )}
-            <Boton variante="texto" onClick={controlador.Reiniciar}>
+            <Boton variante="texto" icono={RefreshCw} onClick={controlador.Reiniciar}>
               Registrar otra devolución
             </Boton>
           </>

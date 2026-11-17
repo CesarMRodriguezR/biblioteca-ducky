@@ -28,7 +28,7 @@
  * ******************************************************************
  */
 
-import { BookX, Printer } from 'lucide-react';
+import { CircleAlert, FileText } from 'lucide-react';
 import { useControladorLibroPerdido } from '../../../controladores/ControladorDevoluciones.js';
 import { FechaCorta, FormatoMoneda, HoyIso } from '../../../modelos/dominio.js';
 import { Pagina } from '../../plantillas/PlantillaAplicacion.jsx';
@@ -102,6 +102,7 @@ export function PaginaLibroPerdido()
           <TablaPendientes
             prestamos={controlador.pendientes}
             etiqueta_accion="Reportar"
+            icono_accion={CircleAlert}
             al_elegir={controlador.Elegir}
           />
         </>
@@ -142,7 +143,7 @@ export function PaginaLibroPerdido()
           <>
             <Boton
               variante="peligro"
-              icono={BookX}
+              icono={CircleAlert}
               onClick={controlador.Reportar}
               disabled={controlador.enviando}
             >
@@ -154,7 +155,7 @@ export function PaginaLibroPerdido()
           </>
         )}
         {resultado && (
-          <Boton icono={Printer} onClick={controlador.ImprimirMulta}>
+          <Boton icono={FileText} onClick={controlador.ImprimirMulta}>
             Imprimir multa
           </Boton>
         )}

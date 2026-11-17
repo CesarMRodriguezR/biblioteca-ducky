@@ -27,7 +27,7 @@
  * ******************************************************************
  */
 
-import { FileText } from 'lucide-react';
+import { FileText, RefreshCw } from 'lucide-react';
 import { useControladorRenovar } from '../../../controladores/ControladorPrestamos.js';
 import { FechaCorta, FechaLarga, FormatoMoneda } from '../../../modelos/dominio.js';
 import { Pagina } from '../../plantillas/PlantillaAplicacion.jsx';
@@ -121,6 +121,7 @@ export function PaginaRenovarPrestamo()
                       <Boton
                         variante="secundario"
                         chico
+                        icono={RefreshCw}
                         onClick={() => controlador.Renovar(prestamo)}
                         disabled={controlador.renovando === prestamo.id_prestamo}
                       >

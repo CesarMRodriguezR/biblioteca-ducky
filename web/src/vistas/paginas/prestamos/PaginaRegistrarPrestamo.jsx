@@ -32,7 +32,7 @@
  * ******************************************************************
  */
 
-import { FileText } from 'lucide-react';
+import { CircleAlert, Clock, FileText } from 'lucide-react';
 import { useControladorRegistrarPrestamo } from '../../../controladores/ControladorPrestamos.js';
 import {
   ESTADOS_COPIA,
@@ -375,7 +375,7 @@ export function PaginaRegistrarPrestamo()
         )}
         {!registrado && rechazo === 'lector' && (
           <>
-            <Boton variante="secundario" onClick={controlador.VerAdeudos}>
+            <Boton variante="secundario" icono={CircleAlert} onClick={controlador.VerAdeudos}>
               Ver multas y adeudos
             </Boton>
             <Boton variante="texto" onClick={controlador.Cancelar}>
@@ -385,7 +385,7 @@ export function PaginaRegistrarPrestamo()
         )}
         {!registrado && rechazo === 'libro' && (
           <>
-            <Boton variante="secundario" onClick={controlador.AgregarEspera}>
+            <Boton variante="secundario" icono={Clock} onClick={controlador.AgregarEspera}>
               Agregar a lista de espera
             </Boton>
             <Boton variante="texto" onClick={controlador.Cancelar}>

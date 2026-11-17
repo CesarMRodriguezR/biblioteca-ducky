@@ -27,7 +27,7 @@
  * ******************************************************************
  */
 
-import { FileText, Printer } from 'lucide-react';
+import { FileText } from 'lucide-react';
 import { useControladorGenerarMulta } from '../../../controladores/ControladorDevoluciones.js';
 import { FechaCorta, FormatoMoneda, HoyIso, MOTIVOS_MULTA } from '../../../modelos/dominio.js';
 import { Pagina } from '../../plantillas/PlantillaAplicacion.jsx';
@@ -167,7 +167,7 @@ export function PaginaGenerarMulta()
           </>
         )}
         {generada && (
-          <Boton icono={Printer} onClick={controlador.ImprimirMulta}>
+          <Boton icono={FileText} onClick={controlador.ImprimirMulta}>
             Imprimir multa
           </Boton>
         )}

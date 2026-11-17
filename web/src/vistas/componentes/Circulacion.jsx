@@ -157,10 +157,11 @@ export function BuscadorMatricula({
 /*
  * Componente: TablaPendientes
  * Objetivo: Préstamos pendientes del lector (a tiempo o con días de retraso) con un botón de
- *           acción por renglón.
- * Uso: <TablaPendientes prestamos={…} etiqueta_accion={…} al_elegir={…} elegido={…} />
+ *           acción por renglón (con ícono opcional).
+ * Uso: <TablaPendientes prestamos={…} etiqueta_accion={…} icono_accion={…} al_elegir={…}
+ *        elegido={…} />
  */
-export function TablaPendientes({ prestamos, etiqueta_accion, al_elegir, elegido })
+export function TablaPendientes({ prestamos, etiqueta_accion, icono_accion, al_elegir, elegido })
 {
   return (
     <Tarjeta relleno={false} className="tabla-envoltura margen-arriba-16">
@@ -199,6 +200,7 @@ export function TablaPendientes({ prestamos, etiqueta_accion, al_elegir, elegido
                 <Boton
                   variante={elegido === prestamo.id_prestamo ? 'primario' : 'secundario'}
                   chico
+                  icono={icono_accion}
                   onClick={() => al_elegir(prestamo)}
                 >
                   {etiqueta_accion}

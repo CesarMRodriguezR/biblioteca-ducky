@@ -28,7 +28,7 @@
  * ******************************************************************
  */
 
-import { RotateCcw } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import { useControladorPagos } from '../../../controladores/ControladorDevoluciones.js';
 import { FechaCorta, FormatoMoneda } from '../../../modelos/dominio.js';
 import { Pagina } from '../../plantillas/PlantillaAplicacion.jsx';
@@ -174,7 +174,7 @@ export function PaginaPagosTesoreria()
       )}
       {datos && !datos.disponible && (
         <div className="margen-arriba-16">
-          <Boton icono={RotateCcw} onClick={controlador.Reintentar} disabled={controlador.cargando}>
+          <Boton icono={RefreshCw} onClick={controlador.Reintentar} disabled={controlador.cargando}>
             {controlador.cargando ? 'Reintentando…' : 'Reintentar ahora'}
           </Boton>
         </div>

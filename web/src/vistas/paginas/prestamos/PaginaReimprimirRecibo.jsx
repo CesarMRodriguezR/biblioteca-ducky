@@ -28,7 +28,7 @@
  * ******************************************************************
  */
 
-import { Printer } from 'lucide-react';
+import { FileText } from 'lucide-react';
 import { useControladorReimprimir } from '../../../controladores/ControladorPrestamos.js';
 import { ESTADOS_PRESTAMO, FechaCorta } from '../../../modelos/dominio.js';
 import { Pagina } from '../../plantillas/PlantillaAplicacion.jsx';
@@ -122,7 +122,7 @@ export function PaginaReimprimirRecibo()
                           : 'secundario'
                       }
                       chico
-                      icono={Printer}
+                      icono={FileText}
                       onClick={() => controlador.Reimprimir(prestamo)}
                     >
                       Reimprimir

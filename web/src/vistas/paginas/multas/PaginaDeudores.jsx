@@ -28,7 +28,7 @@
  * ******************************************************************
  */
 
-import { Printer, Send } from 'lucide-react';
+import { ArrowRight, FileText, List } from 'lucide-react';
 import { useControladorDeudores } from '../../../controladores/ControladorDevoluciones.js';
 import { FormatoMoneda, PERIODOS_EXAMEN } from '../../../modelos/dominio.js';
 import { Pagina } from '../../plantillas/PlantillaAplicacion.jsx';
@@ -69,7 +69,7 @@ export function PaginaDeudores()
             onChange={(evento) => controlador.SetPeriodo(evento.target.value)}
             opciones={PERIODOS_EXAMEN}
           />
-          <Boton onClick={controlador.Generar} disabled={controlador.generando}>
+          <Boton icono={List} onClick={controlador.Generar} disabled={controlador.generando}>
             {controlador.generando ? 'Generando…' : 'Generar lista'}
           </Boton>
         </div>
@@ -130,10 +130,10 @@ export function PaginaDeudores()
             </div>
           )}
           <div className="fila espacio-12 margen-arriba-24">
-            <Boton icono={Send} onClick={controlador.Enviar} disabled={controlador.enviando}>
+            <Boton icono={ArrowRight} onClick={controlador.Enviar} disabled={controlador.enviando}>
               {controlador.enviando ? 'Enviando…' : 'Enviar a Servicios Escolares'}
             </Boton>
-            <Boton variante="secundario" icono={Printer} onClick={controlador.Imprimir}>
+            <Boton variante="secundario" icono={FileText} onClick={controlador.Imprimir}>
               Imprimir
             </Boton>
           </div>
