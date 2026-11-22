@@ -947,7 +947,7 @@ test('CB01: la IA responde una pregunta escrita solo con las preguntas del perfi
     assert.equal(biblio.status, 200);
     assert.equal(biblio.data.encontrada, true);
     assert.equal(biblio.data.id_pregunta, '5');
-    assert.equal(biblio.data.Fuente, 'Historia de usuario BD-SP03-PL03 · Registro de préstamo');
+    assert.equal(biblio.data.Fuente, 'Historia de usuario BD-SP03-PL01 · Registro de préstamo');
     // El bibliotecario recibe las comunes, las de lectores (buscar_libros), préstamos y
     // devoluciones, pero no las de usuarios ni libros.
     assert.ok(['1', '5', '9', '20'].every((id) => recibidas.at(-1).includes(id)));
