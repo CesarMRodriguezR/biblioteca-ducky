@@ -204,7 +204,7 @@ test('validación de perfil: el alumno recibe 403 en funciones restringidas', as
 });
 
 /*------------------------------------------------------------------
- * Sección: BL01 / GL05 Búsqueda y ficha
+ * Sección: BL01 / GL04 Búsqueda y ficha
  * Objetivo: Probar la búsqueda del catálogo y la ficha según el rol.
  *------------------------------------------------------------------*/
 test('BL01: búsqueda sin filtros muestra 18 libros activos en páginas de 6', async () =>
@@ -246,7 +246,7 @@ test('BL01: el filtro también ordena (autor, editorial, año)', async () =>
   assert.equal(aparte.status, 400);
 });
 
-test('GL05: la ficha completa (con códigos de copia) solo la ve quien gestiona libros', async () =>
+test('GL04: la ficha completa (con códigos de copia) solo la ve quien gestiona libros', async () =>
 {
   const alumna = await Solicitar('GET', '/libros/1', { token: tokens.alumna });
   assert.equal(alumna.data.Titulo, 'Introduction to Algorithms');
@@ -297,10 +297,10 @@ test('GL06: listado con filtro y PDF', async () =>
 });
 
 /*------------------------------------------------------------------
- * Sección: GL02 Alta de libro
+ * Sección: GL01 Alta de libro
  * Objetivo: Probar el alta de ficha, el ISBN duplicado y el alta de ejemplares.
  *------------------------------------------------------------------*/
-test('GL02: alta con datos inválidos devuelve un mensaje por campo', async () =>
+test('GL01: alta con datos inválidos devuelve un mensaje por campo', async () =>
 {
   const resultado = await Solicitar('POST', '/libros', {
     token: tokens.admin,
@@ -316,7 +316,7 @@ test('GL02: alta con datos inválidos devuelve un mensaje por campo', async () =
   assert.match(por_campo.Precio, /mayor a \$0\.00/);
 });
 
-test('GL02: un ISBN de una solicitud de compra precarga los datos del alta', async () =>
+test('GL01: un ISBN de una solicitud de compra precarga los datos del alta', async () =>
 {
   const solicitado = await Solicitar('GET', '/libros/solicitados/978-0-201-10088-4', {
     token: tokens.admin,
@@ -338,7 +338,7 @@ test('GL02: un ISBN de una solicitud de compra precarga los datos del alta', asy
   );
 });
 
-test('GL02: ISBN duplicado devuelve la ficha existente y luego alta completa con ejemplares', async () =>
+test('GL01: ISBN duplicado devuelve la ficha existente y luego alta completa con ejemplares', async () =>
 {
   const existente = await Solicitar('GET', '/libros/isbn/978-0-262-03384-8', {
     token: tokens.admin,
@@ -388,10 +388,10 @@ test('GL02: ISBN duplicado devuelve la ficha existente y luego alta completa con
 });
 
 /*------------------------------------------------------------------
- * Sección: GL04 Edición
+ * Sección: GL03 Edición
  * Objetivo: Probar la edición de la ficha y el cambio de estado de las copias.
  *------------------------------------------------------------------*/
-test('GL04: el ISBN no se cambia y las copias solo aumentan', async () =>
+test('GL03: el ISBN no se cambia y las copias solo aumentan', async () =>
 {
   const isbn = await Solicitar('PUT', '/libros/3', {
     token: tokens.admin,
@@ -420,7 +420,7 @@ test('GL04: el ISBN no se cambia y las copias solo aumentan', async () =>
   assert.equal(ok.data.Ejemplares_Totales, 4);
 });
 
-test('GL04: cambio de estado de copia bloqueado si está en préstamo', async () =>
+test('GL03: cambio de estado de copia bloqueado si está en préstamo', async () =>
 {
   const libro = await Solicitar('GET', '/libros/3', { token: tokens.admin });
   const prestada = libro.data.ejemplares.find((ejemplar) => ejemplar.Estatus === 'En préstamo');
@@ -448,10 +448,10 @@ test('GL04: cambio de estado de copia bloqueado si está en préstamo', async ()
 });
 
 /*------------------------------------------------------------------
- * Sección: GL03 Baja
+ * Sección: GL02 Baja
  * Objetivo: Probar el retiro de copias y la inactivación del libro.
  *------------------------------------------------------------------*/
-test('GL03: retiro de copia e inactivación de libro', async () =>
+test('GL02: retiro de copia e inactivación de libro', async () =>
 {
   // Clean Code: EJ-00202 está en préstamo
   const en_prestamo = await Solicitar('POST', '/libros/2/ejemplares/2/baja', {
@@ -637,7 +637,7 @@ test('GU02: baja de quienes ya no aparecen, salvo con préstamos o multas', asyn
   assert.equal(baja.data.rechazados[1].Motivo, 'Sigue apareciendo en CIAA o en Empleados');
 });
 
-test('GU02: gestión de perfiles (Administrador protegido)', async () =>
+test('GU03: gestión de perfiles (Administrador protegido)', async () =>
 {
   const perfiles = await Solicitar('GET', '/perfiles', { token: tokens.admin });
   assert.equal(perfiles.data.length, 5);
@@ -929,7 +929,7 @@ test('CB01: el Asistente Biblio muestra solo las preguntas frecuentes comunes', 
   assert.equal(ajena.status, 404);
 });
 
-test('CB01: la IA responde una pregunta escrita solo con las preguntas del perfil', async () =>
+test('CB02: la IA responde una pregunta escrita solo con las preguntas del perfil', async () =>
 {
   const ElegirOriginal = BuscadorSemantico.ElegirPregunta;
   const recibidas = [];
@@ -984,10 +984,10 @@ test('GU02: detalle de usuario con préstamos y teléfono (de CIAA, no editable)
 });
 
 /*------------------------------------------------------------------
- * Sección: GL01 Solicitud de compra
+ * Sección: GL05 Solicitud de compra
  * Objetivo: Probar las solicitudes de compra y el flujo de estatus de las órdenes.
  *------------------------------------------------------------------*/
-test('GL01: solicitud de libro nuevo y de más copias; flujo de estados', async () =>
+test('GL05: solicitud de libro nuevo y de más copias; flujo de estados', async () =>
 {
   const en_catalogo = await Solicitar('POST', '/ordenes-compra', {
     token: tokens.admin,

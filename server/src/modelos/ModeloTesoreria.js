@@ -1,6 +1,6 @@
 /*
  * ******************************************************************
- * Nombre del programa: BD-SP02-GL01 · ModeloTesoreria.js
+ * Nombre del programa: BD-SP02-GL05 · ModeloTesoreria.js
  * Función: Enviar las solicitudes de compra y las multas a Tesorería (sistema externo) y
  *          traer sus respuestas (aceptada o rechazada) y los pagos de multas.
  * Autor: Equipo CCJMops

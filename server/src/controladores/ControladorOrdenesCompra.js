@@ -1,6 +1,6 @@
 /*
  * ******************************************************************
- * Nombre del programa: BD-SP02-GL01 · ControladorOrdenesCompra.js
+ * Nombre del programa: BD-SP02-GL05 · ControladorOrdenesCompra.js
  * Función: Solicitudes de compra de libros y su flujo de autorización.
  * Autor: Equipo CCJMops
  * Fecha: 26/10/2026

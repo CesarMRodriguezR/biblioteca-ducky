@@ -1,6 +1,6 @@
 /*
  * ******************************************************************
- * Nombre del programa: BD-SP04-CB01 · ControladorAsistente.js
+ * Nombre del programa: BD-SP04-CB01 y CB02 · ControladorAsistente.js
  * Función: Asistente Biblio: preguntas frecuentes, su respuesta con fuente y preguntas escritas
  *          que interpreta la IA.
  * Autor: Equipo CCJMops

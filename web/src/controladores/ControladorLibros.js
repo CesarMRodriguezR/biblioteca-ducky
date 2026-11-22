@@ -21,10 +21,10 @@
  *     ValidarFicha                      Valida en el cliente lo mismo que la API para avisar…
  *     useEditoriales                    Cargar las editoriales y prepararlas como opciones de…
  *     useControladorLibrosRegistrados   Pantalla principal de Libros: libros registrados (activos…
- *     useControladorAltaLibro           BD-SP02-GL02 Alta de libro: el ISBN se valida primero; si…
- *     useControladorEditarLibro         BD-SP02-GL04 Editar libro: ficha bibliográfica y estado…
- *     useControladorBajaLibro           BD-SP02-GL03 Baja de libro: retirar una copia o…
- *     useControladorSolicitudCompra     BD-SP02-GL01 Solicitar libros: título nuevo o más copias…
+ *     useControladorAltaLibro           BD-SP02-GL01 Alta de libro: el ISBN se valida primero; si…
+ *     useControladorEditarLibro         BD-SP02-GL03 Editar libro: ficha bibliográfica y estado…
+ *     useControladorBajaLibro           BD-SP02-GL02 Baja de libro: retirar una copia o…
+ *     useControladorSolicitudCompra     BD-SP02-GL05 Solicitar libros: título nuevo o más copias…
  * ******************************************************************
  */
 
@@ -203,7 +203,7 @@ export function useControladorLibrosRegistrados()
 
 /*
  * Hook: useControladorAltaLibro
- * Objetivo: BD-SP02-GL02 Alta de libro: el ISBN se valida primero; si ya existe se muestra la
+ * Objetivo: BD-SP02-GL01 Alta de libro: el ISBN se valida primero; si ya existe se muestra la
  *           ficha para agregar ejemplares, y si se pidió en una solicitud de compra se
  *           precargan sus datos. Tras guardar la ficha se habilita el panel de ejemplares.
  * Entrada: Ninguna
@@ -368,7 +368,7 @@ export function useControladorAltaLibro()
 
 /*
  * Hook: useControladorEditarLibro
- * Objetivo: BD-SP02-GL04 Editar libro: ficha bibliográfica y estado de copias.
+ * Objetivo: BD-SP02-GL03 Editar libro: ficha bibliográfica y estado de copias.
  * Entrada: Ninguna
  * Salida: Objeto con el estado y las acciones de la pantalla
  */
@@ -545,7 +545,7 @@ export function useControladorEditarLibro()
 
 /*
  * Hook: useControladorBajaLibro
- * Objetivo: BD-SP02-GL03 Baja de libro: retirar una copia o activar/inactivar el libro.
+ * Objetivo: BD-SP02-GL02 Baja de libro: retirar una copia o activar/inactivar el libro.
  * Entrada: Ninguna
  * Salida: Objeto con el estado y las acciones de la pantalla
  */
@@ -655,7 +655,7 @@ export function useControladorBajaLibro()
 
 /*
  * Hook: useControladorSolicitudCompra
- * Objetivo: BD-SP02-GL01 Solicitar libros: título nuevo o más copias de uno registrado; muestra
+ * Objetivo: BD-SP02-GL05 Solicitar libros: título nuevo o más copias de uno registrado; muestra
  *           solicitudes pendientes y el catálogo de editoriales.
  * Entrada: Ninguna
  * Salida: Objeto con el estado y las acciones de la pantalla

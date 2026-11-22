@@ -1,6 +1,6 @@
 /*
  * ******************************************************************
- * Nombre del programa: BD-SP02-GL05 · PantallaDetalle.js
+ * Nombre del programa: BD-SP02-GL04 · PantallaDetalle.js
  * Función: Ficha del libro con disponibilidad, ubicación y sinopsis.
  * Autor: Equipo CCJMops
  * Fecha: 26/10/2026
@@ -17,7 +17,7 @@
  * Contenido de listado:
  *     Componente        Objetivo
  *     Fila              Fila de la tabla de copias con separador superior
- *     PantallaDetalle   BD-SP02-GL05 Consulta de un libro y sus copias (vista…
+ *     PantallaDetalle   BD-SP02-GL04 Consulta de un libro y sus copias (vista…
  * ******************************************************************
  */
 
@@ -57,7 +57,7 @@ function Fila({ primera, children })
 
 /*
  * Componente: PantallaDetalle
- * Objetivo: BD-SP02-GL05 Consulta de un libro y sus copias (vista según el rol).
+ * Objetivo: BD-SP02-GL04 Consulta de un libro y sus copias (vista según el rol).
  * Uso: <PantallaDetalle route={…} />
  */
 export function PantallaDetalle({ route })

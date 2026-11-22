@@ -238,14 +238,15 @@ El perfil Administrador está protegido: sus funciones no se pueden modificar.
 | — | Portal público de la biblioteca (búsqueda y acceso al sistema) | `/` |
 | GU01 | Inicio de sesión (vacío, incompleto, datos incorrectos, cuenta inactiva) | `/login` |
 | — | Panel del administrador (usuarios válidos, solicitudes, libros activos y accesos rápidos) | `/panel` |
-| GU02 | Usuarios válidos, consulta por matrícula, cambio de datos, alta y baja de cuentas según CIAA y Empleados, perfiles y funciones | `/usuarios/…` |
-| GL02 | Alta de libro con ISBN validado primero y ejemplares con ubicación | `/libros/nuevo` |
-| GL04 | Editar ficha (ISBN bloqueado, libro inactivo) y estado de cada copia | `/libros/:id/editar` |
-| GL03 | Baja: retirar una copia con motivo, o activar/inactivar el libro | `/libros/:id/baja` |
-| GL01 | Solicitar libros nuevos o más copias, solicitudes pendientes y editoriales | `/libros/solicitar`, `/libros/:id/solicitar` |
+| GU02 | Usuarios válidos, consulta por matrícula, cambio de datos, alta y baja de cuentas según CIAA y Empleados | `/usuarios/…` |
+| GU03 | Perfiles y funciones (Administrador protegido) | `/usuarios/perfiles` |
+| GL01 | Alta de libro con ISBN validado primero y ejemplares con ubicación | `/libros/nuevo` |
+| GL02 | Baja: retirar una copia con motivo, o activar/inactivar el libro | `/libros/:id/baja` |
+| GL03 | Editar ficha (ISBN bloqueado, libro inactivo) y estado de cada copia | `/libros/:id/editar` |
+| GL04 | Ficha del libro (completa con ejemplares para quien gestiona libros, resumida por estado para los demás) | `/catalogo/:id` |
 | BL01 | Catálogo: búsqueda con filtros (el filtro también ordena) y paginación de 6 | `/catalogo` |
+| GL05 | Solicitar libros nuevos o más copias, solicitudes pendientes y editoriales | `/libros/solicitar`, `/libros/:id/solicitar` |
 | GL06 | Vista previa del listado, impresión y PDF | `/catalogo?listado=1` |
-| GL05 | Ficha del libro (completa con ejemplares para quien gestiona libros, resumida por estado para los demás) | `/catalogo/:id` |
 | GU02 | Detalle de usuario con préstamos activos, vencidos, multas y si puede pedir libros | `/usuarios/:id` |
 | PL01 | Registrar préstamo (lector, libro y ejemplar, fechas; rechazos por adeudos o sin copias) | `/prestamos/registro` |
 | PL02 | Recibo de préstamo (vista previa, impresión, PDF, correo y WhatsApp) y reimpresión | `/prestamos/:id/recibo`, `/prestamos/recibos` |
@@ -259,7 +260,7 @@ El perfil Administrador está protegido: sus funciones no se pueden modificar.
 | DL04 | Multas y adeudos de un usuario | `/multas/adeudos` |
 | DL06 | Lista de alumnos deudores (vista previa, PDF y envío a Servicios Escolares) | `/multas/deudores` |
 | DL07 | Pagos de Tesorería (conectado y sin conexión) | `/multas/pagos` |
-| CB01 | Asistente Biblio: preguntas frecuentes con un clic y preguntas escritas por perfil (IA) | `/asistente` |
+| CB01 / CB02 | Asistente Biblio: preguntas frecuentes con un clic y preguntas escritas por perfil (IA) | `/asistente` |
 
 Los menús *Préstamos*, *Devoluciones* y *Multas y adeudos* muestran indicadores, accesos y los
 últimos movimientos. Los avisos de resultado (recibo enviado, lista enviada, PDF descargado…)

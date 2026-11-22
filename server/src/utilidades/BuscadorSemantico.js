@@ -1,6 +1,6 @@
 /*
  * ******************************************************************
- * Nombre del programa: BD-SP04-CB01 · BuscadorSemantico.js
+ * Nombre del programa: BD-SP04-CB02 · BuscadorSemantico.js
  * Función: Reconocer, con un modelo de IA local (embeddings), cuál pregunta frecuente del
  *          perfil se parece a lo que el usuario escribió en el Asistente Biblio.
  * Autor: Equipo CCJMops

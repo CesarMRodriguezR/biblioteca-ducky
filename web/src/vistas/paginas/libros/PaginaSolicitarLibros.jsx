@@ -1,6 +1,6 @@
 /*
  * ******************************************************************
- * Nombre del programa: BD-SP02-GL01 · PaginaSolicitarLibros.jsx
+ * Nombre del programa: BD-SP02-GL05 · PaginaSolicitarLibros.jsx
  * Función: Solicitud de compra de libros nuevos o de más copias, y catálogo de editoriales.
  * Autor: Equipo CCJMops
  * Fecha: 26/10/2026
@@ -17,7 +17,7 @@
  * Contenido de listado:
  *     Componente              Objetivo
  *     TablaEditoriales        Tabla de editoriales con alta, edición y eliminación en…
- *     PaginaSolicitarLibros   BD-SP02-GL01 Solicitar libros (versión exitosa, fallida y…
+ *     PaginaSolicitarLibros   BD-SP02-GL05 Solicitar libros (versión exitosa, fallida y…
  * ******************************************************************
  */
 
@@ -179,7 +179,7 @@ function TablaEditoriales({ editoriales, al_guardar, al_eliminar })
 
 /*
  * Componente: PaginaSolicitarLibros
- * Objetivo: BD-SP02-GL01 Solicitar libros (versión exitosa, fallida y "más copias").
+ * Objetivo: BD-SP02-GL05 Solicitar libros (versión exitosa, fallida y "más copias").
  * Uso: <PaginaSolicitarLibros />
  */
 export function PaginaSolicitarLibros()

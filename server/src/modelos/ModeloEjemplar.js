@@ -1,6 +1,6 @@
 /*
  * ******************************************************************
- * Nombre del programa: BD-SP02-GL03 · ModeloEjemplar.js
+ * Nombre del programa: BD-SP02-GL02 · ModeloEjemplar.js
  * Función: Copias físicas de cada libro: alta, ubicación, cambio de estado y retiro.
  * Autor: Equipo CCJMops
  * Fecha: 26/10/2026

@@ -1,6 +1,6 @@
 /*
  * ******************************************************************
- * Nombre del programa: BD-SP02-GL03 · PaginaBajaLibro.jsx
+ * Nombre del programa: BD-SP02-GL02 · PaginaBajaLibro.jsx
  * Función: Retiro de una copia con motivo, o activación e inactivación del libro.
  * Autor: Equipo CCJMops
  * Fecha: 26/10/2026
@@ -17,7 +17,7 @@
  * Contenido de listado:
  *     Componente        Objetivo
  *     Opcion            Pestaña para elegir entre retirar una copia o cambiar el…
- *     PaginaBajaLibro   BD-SP02-GL03 Baja de libro: retiro de una copia y…
+ *     PaginaBajaLibro   BD-SP02-GL02 Baja de libro: retiro de una copia y…
  * ******************************************************************
  */
 
@@ -79,7 +79,7 @@ function Opcion({ activa, titulo, texto, onClick })
 
 /*
  * Componente: PaginaBajaLibro
- * Objetivo: BD-SP02-GL03 Baja de libro: retiro de una copia y activar/inactivar el libro.
+ * Objetivo: BD-SP02-GL02 Baja de libro: retiro de una copia y activar/inactivar el libro.
  * Uso: <PaginaBajaLibro />
  */
 export function PaginaBajaLibro()

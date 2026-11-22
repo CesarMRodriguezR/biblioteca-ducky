@@ -1,6 +1,6 @@
 /*
  * ******************************************************************
- * Nombre del programa: BD-SP01-GU02 · ControladorUsuarios.js
+ * Nombre del programa: BD-SP01-GU02 y GU03 · ControladorUsuarios.js
  * Función: Consulta y cambio de usuarios, alta y baja según CIAA y Empleados, y funciones de
  *          los perfiles.
  * Autor: Equipo CCJMops

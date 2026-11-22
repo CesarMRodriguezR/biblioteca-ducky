@@ -1,6 +1,6 @@
 /*
  * ******************************************************************
- * Nombre del programa: BD-SP01-GU02 · PaginaPerfiles.jsx
+ * Nombre del programa: BD-SP01-GU03 · PaginaPerfiles.jsx
  * Función: Gestión de perfiles y sus funciones.
  * Autor: Equipo CCJMops
  * Fecha: 26/10/2026
@@ -16,7 +16,7 @@
  * ******************************************************************
  * Contenido de listado:
  *     Componente       Objetivo
- *     PaginaPerfiles   BD-SP01-GU02 Gestión de perfiles (roles y funciones)
+ *     PaginaPerfiles   BD-SP01-GU03 Gestión de perfiles (roles y funciones)
  * ******************************************************************
  */
 
@@ -46,7 +46,7 @@ import {
 
 /*
  * Componente: PaginaPerfiles
- * Objetivo: BD-SP01-GU02 Gestión de perfiles (roles y funciones).
+ * Objetivo: BD-SP01-GU03 Gestión de perfiles (roles y funciones).
  * Uso: <PaginaPerfiles />
  */
 export function PaginaPerfiles()

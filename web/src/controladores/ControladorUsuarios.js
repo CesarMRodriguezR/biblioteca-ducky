@@ -1,6 +1,6 @@
 /*
  * ******************************************************************
- * Nombre del programa: BD-SP01-GU02 · ControladorUsuarios.js
+ * Nombre del programa: BD-SP01-GU02 y GU03 · ControladorUsuarios.js
  * Función: Pantallas de usuarios: válidos, consulta, cambio, carga y baja por lista, y
  *          perfiles.
  * Autor: Equipo CCJMops

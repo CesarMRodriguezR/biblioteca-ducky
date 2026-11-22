@@ -1,6 +1,6 @@
 /*
  * ******************************************************************
- * Nombre del programa: BD-SP04-CB01 · ControladorAsistente.js
+ * Nombre del programa: BD-SP04-CB01 y CB02 · ControladorAsistente.js
  * Función: Controlador del Asistente Biblio: saludo según el perfil, preguntas frecuentes,
  *          preguntas escritas y conversación con las respuestas y su fuente.
  * Autor: Equipo CCJMops
@@ -18,7 +18,7 @@
  * Contenido de listado:
  *     Hook                      Objetivo
  *     TemasDelPerfil            Temas que el asistente puede resolver según las funciones
- *     useControladorAsistente   BD-SP04-CB01 Asistente Biblio
+ *     useControladorAsistente   BD-SP04-CB01 y CB02 Asistente Biblio
  * ******************************************************************
  */
 
@@ -65,8 +65,8 @@ function TemasDelPerfil(Puede)
 
 /*
  * Hook: useControladorAsistente
- * Objetivo: BD-SP04-CB01 Asistente Biblio: saludo, preguntas frecuentes, preguntas escritas y
- *           respuestas con su fuente.
+ * Objetivo: BD-SP04-CB01 y CB02 Asistente Biblio: saludo, preguntas frecuentes, preguntas
+ *           escritas y respuestas con su fuente.
  * Entrada: Ninguna
  * Salida: Objeto con el estado y las acciones de la pantalla
  */

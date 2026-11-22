@@ -19,7 +19,7 @@
  *     POR_PAGINA               Libros por página del catálogo
  *     useControladorCatalogo   BD-SP02-BL01 Buscar libros: filtro por campo (que también…
  *     useControladorListado    BD-SP02-GL06 Generar listado: vista previa, impresión y PDF
- *     useControladorFicha      BD-SP02-GL05 Consultar ficha bibliográfica
+ *     useControladorFicha      BD-SP02-GL04 Consultar ficha bibliográfica
  * ******************************************************************
  */
 
@@ -182,7 +182,7 @@ export function useControladorListado(filtros)
 
 /*
  * Hook: useControladorFicha
- * Objetivo: BD-SP02-GL05 Consultar ficha bibliográfica.
+ * Objetivo: BD-SP02-GL04 Consultar ficha bibliográfica.
  * Entrada: Ninguna
  * Salida: Objeto con el estado y las acciones de la pantalla
  */

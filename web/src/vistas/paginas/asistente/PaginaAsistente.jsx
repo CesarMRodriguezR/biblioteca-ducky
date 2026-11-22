@@ -1,6 +1,6 @@
 /*
  * ******************************************************************
- * Nombre del programa: BD-SP04-CB01 · PaginaAsistente.jsx
+ * Nombre del programa: BD-SP04-CB01 y CB02 · PaginaAsistente.jsx
  * Función: Asistente Biblio: saludo, preguntas frecuentes, preguntas escritas y respuestas con
  *          su fuente.
  * Autor: Equipo CCJMops
@@ -18,7 +18,7 @@
  * Contenido de listado:
  *     Componente        Objetivo
  *     MensajeAsistente  Burbuja del asistente con su ícono
- *     PaginaAsistente   BD-SP04-CB01 Asistente Biblio
+ *     PaginaAsistente   BD-SP04-CB01 y CB02 Asistente Biblio
  * ******************************************************************
  */
 
@@ -64,7 +64,8 @@ function MensajeAsistente({ pregunta, fuente, children })
 
 /*
  * Componente: PaginaAsistente
- * Objetivo: BD-SP04-CB01 Asistente Biblio (estado inicial y respuestas) para todos los perfiles.
+ * Objetivo: BD-SP04-CB01 y CB02 Asistente Biblio (estado inicial y respuestas) para todos los
+ *           perfiles.
  * Uso: <PaginaAsistente />
  */
 export function PaginaAsistente()

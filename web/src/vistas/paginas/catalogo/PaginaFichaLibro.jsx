@@ -1,6 +1,6 @@
 /*
  * ******************************************************************
- * Nombre del programa: BD-SP02-GL05 · PaginaFichaLibro.jsx
+ * Nombre del programa: BD-SP02-GL04 · PaginaFichaLibro.jsx
  * Función: Ficha bibliográfica completa o resumida según el rol.
  * Autor: Equipo CCJMops
  * Fecha: 26/10/2026
@@ -22,7 +22,7 @@
  *     Ubicacion             Pasillo, estante, nivel y sección
  *     FichaCompleta         Vista para quien gestiona libros (con ejemplares)
  *     FichaResumida         Vista para quien solo busca (copias por estado)
- *     PaginaFichaLibro      BD-SP02-GL05 Consultar un libro
+ *     PaginaFichaLibro      BD-SP02-GL04 Consultar un libro
  * ******************************************************************
  */
 
@@ -115,7 +115,7 @@ function Ubicacion({ libro, titulo, className = '' })
 
 /*
  * Componente: FichaCompleta
- * Objetivo: BD-SP02-GL05 Consulta exitosa (quien gestiona libros): portada con «Editar ficha»
+ * Objetivo: BD-SP02-GL04 Consulta exitosa (quien gestiona libros): portada con «Editar ficha»
  *           y la tabla de ejemplares con su estado.
  * Uso: <FichaCompleta libro={…} al_editar={…} />
  */
@@ -237,7 +237,7 @@ function FichaResumida({ libro })
 
 /*
  * Componente: PaginaFichaLibro
- * Objetivo: BD-SP02-GL05 Consultar un libro: vista completa para quien gestiona libros y vista
+ * Objetivo: BD-SP02-GL04 Consultar un libro: vista completa para quien gestiona libros y vista
  *           resumida para los demás perfiles.
  * Uso: <PaginaFichaLibro />
  */

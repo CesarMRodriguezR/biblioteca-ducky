@@ -1,6 +1,6 @@
 /*
  * ******************************************************************
- * Nombre del programa: BD-SP01-GU02 · ModeloPerfil.js
+ * Nombre del programa: BD-SP01-GU03 · ModeloPerfil.js
  * Función: Perfiles (roles) y las funciones que tiene asignadas cada uno.
  * Autor: Equipo CCJMops
  * Fecha: 26/10/2026

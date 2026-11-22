@@ -1,6 +1,6 @@
 /*
  * ******************************************************************
- * Nombre del programa: BD-SP02-GL04 · PaginaEditarLibro.jsx
+ * Nombre del programa: BD-SP02-GL03 · PaginaEditarLibro.jsx
  * Función: Edición de la ficha bibliográfica y del estado de cada copia.
  * Autor: Equipo CCJMops
  * Fecha: 26/10/2026
@@ -16,7 +16,7 @@
  * ******************************************************************
  * Contenido de listado:
  *     Componente          Objetivo
- *     PaginaEditarLibro   BD-SP02-GL04 Editar libro y estado de copias (todas sus…
+ *     PaginaEditarLibro   BD-SP02-GL03 Editar libro y estado de copias (todas sus…
  * ******************************************************************
  */
 
@@ -49,7 +49,7 @@ import {
 
 /*
  * Componente: PaginaEditarLibro
- * Objetivo: BD-SP02-GL04 Editar libro y estado de copias (todas sus variantes).
+ * Objetivo: BD-SP02-GL03 Editar libro y estado de copias (todas sus variantes).
  * Uso: <PaginaEditarLibro />
  */
 export function PaginaEditarLibro()

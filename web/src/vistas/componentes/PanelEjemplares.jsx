@@ -1,6 +1,6 @@
 /*
  * ******************************************************************
- * Nombre del programa: BD-SP02-GL02 · PanelEjemplares.jsx
+ * Nombre del programa: BD-SP02-GL01 · PanelEjemplares.jsx
  * Función: Agregar ejemplares con su ubicación y listar los registrados.
  * Autor: Equipo CCJMops
  * Fecha: 26/10/2026

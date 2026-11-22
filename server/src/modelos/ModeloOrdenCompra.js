@@ -1,6 +1,6 @@
 /*
  * ******************************************************************
- * Nombre del programa: BD-SP02-GL01 · ModeloOrdenCompra.js
+ * Nombre del programa: BD-SP02-GL05 · ModeloOrdenCompra.js
  * Función: Órdenes de compra de libros nuevos o de más copias y su flujo de estatus.
  * Autor: Equipo CCJMops
  * Fecha: 26/10/2026

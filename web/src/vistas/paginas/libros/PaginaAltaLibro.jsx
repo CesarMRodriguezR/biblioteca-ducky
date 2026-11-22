@@ -1,6 +1,6 @@
 /*
  * ******************************************************************
- * Nombre del programa: BD-SP02-GL02 · PaginaAltaLibro.jsx
+ * Nombre del programa: BD-SP02-GL01 · PaginaAltaLibro.jsx
  * Función: Alta de libro con validación de ISBN y alta de ejemplares.
  * Autor: Equipo CCJMops
  * Fecha: 26/10/2026
@@ -16,7 +16,7 @@
  * ******************************************************************
  * Contenido de listado:
  *     Componente        Objetivo
- *     PaginaAltaLibro   BD-SP02-GL02 Alta de libro (formulario, registro…
+ *     PaginaAltaLibro   BD-SP02-GL01 Alta de libro (formulario, registro…
  * ******************************************************************
  */
 
@@ -37,7 +37,7 @@ import { Alerta, Boton, EnlaceVolver, Tarjeta } from '../../componentes/interfaz
 
 /*
  * Componente: PaginaAltaLibro
- * Objetivo: BD-SP02-GL02 Alta de libro (formulario, registro exitoso/fallido, ISBN duplicado,
+ * Objetivo: BD-SP02-GL01 Alta de libro (formulario, registro exitoso/fallido, ISBN duplicado,
  *           cancelación).
  * Uso: <PaginaAltaLibro />
  */

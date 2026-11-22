@@ -1,6 +1,6 @@
 /*
  * ******************************************************************
- * Nombre del programa: BD-SP04-CB01 · ModeloAsistente.js
+ * Nombre del programa: BD-SP04-CB01 y CB02 · ModeloAsistente.js
  * Función: Preguntas y respuestas del Asistente Biblio según las funciones del perfil, con la
  *          fuente (artefacto del proyecto) de cada respuesta.
  * Autor: Equipo CCJMops
