@@ -42,6 +42,8 @@
 --     falta enviar a Tesorería aunque no responda (Pagos de Tesorería).
 --   * PreguntasChatbot: id_funcion. Cada pregunta del Asistente Biblio pertenece a una
 --     función; un usuario solo ve las preguntas de las funciones de su perfil.
+--     Frases_Ejemplo: otras formas de hacer la pregunta (separadas por |) con las que
+--     el asistente reconoce lo que el usuario escribe.
 --   * ContenidosChatbot: Respuesta crece a VARCHAR(500) porque las respuestas del
 --     prototipo pasan de 150 caracteres.
 -- =====================================================================
@@ -330,6 +332,8 @@ CREATE TABLE PreguntasChatbot (
   id_pregunta  VARCHAR(13)  NOT NULL,
   Pregunta     VARCHAR(150) NOT NULL,
   id_funcion   VARCHAR(13)  NOT NULL COMMENT '[PROTOTIPO] Función que da acceso a la pregunta',
+  Frases_Ejemplo VARCHAR(500) NULL
+    COMMENT '[PROTOTIPO] Otras formas de hacer la pregunta, separadas por |',
   PRIMARY KEY (id_pregunta),
   FULLTEXT KEY ft_preguntas (Pregunta),
   CONSTRAINT fk_preguntas_funcion FOREIGN KEY (id_funcion)

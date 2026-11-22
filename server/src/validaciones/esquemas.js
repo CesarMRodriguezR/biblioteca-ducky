@@ -473,6 +473,13 @@ const esquemas = {
     estatus: z.enum(['Aceptada', 'Rechazada']),
     motivo: z.string().trim().max(255).optional().nullable(),
   }),
+
+  asistente_mensaje: z.object({
+    mensaje: z.preprocess(
+      (valor) => valor ?? '',
+      z.string().trim().min(1, 'Escribe tu pregunta.').max(300, 'Escribe máximo 300 caracteres.'),
+    ),
+  }),
 };
 
 export { esquemas };

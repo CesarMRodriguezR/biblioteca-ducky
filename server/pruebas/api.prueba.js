@@ -39,6 +39,7 @@ import assert from 'node:assert/strict';
 import { aplicacion } from '../src/aplicacion.js';
 import { pool, Consultar } from '../src/configuracion/conexion.js';
 import { ENTORNO } from '../src/configuracion/entorno.js';
+import { BuscadorSemantico } from '../src/utilidades/BuscadorSemantico.js';
 import { IniciarSimulador } from './SimuladorExternos.js';
 import { Hoy } from '../src/utilidades/fechas.js';
 import { SumarDiasHabiles } from '../src/utilidades/ReglasCirculacion.js';
@@ -915,18 +916,55 @@ test('DL07: Tesorería recibe las multas pendientes y sus pagos se aplican', asy
   assert.equal((await aviso.json()).cambio, true);
 });
 
-test('CB01: el Asistente Biblio muestra preguntas según las funciones del perfil', async () =>
+test('CB01: el Asistente Biblio muestra solo las preguntas frecuentes comunes', async () =>
 {
   const Preguntas = async (token) =>
     (await Solicitar('GET', '/asistente/preguntas', { token })).data.length;
   assert.equal(await Preguntas(tokens.alumna), 4);
-  assert.equal(await Preguntas(tokens.profesor), 4);
-  assert.equal(await Preguntas(tokens.biblio), 6);
-  assert.equal(await Preguntas(tokens.admin), 8);
+  assert.equal(await Preguntas(tokens.biblio), 4);
+  assert.equal(await Preguntas(tokens.admin), 4);
   const respuesta = await Solicitar('GET', '/asistente/preguntas/1', { token: tokens.alumna });
   assert.equal(respuesta.data.Fuente, 'Propuesta de Negocio · Objetivo del proyecto');
   const ajena = await Solicitar('GET', '/asistente/preguntas/7', { token: tokens.alumna });
   assert.equal(ajena.status, 404);
+});
+
+test('CB01: la IA responde una pregunta escrita solo con las preguntas del perfil', async () =>
+{
+  const ElegirOriginal = BuscadorSemantico.ElegirPregunta;
+  const recibidas = [];
+  // El buscador simulado elige la pregunta 5 (préstamos) si está en la lista que recibe.
+  BuscadorSemantico.ElegirPregunta = async (mensaje, preguntas) =>
+  {
+    recibidas.push(preguntas.map((pregunta) => String(pregunta.id_pregunta)));
+    return recibidas.at(-1).includes('5') ? '5' : null;
+  };
+  try
+  {
+    const Escribir = (token, mensaje) =>
+      Solicitar('POST', '/asistente/mensajes', { token, body: { mensaje } });
+    const biblio = await Escribir(tokens.biblio, 'como le presto un libro a alguien?');
+    assert.equal(biblio.status, 200);
+    assert.equal(biblio.data.encontrada, true);
+    assert.equal(biblio.data.id_pregunta, '5');
+    assert.equal(biblio.data.Fuente, 'Historia de usuario BD-SP03-PL03 · Registro de préstamo');
+    // El bibliotecario recibe las comunes, las de lectores (buscar_libros), préstamos y
+    // devoluciones, pero no las de usuarios ni libros.
+    assert.ok(['1', '5', '9', '20'].every((id) => recibidas.at(-1).includes(id)));
+    assert.ok(!recibidas.at(-1).includes('7') && !recibidas.at(-1).includes('29'));
+
+    const alumna = await Escribir(tokens.alumna, 'como le presto un libro a alguien?');
+    assert.equal(alumna.data.encontrada, false);
+    assert.equal(alumna.data.Fuente, undefined);
+    assert.deepEqual(recibidas.at(-1), ['1', '2', '3', '4', '9', '10', '11', '12', '13', '14', '15']);
+
+    const vacio = await Escribir(tokens.alumna, '   ');
+    assert.equal(vacio.status, 400);
+  }
+  finally
+  {
+    BuscadorSemantico.ElegirPregunta = ElegirOriginal;
+  }
 });
 
 test('GU02: detalle de usuario con préstamos y teléfono (de CIAA, no editable)', async () =>

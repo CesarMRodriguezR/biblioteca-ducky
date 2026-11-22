@@ -1,11 +1,11 @@
 /*
  * ******************************************************************
  * Nombre del programa: BD-SP04-CB01 · ControladorAsistente.js
- * Función: Controlador del Asistente Biblio: saludo según el perfil, preguntas disponibles y
- *          conversación con las respuestas y su fuente.
+ * Función: Controlador del Asistente Biblio: saludo según el perfil, preguntas frecuentes,
+ *          preguntas escritas y conversación con las respuestas y su fuente.
  * Autor: Equipo CCJMops
  * Fecha: 15/11/2026
- * Entrada: Pregunta elegida por el usuario
+ * Entrada: Pregunta elegida o escrita por el usuario
  * Salida: Estado y acciones para la vista
  * Nomenclatura: Componentes en CamelCase, hooks en use + CamelCase,
  *               variables y props en snake_case, funciones en
@@ -26,8 +26,8 @@
  * ******************************************************************
  * Instrucciones de reutilización:
  * (1) Controlador del patrón MVC: no devuelve JSX; la vista es PaginaAsistente.
- * (2) Las preguntas las entrega la API según las funciones del perfil; las que ya se hicieron
- *     dejan de mostrarse como opción.
+ * (2) Las preguntas frecuentes (comunes a todos) se eligen con un clic y, ya respondidas, dejan
+ *     de mostrarse; las de cada perfil se escriben y la API las interpreta con IA.
  * ******************************************************************
  */
 
@@ -65,8 +65,8 @@ function TemasDelPerfil(Puede)
 
 /*
  * Hook: useControladorAsistente
- * Objetivo: BD-SP04-CB01 Asistente Biblio: saludo, preguntas por perfil y respuestas con su
- *           fuente.
+ * Objetivo: BD-SP04-CB01 Asistente Biblio: saludo, preguntas frecuentes, preguntas escritas y
+ *           respuestas con su fuente.
  * Entrada: Ninguna
  * Salida: Objeto con el estado y las acciones de la pantalla
  */
@@ -75,21 +75,33 @@ export function useControladorAsistente()
   const { usuario, Puede } = useSesion();
   const { datos: preguntas, error, cargando } = useCarga(() => ModeloAsistente.Preguntas(), []);
   const [conversacion, SetConversacion] = useState([]);
+  const [mensaje, SetMensaje] = useState('');
   const [respondiendo, SetRespondiendo] = useState(false);
   const [error_respuesta, SetErrorRespuesta] = useState(null);
 
-  async function Preguntar(pregunta)
+  /*
+   * Función: Responder
+   * Objetivo: Pedir una respuesta y agregarla a la conversación con el texto del usuario.
+   * Entrada: texto_usuario, pedir (función que devuelve la promesa de la respuesta)
+   * Salida: Promesa con true si se respondió
+   */
+  async function Responder(texto_usuario, pedir)
   {
     SetRespondiendo(true);
     SetErrorRespuesta(null);
     try
     {
-      const respuesta = await ModeloAsistente.Responder(pregunta.id_pregunta);
-      SetConversacion((previa) => [...previa, respuesta]);
+      const respuesta = await pedir();
+      SetConversacion((previa) => [
+        ...previa,
+        { clave: previa.length, texto_usuario, ...respuesta },
+      ]);
+      return true;
     }
     catch (excepcion)
     {
       SetErrorRespuesta(excepcion);
+      return false;
     }
     finally
     {
@@ -97,16 +109,39 @@ export function useControladorAsistente()
     }
   }
 
+  function Preguntar(pregunta)
+  {
+    return Responder(pregunta.Pregunta, () => ModeloAsistente.Responder(pregunta.id_pregunta));
+  }
+
+  async function EnviarMensaje(evento)
+  {
+    evento.preventDefault();
+    const texto = mensaje.trim();
+    if (!texto || respondiendo)
+    {
+      return;
+    }
+    if (await Responder(texto, () => ModeloAsistente.Conversar(texto)))
+    {
+      SetMensaje('');
+    }
+  }
+
   const hechas = new Set(conversacion.map((respuesta) => respuesta.id_pregunta));
   return {
     saludo:
       `¡Hola, ${usuario.Nombre_Completo.split(' ')[0]}! Soy el Asistente Biblio. Puedo resolver ` +
-      `tus dudas sobre ${TemasDelPerfil(Puede)}. Elige una de las preguntas de abajo.`,
+      `tus dudas sobre ${TemasDelPerfil(Puede)}. Elige una pregunta frecuente o escríbeme tu ` +
+      'duda.',
     disponibles: (preguntas ?? []).filter((pregunta) => !hechas.has(pregunta.id_pregunta)),
     conversacion,
+    mensaje,
     error: error ?? error_respuesta,
     cargando,
     respondiendo,
+    SetMensaje,
     Preguntar,
+    EnviarMensaje,
   };
 }

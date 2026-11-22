@@ -575,7 +575,8 @@ rutas.get(
 
 /*------------------------------------------------------------------
  * Sección: Asistente Biblio
- * Objetivo: Preguntas frecuentes según las funciones del perfil.
+ * Objetivo: Preguntas frecuentes y preguntas escritas que interpreta la IA según las funciones
+ *           del perfil.
  *------------------------------------------------------------------*/
 const asistente = Puede('usar_asistente');
 rutas.get(
@@ -590,6 +591,13 @@ rutas.get(
   asistente,
   con_id,
   ManejarAsincrono(ControladorAsistente.Responder),
+);
+rutas.post(
+  '/asistente/mensajes',
+  Autenticar,
+  asistente,
+  Validar(esquemas.asistente_mensaje),
+  ManejarAsincrono(ControladorAsistente.Conversar),
 );
 
 export { rutas };

@@ -30,10 +30,12 @@
 import { aplicacion } from './aplicacion.js';
 import { ENTORNO } from './configuracion/entorno.js';
 import { pool } from './configuracion/conexion.js';
+import { BuscadorSemantico } from './utilidades/BuscadorSemantico.js';
 
 const servidor = aplicacion.listen(ENTORNO.PUERTO, () =>
 {
   console.log(`API Biblioteca Ducky escuchando en http://localhost:${ENTORNO.PUERTO}/api`);
+  BuscadorSemantico.Precargar();
 });
 
 /*

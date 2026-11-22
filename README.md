@@ -218,8 +218,14 @@ Alcance:
 - *Devolución de libros*: registro de devoluciones con multa por retraso, libros perdidos,
   préstamos vencidos, multas por daño o pérdida, adeudos de un usuario, lista de alumnos
   deudores para Servicios Escolares y pagos recibidos de Tesorería.
-- *Asistente Biblio*: preguntas frecuentes según las funciones del perfil; cada respuesta cita
-  el artefacto del proyecto del que se tomó (Propuesta de Negocio o la historia de usuario).
+- *Asistente Biblio*: las preguntas comunes a todos se eligen con un clic; las de cada perfil se
+  escriben y un modelo de IA local (embeddings multilingües con transformers.js, sin servicios
+  externos ni costo) reconoce cuál pregunta del perfil es lo suficientemente parecida,
+  comparando con la pregunta y sus frases de ejemplo (`PreguntasChatbot.Frases_Ejemplo`). La
+  respuesta siempre sale tal cual de la BD y cita el artefacto del proyecto del que se tomó
+  (Propuesta de Negocio o la historia de usuario). La primera vez que arranca, la API descarga
+  el modelo (unos 120 MB) de Hugging Face; después funciona sin internet. Si una pregunta
+  escrita no se reconoce, agrega frases de ejemplo a la pregunta.
 
 El perfil Administrador está protegido: sus funciones no se pueden modificar.
 
@@ -253,7 +259,7 @@ El perfil Administrador está protegido: sus funciones no se pueden modificar.
 | DL04 | Multas y adeudos de un usuario | `/multas/adeudos` |
 | DL06 | Lista de alumnos deudores (vista previa, PDF y envío a Servicios Escolares) | `/multas/deudores` |
 | DL07 | Pagos de Tesorería (conectado y sin conexión) | `/multas/pagos` |
-| CB01 | Asistente Biblio con preguntas por perfil | `/asistente` |
+| CB01 | Asistente Biblio: preguntas frecuentes con un clic y preguntas escritas por perfil (IA) | `/asistente` |
 
 Los menús *Préstamos*, *Devoluciones* y *Multas y adeudos* muestran indicadores, accesos y los
 últimos movimientos. Los avisos de resultado (recibo enviado, lista enviada, PDF descargado…)
@@ -306,7 +312,7 @@ Todas las rutas van bajo `/api` y, salvo `POST /auth/login` y `GET /salud`, requ
 | Lista de espera | `GET /lista-espera?q=` · `POST /lista-espera` · `DELETE /lista-espera/:id` | prestar_libros |
 | Devoluciones | `GET /devoluciones/resumen` · `POST /devoluciones` · `POST /prestamos/:id/perdido` | devolver_libros |
 | Multas | `GET /multas/resumen` · `POST /multas` · `GET /multas/:id` · `GET /multas/:id/comprobante.pdf` · `GET /multas/deudores?periodo=` · `GET /multas/deudores.pdf` · `POST /multas/deudores/envio` · `GET /multas/pagos` | devolver_libros |
-| Asistente Biblio | `GET /asistente/preguntas` · `GET /asistente/preguntas/:id` | usar_asistente |
+| Asistente Biblio | `GET /asistente/preguntas` · `GET /asistente/preguntas/:id` · `POST /asistente/mensajes` | usar_asistente |
 
 Errores: `{ "error": "mensaje", "detalles": … }`. 400 trae un mensaje por campo
 (`[{ campo, mensaje }]`); 409 trae `detalles.codigo` (`ISBN_DUPLICADO`,

@@ -1,7 +1,8 @@
 /*
  * ******************************************************************
  * Nombre del programa: BD-SP04-CB01 · PaginaAsistente.jsx
- * Función: Asistente Biblio: saludo, preguntas según el perfil y respuestas con su fuente.
+ * Función: Asistente Biblio: saludo, preguntas frecuentes, preguntas escritas y respuestas con
+ *          su fuente.
  * Autor: Equipo CCJMops
  * Fecha: 15/11/2026
  * Entrada: Estado del controlador de la pantalla
@@ -28,17 +29,24 @@
  * ******************************************************************
  */
 
-import { CircleHelp } from 'lucide-react';
+import { CircleHelp, SendHorizontal } from 'lucide-react';
 import { useControladorAsistente } from '../../../controladores/ControladorAsistente.js';
 import { Pagina } from '../../plantillas/PlantillaAplicacion.jsx';
-import { AlertaError, Cargando, Insignia, Tarjeta } from '../../componentes/interfaz.jsx';
+import {
+  AlertaError,
+  Boton,
+  Cargando,
+  Insignia,
+  Tarjeta,
+} from '../../componentes/interfaz.jsx';
 
 /*
  * Componente: MensajeAsistente
- * Objetivo: Burbuja del asistente con su ícono y, si la hay, la fuente de la respuesta.
- * Uso: <MensajeAsistente fuente={…}>…</MensajeAsistente>
+ * Objetivo: Burbuja del asistente con su ícono y, si las hay, la pregunta que reconoció en un
+ *           mensaje escrito y la fuente de la respuesta.
+ * Uso: <MensajeAsistente pregunta={…} fuente={…}>…</MensajeAsistente>
  */
-function MensajeAsistente({ fuente, children })
+function MensajeAsistente({ pregunta, fuente, children })
 {
   return (
     <div className="chat-renglon">
@@ -46,6 +54,7 @@ function MensajeAsistente({ fuente, children })
         <CircleHelp size={18} />
       </div>
       <div className="chat-burbuja">
+        {pregunta && <p className="chat-pregunta-detectada">Sobre: {pregunta}</p>}
         {children}
         {fuente && <p className="chat-fuente">Fuente: {fuente}</p>}
       </div>
@@ -72,7 +81,7 @@ export function PaginaAsistente()
           <div style={{ flex: 1 }}>
             <h2 className="titulo-seccion">Asistente Biblio</h2>
             <p className="texto-nota">
-              Resuelve tus dudas sobre Biblio: objetivo, alcance, plataformas y cómo usarla
+              Elige una pregunta frecuente o escribe tu duda sobre cómo usar Biblio
             </p>
           </div>
           <Insignia tono="exito">En línea</Insignia>
@@ -80,11 +89,16 @@ export function PaginaAsistente()
         <div className="chat-cuerpo" aria-live="polite">
           <MensajeAsistente>{controlador.saludo}</MensajeAsistente>
           {controlador.conversacion.map((respuesta) => (
-            <div key={respuesta.id_pregunta}>
+            <div key={respuesta.clave}>
               <div className="chat-renglon chat-renglon-usuario">
-                <div className="chat-burbuja chat-burbuja-usuario">{respuesta.Pregunta}</div>
+                <div className="chat-burbuja chat-burbuja-usuario">{respuesta.texto_usuario}</div>
               </div>
-              <MensajeAsistente fuente={respuesta.Fuente}>{respuesta.Respuesta}</MensajeAsistente>
+              <MensajeAsistente
+                pregunta={respuesta.encontrada ? respuesta.Pregunta : null}
+                fuente={respuesta.Fuente}
+              >
+                {respuesta.Respuesta}
+              </MensajeAsistente>
             </div>
           ))}
           {controlador.cargando && <Cargando texto="Cargando preguntas…" />}
@@ -105,10 +119,28 @@ export function PaginaAsistente()
           </div>
           {!controlador.cargando && !controlador.disponibles.length && (
             <p className="texto-nota chat-opciones">
-              Ya respondí todas las preguntas disponibles para tu perfil.
+              Ya respondí todas las preguntas frecuentes. Escríbeme si tienes otra duda.
             </p>
           )}
         </div>
+        <form className="chat-redactar" onSubmit={controlador.EnviarMensaje}>
+          <input
+            className="entrada"
+            value={controlador.mensaje}
+            onChange={(evento) => controlador.SetMensaje(evento.target.value)}
+            placeholder="Escribe tu pregunta, por ejemplo: ¿cómo registro un préstamo?"
+            aria-label="Escribe tu pregunta"
+            maxLength={300}
+            disabled={controlador.respondiendo}
+          />
+          <Boton
+            type="submit"
+            icono={SendHorizontal}
+            disabled={controlador.respondiendo || !controlador.mensaje.trim()}
+          >
+            Enviar
+          </Boton>
+        </form>
       </Tarjeta>
     </Pagina>
   );
