@@ -26,9 +26,12 @@
  * ******************************************************************
  * Instrucciones de reutilización:
  * (1) Vista del patrón MVC: solo muestra lo que recibe del controlador; nunca llama a la API.
+ * (2) La conversación se desplaza dentro de la tarjeta y baja sola al último mensaje; la barra
+ *     para escribir siempre queda visible.
  * ******************************************************************
  */
 
+import { useEffect, useRef } from 'react';
 import { CircleHelp } from 'lucide-react';
 import { useControladorAsistente } from '../../../controladores/ControladorAsistente.js';
 import { Pagina } from '../../plantillas/PlantillaAplicacion.jsx';
@@ -71,6 +74,13 @@ function MensajeAsistente({ pregunta, fuente, children })
 export function PaginaAsistente()
 {
   const controlador = useControladorAsistente();
+  const cuerpo = useRef(null);
+
+  // Al llegar un mensaje (o el «Escribiendo…»), mostrar lo último de la conversación.
+  useEffect(() =>
+  {
+    cuerpo.current?.scrollTo({ top: cuerpo.current.scrollHeight, behavior: 'smooth' });
+  }, [controlador.conversacion.length, controlador.respondiendo]);
 
   return (
     <Pagina miga="Asistente Biblio" titulo="Asistente Biblio">
@@ -88,7 +98,7 @@ export function PaginaAsistente()
           </div>
           <Insignia tono="exito">En línea</Insignia>
         </div>
-        <div className="chat-cuerpo" aria-live="polite">
+        <div className="chat-cuerpo" aria-live="polite" ref={cuerpo}>
           <MensajeAsistente>{controlador.saludo}</MensajeAsistente>
           {controlador.conversacion.map((respuesta) => (
             <div key={respuesta.clave}>
