@@ -132,8 +132,8 @@ export function useControladorAsistente()
   return {
     saludo:
       `¡Hola, ${usuario.Nombre_Completo.split(' ')[0]}! Soy el Asistente Biblio. Puedo resolver ` +
-      `tus dudas sobre ${TemasDelPerfil(Puede)}. Elige una pregunta frecuente o escríbeme tu ` +
-      'duda.',
+      `tus dudas sobre ${TemasDelPerfil(Puede)}. Elige una de las preguntas de abajo o escribe ` +
+      'la tuya.',
     disponibles: (preguntas ?? []).filter((pregunta) => !hechas.has(pregunta.id_pregunta)),
     conversacion,
     mensaje,

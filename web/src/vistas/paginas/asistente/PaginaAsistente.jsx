@@ -29,7 +29,7 @@
  * ******************************************************************
  */
 
-import { CircleHelp, SendHorizontal } from 'lucide-react';
+import { CircleHelp } from 'lucide-react';
 import { useControladorAsistente } from '../../../controladores/ControladorAsistente.js';
 import { Pagina } from '../../plantillas/PlantillaAplicacion.jsx';
 import {
@@ -82,7 +82,8 @@ export function PaginaAsistente()
           <div style={{ flex: 1 }}>
             <h2 className="titulo-seccion">Asistente Biblio</h2>
             <p className="texto-nota">
-              Elige una pregunta frecuente o escribe tu duda sobre cómo usar Biblio
+              Resuelve tus dudas sobre Biblio con inteligencia artificial: elige una pregunta o
+              escribe la tuya
             </p>
           </div>
           <Insignia tono="exito">En línea</Insignia>
@@ -129,16 +130,12 @@ export function PaginaAsistente()
             className="entrada"
             value={controlador.mensaje}
             onChange={(evento) => controlador.SetMensaje(evento.target.value)}
-            placeholder="Escribe tu pregunta, por ejemplo: ¿cómo registro un préstamo?"
+            placeholder="Escribe tu pregunta sobre Biblio…"
             aria-label="Escribe tu pregunta"
             maxLength={300}
             disabled={controlador.respondiendo}
           />
-          <Boton
-            type="submit"
-            icono={SendHorizontal}
-            disabled={controlador.respondiendo || !controlador.mensaje.trim()}
-          >
+          <Boton type="submit" disabled={controlador.respondiendo}>
             Enviar
           </Boton>
         </form>
