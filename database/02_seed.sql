@@ -390,7 +390,7 @@ INSERT INTO PreguntasChatbot (id_pregunta, Pregunta, id_funcion, Frases_Ejemplo)
   (16, '¿Cómo renuevo un préstamo?', 4,
    '¿Cómo extiendo la fecha de devolución de un lector?|Un lector quiere más tiempo con su libro|¿Dónde se hace la renovación?|Renovar el préstamo de un lector'),
   (17, '¿Cómo reimprimo o envío un recibo de préstamo?', 4,
-   '¿Cómo mando el recibo por correo o WhatsApp?|El lector perdió su recibo|¿Dónde encuentro el recibo de un préstamo?|Reimprimir el recibo'),
+   '¿Cómo mando el recibo por correo o WhatsApp?|El lector necesita otra copia de su recibo|¿Dónde encuentro el recibo de un préstamo?|Reimprimir el recibo'),
   (18, '¿Cómo agrego a un lector a la lista de espera?', 4,
    '¿Cómo funciona la lista de espera?|No hay copias de un libro y el lector lo quiere|¿Quién sigue en la lista de espera de un libro?|Anotar a un lector en la lista de espera'),
   (19, '¿Cómo consulto los préstamos de un usuario?', 4,
