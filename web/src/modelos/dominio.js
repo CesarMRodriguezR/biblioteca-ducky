@@ -54,6 +54,8 @@
  *     TextoRecibo           Texto del recibo para enviarlo por correo o WhatsApp
  *     EnlaceWhatsApp        Enlace de WhatsApp con el recibo escrito
  *     EnlaceCorreo          Enlace de correo con el recibo escrito
+ *     GUIAS_MODULO          Nombre comprensible de la guía de cada módulo
+ *     FuenteLegible         Fuente del Asistente Biblio en palabras comprensibles
  * ******************************************************************
  */
 
@@ -623,4 +625,40 @@ export function EnlaceWhatsApp(telefono, texto)
 export function EnlaceCorreo(correo, asunto, cuerpo)
 {
   return `mailto:${correo}?subject=${encodeURIComponent(asunto)}&body=${encodeURIComponent(cuerpo)}`;
+}
+
+/*
+ * Constante: GUIAS_MODULO
+ * Objetivo: Nombre comprensible de la guía de cada módulo de las historias de usuario
+ *           (BD-SP03-PL01 → PL).
+ */
+export const GUIAS_MODULO = {
+  GU: 'Guía de usuarios y perfiles',
+  GL: 'Guía del catálogo de libros',
+  BL: 'Guía de búsqueda de libros',
+  PL: 'Guía de préstamos',
+  DL: 'Guía de devoluciones y multas',
+  CB: 'Guía del Asistente Biblio',
+};
+
+/*
+ * Función: FuenteLegible
+ * Objetivo: Expresar la fuente de una respuesta del Asistente Biblio (FuentesChatbot.Fuente,
+ *           que nombra el artefacto del proyecto) en palabras que cualquier usuario entienda.
+ *           «Historia de usuario BD-SP03-PL01 · Registro de préstamo» → «Guía de préstamos ·
+ *           Registro de préstamo»; «Propuesta de Negocio · Alcance» → «Información general de
+ *           Biblio · Alcance». Otra fuente se muestra tal cual.
+ * Entrada: fuente
+ * Salida: Texto de la fuente para mostrar
+ */
+export function FuenteLegible(fuente)
+{
+  const [documento, ...resto] = fuente.split(' · ');
+  const tema = resto.join(' · ');
+  if (documento === 'Propuesta de Negocio')
+  {
+    return `Información general de Biblio · ${tema}`;
+  }
+  const modulo = documento.match(/^Historia de usuario BD-SP\d+-([A-Z]+)\d+$/)?.[1];
+  return GUIAS_MODULO[modulo] && tema ? `${GUIAS_MODULO[modulo]} · ${tema}` : fuente;
 }

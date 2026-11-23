@@ -42,11 +42,13 @@ import {
   Insignia,
   Tarjeta,
 } from '../../componentes/interfaz.jsx';
+import { FuenteLegible } from '../../../modelos/dominio.js';
 
 /*
  * Componente: MensajeAsistente
  * Objetivo: Burbuja del asistente con su ícono y, si las hay, la pregunta que reconoció en un
- *           mensaje escrito y la fuente de la respuesta.
+ *           mensaje escrito y la fuente de la respuesta. La fuente se muestra en palabras
+ *           comprensibles.
  * Uso: <MensajeAsistente pregunta={…} fuente={…}>…</MensajeAsistente>
  */
 function MensajeAsistente({ pregunta, fuente, children })
@@ -59,7 +61,7 @@ function MensajeAsistente({ pregunta, fuente, children })
       <div className="chat-burbuja">
         {pregunta && <p className="chat-pregunta-detectada">Sobre: {pregunta}</p>}
         {children}
-        {fuente && <p className="chat-fuente">Fuente: {fuente}</p>}
+        {fuente && <p className="chat-fuente">Fuente: {FuenteLegible(fuente)}</p>}
       </div>
     </div>
   );
